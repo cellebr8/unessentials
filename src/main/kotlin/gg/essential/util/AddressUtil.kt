@@ -15,7 +15,6 @@ import com.google.common.net.HostAndPort
 import com.google.common.net.InetAddresses
 
 object AddressUtil {
-
     @JvmStatic
     fun removeDefaultPort(address: String): String {
         return address.removeSuffix(":25565")

@@ -16,7 +16,6 @@ import gg.essential.elementa.components.UIBlock
 import gg.essential.elementa.components.UIContainer
 import gg.essential.elementa.constraints.*
 import gg.essential.elementa.dsl.*
-import gg.essential.elementa.effects.Effect
 import gg.essential.elementa.effects.OutlineEffect
 import gg.essential.elementa.state.BasicState
 import gg.essential.elementa.state.State
@@ -25,6 +24,7 @@ import gg.essential.elementa.utils.withAlpha
 import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.IconButton
 import gg.essential.gui.common.bindParent
+import gg.essential.gui.common.effect.CheckerboardBackgroundEffect
 import gg.essential.gui.common.onSetValueAndNow
 import gg.essential.gui.common.or
 import gg.essential.gui.common.shadow.ShadowEffect
@@ -39,6 +39,7 @@ import gg.essential.universal.shader.BlendState
 import gg.essential.util.bindHoverEssentialTooltip
 import gg.essential.util.centered
 import gg.essential.gui.util.hoveredState
+import gg.essential.util.HSBColor
 import gg.essential.vigilance.utils.onLeftClick
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats
 import org.lwjgl.opengl.GL11
@@ -593,58 +594,5 @@ class ScreenshotColorPicker(
                 activeColorIndex.set { index }
             }
         }
-    }
-}
-
-class CheckerboardBackgroundEffect() : Effect() {
-    override fun beforeDraw(matrixStack: UMatrixStack) {
-        drawCheckerBoard(matrixStack, boundComponent)
-
-    }
-    private fun drawCheckerBoard(matrixStack: UMatrixStack, component: UIComponent) {
-        val left = component.getLeft().toDouble()
-        val top = component.getTop().toDouble()
-        val right = component.getRight().toDouble()
-        val bottom = component.getBottom().toDouble()
-        val graphics = UGraphics.getFromTessellator()
-
-        graphics.beginWithDefaultShader(UGraphics.DrawMode.QUADS, DefaultVertexFormats.POSITION_COLOR)
-        for (x in 0 until (right - left).toInt()) {
-            for (y in 0 until (bottom - top).toInt()) {
-                val color = if ((x + y) % 2 == 0) Color.LIGHT_GRAY else EssentialPalette.TEXT_HIGHLIGHT
-                drawVertex(graphics, matrixStack, left + x, top + y, color)
-                drawVertex(graphics, matrixStack, left + x, top + y + 1, color)
-                drawVertex(graphics, matrixStack, left + x + 1, top + y + 1, color)
-                drawVertex(graphics, matrixStack, left + x + 1, top + y, color)
-            }
-        }
-        graphics.drawDirect()
-    }
-    private fun drawVertex(graphics: UGraphics, matrixStack: UMatrixStack, x: Double, y: Double, color: Color) {
-        graphics
-            .pos(matrixStack, x, y, 0.0)
-            .color(
-                color.red.toFloat() / 255f,
-                color.green.toFloat() / 255f,
-                color.blue.toFloat() / 255f,
-                color.alpha.toFloat() / 255f
-            )
-            .endVertex()
-    }
-}
-
-data class HSBColor(var hue: Float, var saturation: Float, var brightness: Float, var alpha: Float) {
-
-    constructor(color: Color) : this(0f, 0f, 0f, color.alpha / 255F) {
-        val hsb = Color.RGBtoHSB(color.red, color.green, color.blue, null)
-        hue = hsb[0]
-        saturation = hsb[1]
-        brightness = hsb[2]
-    }
-
-    constructor(color: Int) : this(Color(color))
-
-    fun toColor(): Color {
-        return Color(Color.HSBtoRGB(hue, saturation, brightness)).withAlpha(alpha)
     }
 }

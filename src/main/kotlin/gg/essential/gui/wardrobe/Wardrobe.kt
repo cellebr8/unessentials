@@ -356,6 +356,8 @@ class Wardrobe(
 
         outfitManager.cleanUpUnusedSettingsOnOutfits()
 
+        Essential.getInstance().connectionManager.noticesManager.flushDismissNotices()
+
         super.onScreenClose()
     }
 

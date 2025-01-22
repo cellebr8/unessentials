@@ -22,6 +22,7 @@ import gg.essential.gui.common.onSetValueAndNow
 import gg.essential.gui.elementa.state.v2.*
 import gg.essential.gui.elementa.state.v2.combinators.*
 import gg.essential.gui.elementa.state.v2.stateBy
+import gg.essential.gui.image.ImageFactory
 import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.util.hoverScope
 import gg.essential.util.*
@@ -222,7 +223,8 @@ fun LayoutScope.essentialInput(
     errorState: State<Boolean>,
     errorMessage: String,
     modifier: Modifier = Modifier,
-) = essentialInput(input, errorState, stateOf(errorMessage), modifier)
+    icon: ImageFactory? = null,
+) = essentialInput(input, errorState, stateOf(errorMessage), modifier, icon)
 
 // Overload to allow external control of the error state instead of providing a check function
 fun LayoutScope.essentialInput(
@@ -230,10 +232,11 @@ fun LayoutScope.essentialInput(
     errorState: State<Boolean>,
     errorMessage: State<String?>,
     modifier: Modifier = Modifier,
+    icon: ImageFactory? = null,
 ) {
     // create this outside the function, so we don't recreate it every time check is called
     val state = stateBy { if (errorState()) errorMessage() else null }
-    essentialInput(input, state, modifier)
+    essentialInput(input, state, modifier, icon)
 }
 
 // Overload to allow external control of the error state instead of providing a check function.
@@ -243,13 +246,15 @@ fun LayoutScope.essentialInput(
     input: AbstractTextInput,
     errorMessageState: State<String?>,
     modifier: Modifier = Modifier,
-) = essentialInput(input, modifier, { errorMessageState }, true)
+    icon: ImageFactory? = null,
+) = essentialInput(input, modifier, { errorMessageState }, true, icon)
 
 fun LayoutScope.essentialInput(
     input: AbstractTextInput,
     modifier: Modifier = Modifier,
     check: (String) -> State<String?> = { stateOf(null) },
     checkImmediately: Boolean = false,
+    icon: ImageFactory? = null,
 ) {
     val errorTextState = stateDelegatingTo(stateOf<String?>(null))
     val errorState = errorTextState.map { it != null }
@@ -286,7 +291,16 @@ fun LayoutScope.essentialInput(
 
     box(Modifier.fillParent().color(outlineColorState).hoverScope() then modifier) {
         box(Modifier.fillParent(padding = 1f).color(EssentialPalette.GUI_BACKGROUND)) {
-            input(Modifier.alignVertical(Alignment.Center(true)))
+            if(icon != null) {
+                row(Modifier.fillWidth(padding = 5f).alignVertical(Alignment.Center(true)), Arrangement.spacedBy(6f, FloatPosition.START)) {
+                    box(Modifier.width(10f).heightAspect(1f)) {
+                        image(icon, Modifier.color(EssentialPalette.TEXT_MID_GRAY).shadow(EssentialPalette.TEXT_SHADOW))
+                    }
+                    input()
+                }
+            } else {
+                input(Modifier.alignVertical(Alignment.Center(true)))
+            }
 
             if_(errorState) {
                 box(Modifier.width(33f).fillHeight().alignHorizontal(Alignment.End)) {

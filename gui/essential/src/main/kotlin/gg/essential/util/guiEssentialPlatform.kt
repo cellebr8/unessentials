@@ -21,13 +21,17 @@ import gg.essential.gui.friends.state.SocialStates
 import gg.essential.gui.notification.NotificationsManager
 import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.overlay.OverlayManager
+import gg.essential.gui.screenshot.bytebuf.LimitedAllocator
 import gg.essential.model.backend.RenderBackend
 import gg.essential.network.CMConnection
 import gg.essential.network.connectionmanager.cosmetics.AssetLoader
+import gg.essential.network.connectionmanager.media.IScreenshotManager
 import gg.essential.network.connectionmanager.notices.INoticesManager
 import gg.essential.universal.UImage
 import gg.essential.universal.utils.ReleasedDynamicTexture
 import gg.essential.util.image.bitmap.MutableBitmap
+import gg.essential.util.lwjgl3.Lwjgl3Loader
+import io.netty.buffer.ByteBuf
 import kotlinx.coroutines.CoroutineDispatcher
 import java.io.IOException
 import java.io.InputStream
@@ -41,12 +45,19 @@ interface GuiEssentialPlatform {
     val renderBackend: RenderBackend
     val overlayManager: OverlayManager
     val assetLoader: AssetLoader
+    val lwjgl3: Lwjgl3Loader
 
     val cmConnection: CMConnection
 
     val notifications: NotificationsManager
 
     fun createModalManager(): ModalManager
+    fun pushModal(builder: (ModalManager) -> Modal): Modal {
+        val manager = createModalManager()
+        val modal = builder(manager)
+        manager.queueModal(modal)
+        return modal
+    }
 
     fun onResourceManagerReload(runnable: Runnable)
 
@@ -57,6 +68,8 @@ interface GuiEssentialPlatform {
     fun bitmapFromInputStream(inputStream: InputStream): MutableBitmap
 
     fun uImageIntoReleasedDynamicTexture(uImage: UImage): ReleasedDynamicTexture
+
+    fun bindTexture(textureUnit: Int, identifier: UIdentifier)
 
     fun playSound(identifier: UIdentifier)
 
@@ -83,7 +96,11 @@ interface GuiEssentialPlatform {
 
     val noticesManager: INoticesManager
 
+    val screenshotManager: IScreenshotManager
+
     val isOptiFineInstalled: Boolean
+
+    fun trackByteBuf(alloc: LimitedAllocator, buf: ByteBuf): ByteBuf
 
     interface Config {
         val shouldDarkenRetexturedButtons: Boolean

@@ -70,15 +70,6 @@ dependencies {
         }
     }
 
-    implementation(bundle("org.jitsi:ice4j:3.0-52-ga9ba80e") {
-        exclude(module = "kotlin-osgi-bundle")
-        exclude(module = "guava") // we use the one which comes with Minecraft (assuming that it is not too old)
-        exclude(module = "java-sdp-nist-bridge") // sdp is unnecessarily high-level for our use case
-        exclude(module = "jna") // comes with jitsi-utils but is not needed
-    })
-    // upgrade because the old one pulled in by ice4j got compiled by ancient kotlin and fails to remap
-    implementation(bundle("org.jitsi:jitsi-metaconfig:1.0-9-g5e1b624")!!)
-
     // Some of our dependencies rely on slf4j but that's not included in MC prior to 1.17, so we'll manually bundle a
     // log4j adapter for those versions
     // We also bundle it for version 1.17-1.19.2 because those ship slf4j 1.x and only 1.19.3+ starts shipping 2.x
@@ -86,6 +77,7 @@ dependencies {
         implementation(bundle(project(":slf4j-to-log4j"))!!)
     }
     implementation(bundle(project(":quic-connector"))!!)
+    implementation(bundle(project(":pseudotcp"))!!)
 
     implementation(bundle(project(":clipboard"))!!)
     implementation(bundle(project(":utils"))!!)
@@ -205,12 +197,8 @@ tasks.relocatedJar {
     relocate("okhttp3", "gg.essential.lib.okhttp3")
     relocate("okio", "gg.essential.lib.okio")
 
-    // ice4j
+    // pseudotcp
     relocate("org.ice4j", "gg.essential.lib.ice4j")
-    relocate("org.jitsi", "gg.essential.lib.jitsi")
-    relocate("com.typesafe.config", "gg.essential.lib.typesafeconfig")
-    relocate("org.json.simple", "gg.essential.lib.jsonsimple")
-    relocate("org.bitlet.weupnp", "gg.essential.lib.weupnp")
 
     // connection-manager
     relocate("org.java_websocket", "gg.essential.lib.websocket")

@@ -95,6 +95,7 @@ class VigilanceV2SettingsGui @JvmOverloads constructor(
     }
 
     private fun LayoutScope.leftTitleBarContent() {
+
     }
 
     private fun LayoutScope.bottomSidebarContent() {

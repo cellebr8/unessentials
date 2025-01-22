@@ -31,8 +31,8 @@ import gg.essential.gui.layoutdsl.fillParent
 import gg.essential.gui.layoutdsl.layout
 import gg.essential.gui.screenshot.constraints.AspectPreservingFillConstraint
 import gg.essential.gui.screenshot.constraints.TileConstraint
-import gg.essential.gui.screenshot.image.PixelBufferTexture
 import gg.essential.gui.screenshot.image.ScreenshotImage
+import gg.essential.gui.screenshot.providers.RegisteredTexture
 import gg.essential.gui.screenshot.providers.WindowedProvider
 import gg.essential.universal.UMatrixStack
 import gg.essential.universal.USound
@@ -40,8 +40,6 @@ import gg.essential.util.bindHoverEssentialTooltip
 import gg.essential.util.centered
 import gg.essential.gui.util.hoveredState
 import gg.essential.vigilance.utils.onLeftClick
-import net.minecraft.client.Minecraft
-import net.minecraft.util.ResourceLocation
 
 class ScreenshotPreview(
     val properties: ScreenshotProperties,
@@ -147,14 +145,10 @@ class ScreenshotPreview(
     }
 
     /**
-     * Receives [resourceLocation] from a WindowedProvider and applies its texture to this preview
+     * Receives [RegisteredTexture] from a WindowedProvider and applies its texture to this preview
      */
-    fun updateTexture(resourceLocation: ResourceLocation?) {
-        val texture = resourceLocation?.let {
-            Minecraft.getMinecraft().textureManager.getTexture(it) as PixelBufferTexture?
-        }
-
-        img.texture.set(texture)
+    fun updateTexture(texture: RegisteredTexture?) {
+        img.texture.set(texture?.identifier)
 
         if (texture != null) {
             imageAspectState.set(texture.imageWidth / texture.imageHeight.toFloat())

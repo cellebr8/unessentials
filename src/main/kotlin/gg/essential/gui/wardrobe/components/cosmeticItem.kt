@@ -496,15 +496,18 @@ private fun LayoutScope.partnerIcons(item: Item, wardrobeState: WardrobeState) {
 }
 
 private fun LayoutScope.newIcon(item: Item) {
-    if (item !is Item.CosmeticOrEmote || !item.cosmetic.isCosmeticNew) {
+    if (item !is Item.CosmeticOrEmote) {
         return
     }
 
-    textTag(
-        "NEW",
-        Modifier.color(EssentialPalette.BANNER_GREEN),
-        Modifier.color(Color.BLACK).shadow(EssentialPalette.BLACK.withAlpha(0.25f))
-    )
+    val isNew = Essential.getInstance().connectionManager.noticesManager.cosmeticNotices.getNewState(item.cosmetic.id)
+    if_(isNew) {
+        textTag(
+            "NEW",
+            Modifier.color(EssentialPalette.BANNER_GREEN),
+            Modifier.color(Color.BLACK).shadow(EssentialPalette.BLACK.withAlpha(0.25f))
+        )
+    }
 }
 
 private fun LayoutScope.salesTag(item: Item, owned: State<Boolean>, pricingInfo: State<Item.PricingInfo?>) {

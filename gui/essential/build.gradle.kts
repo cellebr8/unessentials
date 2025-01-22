@@ -31,13 +31,11 @@ dependencies {
     implementation(project(":gui:elementa"))
     implementation(project(":ice"))
     implementation(project(":quic-connector"))
+    implementation(project(":pseudotcp"))
+    implementation(project(":lwjgl3"))
 
     // For NotificationBuilder
     compileOnly(project(":api:1.12.2-forge")) { isTransitive = false}
-
-    implementation("org.jitsi:ice4j:3.0-52-ga9ba80e") {
-        isTransitive = false // for PseudoTCPBase only
-    }
 }
 
 kotlin.jvmToolchain(8)

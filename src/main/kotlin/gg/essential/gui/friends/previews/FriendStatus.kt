@@ -20,12 +20,16 @@ import gg.essential.elementa.dsl.*
 import gg.essential.elementa.effects.ScissorEffect
 import gg.essential.elementa.state.State
 import gg.essential.gui.EssentialPalette
-import gg.essential.gui.common.onSetValueAndNow
 import gg.essential.gui.common.shadow.EssentialUIText
 import gg.essential.gui.common.shadow.ShadowIcon
 import gg.essential.gui.common.state
+import gg.essential.gui.elementa.state.v2.effect
+import gg.essential.gui.elementa.state.v2.memo
+import gg.essential.gui.elementa.state.v2.toV1
 import gg.essential.gui.friends.state.IStatusStates
 import gg.essential.gui.friends.state.PlayerActivity
+import gg.essential.network.pingproxy.fetchWorldNameFromSPSHost
+import gg.essential.util.AddressUtil
 import gg.essential.util.UUIDUtil
 import java.util.*
 
@@ -39,11 +43,12 @@ class FriendStatus(
         constrain {
             width = 100.percent
             height = ChildBasedMaxSizeConstraint()
-        } effect ScissorEffect()
+        }.effect(ScissorEffect())
 
-        statusStates.getActivityState(uuid).onSetValueAndNow(this) {
+        effect(this) {
+            val activity = statusStates.getActivityState(uuid)()
             clearChildren()
-            when (it) {
+            when (activity) {
                 is PlayerActivity.Offline -> {
                     val lastSeenText = "Offline"
                     EssentialUIText(lastSeenText, shadowColor = EssentialPalette.BLACK, truncateIfTooSmall = true).constrain {
@@ -56,28 +61,32 @@ class FriendStatus(
                     }
                 }
                 is PlayerActivity.OnlineWithDescription -> {
-                    EssentialUIText(it.description, truncateIfTooSmall = true).constrain {
+                    val description = if (activity.description == AddressUtil.SINGLEPLAYER) {
+                        "In World"
+                    } else {
+                        activity.description
+                    }
+                    EssentialUIText(description, truncateIfTooSmall = true).constrain {
                         color = EssentialPalette.GREEN.toConstraint()
                     }
                 }
                 is PlayerActivity.Multiplayer -> {
-                    createJoinableEntry(it.serverAddress.state())
+                    createJoinableEntry(activity.serverAddress.state())
                 }
                 is PlayerActivity.SPSSession -> {
-                    val name = UUIDUtil.getNameAsState(it.host).map { name ->
-                        "$name's world"
-                    }
-                    if (it.invited) {
-                        createJoinableEntry(name)
+                    if (activity.invited) {
+                        val worldName = fetchWorldNameFromSPSHost(uuid)
+                        val username = UUIDUtil.nameState(activity.host)
+                        createJoinableEntry(memo { worldName() ?: "${username()}'s world" }.toV1(this@FriendStatus))
                     } else {
-                        EssentialUIText(truncateIfTooSmall = true).bindText(name).constrain {
+                        EssentialUIText("In World", truncateIfTooSmall = true).constrain {
                             color = EssentialPalette.GREEN.toConstraint()
                         }
                     }
                 }
             }.constrain {
                 width = width.coerceAtMost(100.percent)
-            } childOf this
+            } childOf this@FriendStatus
 
             sortListener?.sort()
         }

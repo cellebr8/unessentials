@@ -85,6 +85,7 @@ import net.minecraft.client.renderer.OpenGlHelper;
 //$$ import com.mojang.blaze3d.platform.PlatformDescriptors;
 //#endif
 
+import static gg.essential.sps.ConstantsKt.SPS_TLD;
 import static gg.essential.util.ExtensionsKt.getExecutor;
 
 /**
@@ -92,18 +93,7 @@ import static gg.essential.util.ExtensionsKt.getExecutor;
  */
 public class SPSManager extends StateCallbackManager<IStatusManager> implements NetworkedManager {
 
-    /**
-     * We give each player a dedicated, fake SPS server address in the form of `UUID.TLD`.
-     * This value defines the `.TLD` part. The `UUID` is just the player's UUID (with dashes).
-     * The address is only resolved to the real SPS session IP+port (or ICE) when opening the actual TCP connection.
-     * <p>
-     * This allows us to mask the real address in their activity info as well as keep it consistent
-     * even if the IP changes which is very useful for mods which store data per server (e.g. minimap).
-     * The consistency in the activity info also allows us to easily identify and filter friends from the multiplayer
-     * menu who are playing in a SPS session so we do not show the server twice / at all if we are not invited (i.e.
-     * it is easy to identify if they are playing via SPS vs regular servers).
-     */
-    public static final String SPS_SERVER_TLD = ".essential-sps";
+    public static final String SPS_SERVER_TLD = SPS_TLD;
 
     @NotNull
     private final ConnectionManager connectionManager;

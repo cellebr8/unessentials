@@ -82,10 +82,6 @@ data class Cosmetic(
     val isLegacy: Boolean
         get() = "LEGACY" in tags
 
-    // Rename to isNew when removing flag
-    val isCosmeticNew: Boolean
-        get() = "NEW" in tags
-
     val priceCoinsNullable = prices["coins"]?.toInt()
 
     val priceCoins = priceCoinsNullable ?: 0

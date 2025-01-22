@@ -33,6 +33,7 @@ import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.overlay.ModalManagerImpl
 import gg.essential.gui.overlay.OverlayManager
 import gg.essential.gui.overlay.OverlayManagerImpl
+import gg.essential.gui.screenshot.bytebuf.LimitedAllocator
 import gg.essential.gui.util.onAnimationFrame
 import gg.essential.handlers.EssentialSoundManager
 import gg.essential.handlers.PauseMenuDisplay
@@ -41,13 +42,17 @@ import gg.essential.model.backend.minecraft.MinecraftRenderBackend
 import gg.essential.model.util.Color
 import gg.essential.network.CMConnection
 import gg.essential.network.connectionmanager.cosmetics.AssetLoader
+import gg.essential.network.connectionmanager.media.IScreenshotManager
 import gg.essential.network.connectionmanager.notices.INoticesManager
+import gg.essential.universal.UGraphics
 import gg.essential.universal.UImage
 import gg.essential.universal.UScreen
 import gg.essential.universal.utils.ReleasedDynamicTexture
 import gg.essential.util.image.bitmap.Bitmap
 import gg.essential.util.image.bitmap.MutableBitmap
 import gg.essential.util.image.bitmap.forEachPixel
+import gg.essential.util.lwjgl3.Lwjgl3Loader
+import io.netty.buffer.ByteBuf
 import kotlinx.coroutines.CoroutineDispatcher
 import me.kbrewster.eventbus.Subscribe
 import net.minecraft.client.Minecraft
@@ -72,6 +77,9 @@ class GuiEssentialPlatformImpl : GuiEssentialPlatform {
 
     override val assetLoader: AssetLoader
         get() = Essential.getInstance().connectionManager.cosmeticsManager.assetLoader
+
+    override val lwjgl3: Lwjgl3Loader
+        get() = Essential.getInstance().lwjgl3
 
     override val cmConnection: CMConnection
         get() = Essential.getInstance().connectionManager
@@ -110,6 +118,10 @@ class GuiEssentialPlatformImpl : GuiEssentialPlatform {
 
     override fun uImageIntoReleasedDynamicTexture(uImage: UImage): ReleasedDynamicTexture {
         return ReleasedDynamicTexture(uImage.nativeImage)
+    }
+
+    override fun bindTexture(textureUnit: Int, identifier: UIdentifier) {
+        UGraphics.bindTexture(textureUnit, identifier.toMC())
     }
 
     override fun playSound(identifier: UIdentifier) {
@@ -219,6 +231,12 @@ class GuiEssentialPlatformImpl : GuiEssentialPlatform {
     override val noticesManager: INoticesManager
         get() = Essential.getInstance().connectionManager.noticesManager
 
+    override val screenshotManager: IScreenshotManager
+        get() = Essential.getInstance().connectionManager.screenshotManager
+
     override val isOptiFineInstalled: Boolean
         get() = OptiFineUtil.isLoaded()
+
+    override fun trackByteBuf(alloc: LimitedAllocator, buf: ByteBuf): ByteBuf =
+        gg.essential.gui.screenshot.bytebuf.trackByteBuf(alloc, buf)
 }

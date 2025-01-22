@@ -162,13 +162,21 @@ private fun UIComponent.positionTooltip(
         EssentialTooltip.Position.LEFT -> SiblingConstraint(padding = padding, alignOpposite = true)
         EssentialTooltip.Position.RIGHT -> SiblingConstraint(padding = padding)
         EssentialTooltip.Position.ABOVE, EssentialTooltip.Position.BELOW -> CenterConstraint()
+        is EssentialTooltip.Position.MOUSE -> MousePositionConstraint()
     } boundTo this@positionTooltip
 
     var yConstraint: YConstraint = when (position) {
         EssentialTooltip.Position.LEFT, EssentialTooltip.Position.RIGHT -> CenterConstraint()
         EssentialTooltip.Position.ABOVE -> SiblingConstraint(padding = padding, alignOpposite = true)
         EssentialTooltip.Position.BELOW -> SiblingConstraint(padding = padding)
+        is EssentialTooltip.Position.MOUSE -> MousePositionConstraint()
     } boundTo this@positionTooltip
+
+    // Since an additive constraint can't be boundTo
+    if(position is EssentialTooltip.Position.MOUSE) {
+        xConstraint += position.xOffset.pixels
+        yConstraint += position.yOffset.pixels
+    }
 
     if (windowPadding != null) {
         val minConstraint = lazyPosition { windowPadding.pixels boundTo Window.of(this) }

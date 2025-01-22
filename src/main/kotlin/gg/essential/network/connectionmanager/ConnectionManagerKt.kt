@@ -50,6 +50,7 @@ import org.apache.logging.log4j.Logger
 import java.io.Closeable
 import java.time.Duration as JavaDuration
 import java.time.Instant
+import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
@@ -191,7 +192,7 @@ abstract class ConnectionManagerKt : CMConnection {
             var fastUnexpectedClose = false
             val wrapper = ConnectionWrapper()
             try {
-                when (val result = wrapper.connect(userName, sharedSecret)) {
+                when (val result = wrapper.connect(uuid, userName, sharedSecret)) {
                     ConnectResult.Outdated -> {
                         LOGGER.error("Client version is no longer supported. Will no longer try to connect.")
                         updateStatus(Status.OUTDATED)
@@ -303,9 +304,9 @@ abstract class ConnectionManagerKt : CMConnection {
             closeChannel.trySendBlocking(info)
         }
 
-        suspend fun connect(userName: String, sharedSecret: ByteArray): ConnectResult {
+        suspend fun connect(uuid: UUID, userName: String, sharedSecret: ByteArray): ConnectResult {
             withContext(Dispatchers.IO) {
-                connection.setupAndConnect(userName, sharedSecret)
+                connection.setupAndConnect(uuid, userName, sharedSecret)
             }
             return select {
                 openChannel.onReceive { ConnectResult.Connected }

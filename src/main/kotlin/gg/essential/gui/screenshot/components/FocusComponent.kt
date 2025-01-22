@@ -48,7 +48,7 @@ import gg.essential.vigilance.utils.onLeftClick
 open class FocusComponent(
     private val screenshotBrowser: ScreenshotBrowser,
     private val focusType: FocusType
-) : ScreenshotView(View.FOCUS, screenshotBrowser) {
+) : ScreenshotView(View.FOCUS, screenshotBrowser.currentView) {
 
     final override val active: State<Boolean> = super.active and screenshotBrowser.focusType.map { it == focusType }
     private val isFocusView = screenshotBrowser.focusType.map { it == FocusType.VIEW }

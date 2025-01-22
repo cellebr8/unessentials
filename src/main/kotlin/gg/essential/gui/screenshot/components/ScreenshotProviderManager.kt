@@ -43,9 +43,9 @@ import gg.essential.util.GuiUtil
 import gg.essential.util.findChildOfTypeOrNull
 import gg.essential.util.lwjgl3.api.NativeImageReader
 import gg.essential.gui.util.pollingState
+import gg.essential.util.GuiEssentialPlatform.Companion.platform
 import io.netty.buffer.ByteBufAllocator
 import io.netty.buffer.PooledByteBufAllocator
-import net.minecraft.util.ResourceLocation
 import java.awt.Color
 import java.io.File
 import java.nio.file.Files
@@ -106,7 +106,7 @@ class ScreenshotProviderManager(
         )
     )
 
-    private val providerArray: Array<WindowedProvider<ResourceLocation>> = arrayOf(
+    private val providerArray: Array<WindowedProvider<RegisteredTexture>> = arrayOf(
 
         // First item is the primary and provider
         // This is updated to be the target resolution when the target resolution changes
@@ -222,7 +222,7 @@ class ScreenshotProviderManager(
      */
     fun reloadItems() {
         // Provider items updated in updateItems which is called by the ListViewComponent's reload
-        val screenshotManager = Essential.getInstance().connectionManager.screenshotManager
+        val screenshotManager = platform.screenshotManager
         val remoteMedia = screenshotManager.uploadedMedia.associateBy { it.id }.toMutableMap()
         val localScreenshots = screenshotManager.orderedPaths
             .map { path ->
@@ -245,7 +245,7 @@ class ScreenshotProviderManager(
     /**
      * Sets the current paths and the providers to the provided list
      */
-    fun updateItems(paths: List<ScreenshotId>): Map<ScreenshotId, ResourceLocation> {
+    fun updateItems(paths: List<ScreenshotId>): Map<ScreenshotId, RegisteredTexture> {
         provider.items = paths
         focusImageResolution.items = paths
 
@@ -277,7 +277,7 @@ class ScreenshotProviderManager(
     /**
      * Queries [provider] with [renderedLastFrame] and returns the result
      */
-    fun provide(): Map<ScreenshotId, ResourceLocation> {
+    fun provide(): Map<ScreenshotId, RegisteredTexture> {
         val windows = listOfNotNull(renderedLastFrame?.inRange(provider.items.indices))
         if (windows.isEmpty()) {
             // If we call the provider with an empty list, it will unnecessarily clean up all resources.
@@ -290,14 +290,14 @@ class ScreenshotProviderManager(
     /**
      * Queries the [focusImageResolution] with the specified window and returns the result
      */
-    fun provideFocus(window: WindowedProvider.Window): Map<ScreenshotId, ResourceLocation> {
+    fun provideFocus(window: WindowedProvider.Window): Map<ScreenshotId, RegisteredTexture> {
         return provideFocus(listOf(window))
     }
 
     /**
      * Queries the [focusImageResolution] with the specified windows and returns the result
      */
-    fun provideFocus(windows: List<WindowedProvider.Window>): Map<ScreenshotId, ResourceLocation> {
+    fun provideFocus(windows: List<WindowedProvider.Window>): Map<ScreenshotId, RegisteredTexture> {
         return focusImageResolution.provide(windows, emptySet())
     }
 
@@ -316,8 +316,9 @@ class ScreenshotProviderManager(
                     }
             }.onPrimaryAction {
                 Window.enqueueRenderOperation {
-                    if (properties.id is LocalScreenshot && !uploadedOnly) {
-                        browser.screenshotManager.handleDelete(properties.id.path.toFile(), false)
+                    val id = properties.id
+                    if (id is LocalScreenshot && !uploadedOnly) {
+                        browser.screenshotManager.handleDelete(id.path.toFile(), false)
                     }
                     val mediaId = properties.metadata?.mediaId
                     if (mediaId != null) {

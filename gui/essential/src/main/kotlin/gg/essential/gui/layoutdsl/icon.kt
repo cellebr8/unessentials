@@ -23,6 +23,9 @@ fun LayoutScope.image(icon: ImageFactory, modifier: Modifier = Modifier): UIImag
     return image(modifier)
 }
 
+fun LayoutScope.image(icon: State<ImageFactory>, modifier: Modifier = Modifier) =
+    bind(icon) { image(it, modifier) }
+
 /** Like [image] but with a default [EssentialPalette.TEXT_SHADOW] shadow. */
 fun LayoutScope.icon(icon: ImageFactory, modifier: Modifier = Modifier) =
     image(icon, Modifier.shadow(EssentialPalette.TEXT_SHADOW).then(modifier))

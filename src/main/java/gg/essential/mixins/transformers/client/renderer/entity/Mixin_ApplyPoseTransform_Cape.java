@@ -104,7 +104,7 @@ public abstract class Mixin_ApplyPoseTransform_Cape
     ) {
         CosmeticsRenderState cState = new CosmeticsRenderState.Live(player);
         PlayerPoseManager poseManager = cState.poseManager();
-        if (poseManager != null) {
+        if (poseManager == null) {
             return;
         }
         // We want MC's cape transformations only, not any transformations applied outside of the renderer.
@@ -139,7 +139,7 @@ public abstract class Mixin_ApplyPoseTransform_Cape
     ) {
         CosmeticsRenderState cState = new CosmeticsRenderState.Live(player);
         PlayerPoseManager poseManager = cState.poseManager();
-        if (poseManager != null) {
+        if (poseManager == null) {
             return;
         }
         //#if MC>=11600

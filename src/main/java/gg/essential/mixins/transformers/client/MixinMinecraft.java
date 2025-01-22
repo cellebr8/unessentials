@@ -41,6 +41,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.io.File;
 import java.util.Objects;
 
+import static gg.essential.universal.UMinecraft.isCallingFromMinecraftThread;
 import static gg.essential.util.HelpersKt.toUSession;
 
 //#if MC>=12002
@@ -185,6 +186,17 @@ public abstract class MixinMinecraft implements MinecraftExt {
     @Inject(method = "shutdown", at = @At("HEAD"))
     private void shutdown(CallbackInfo ci) {
         minecraftHook.shutdown();
+    }
+
+    @Inject(method = "displayGuiScreen", at = @At("HEAD"))
+    private void checkThreadSafety(CallbackInfo ci) {
+        if (!isCallingFromMinecraftThread()) {
+            Essential.logger.error("Detected call to `openScreen` on thread {}. " +
+                "This method is NOT thread safe and MUST NOT be called from any thread except the main client thread! " +
+                "Please report this to the mod responsible as per the following stacktrace:",
+                Thread.currentThread(),
+                new Throwable());
+        }
     }
 
     @ModifyVariable(method = "displayGuiScreen", at = @At("HEAD"))

@@ -20,12 +20,12 @@ import gg.essential.gui.common.modal.ConfirmDenyModal
 import gg.essential.gui.common.modal.configure
 import gg.essential.gui.screenshot.constraints.AspectPreservingFillConstraint
 import gg.essential.gui.screenshot.editor.ScreenshotCanvas
-import gg.essential.gui.screenshot.image.PixelBufferTexture
+import gg.essential.gui.screenshot.providers.RegisteredTexture
 import gg.essential.gui.screenshot.providers.toSingleWindowRequest
 import gg.essential.universal.USound
 import gg.essential.util.GuiUtil
 import gg.essential.util.centered
-import net.minecraft.client.Minecraft
+import gg.essential.util.thenAcceptOnMainThread
 import java.io.File
 import java.util.concurrent.CompletableFuture
 
@@ -33,7 +33,7 @@ class FocusEditComponent(
     private val screenshotBrowser: ScreenshotBrowser
 ) : FocusComponent(screenshotBrowser, FocusType.EDIT) {
 
-    private val textureState = BasicState<PixelBufferTexture?>(null)
+    private val textureState = BasicState<RegisteredTexture?>(null)
     private val aspectConstraint = textureState.map {
         if (it != null) {
             it.imageWidth / it.imageHeight.toFloat()
@@ -52,7 +52,7 @@ class FocusEditComponent(
         height = AspectPreservingFillConstraint(aspectConstraint)
     } childOf imageSizeContainer
 
-    private val canvas by ScreenshotCanvas(textureState).centered().constrain {
+    private val canvas by ScreenshotCanvas(textureState.map { it?.identifier }).centered().constrain {
         width = (100.percent boundTo imageSize) + 4.pixels // Crop handles are 2px on each side
         height = (100.percent boundTo imageSize) + 4.pixels // Crop handles are 2px on each side
     }.apply {
@@ -81,10 +81,10 @@ class FocusEditComponent(
             canvas.exportImage(
                 source = source.id,
                 screenshotManager = screenshotBrowser.screenshotManager,
-                screenshotBrowser = screenshotBrowser,
                 temp = false,
-                viewAfter = true,
-            )
+            ).thenAcceptOnMainThread { file ->
+                screenshotBrowser.editCallback(file.toPath(), true)
+            }
         }
     }
 
@@ -114,16 +114,12 @@ class FocusEditComponent(
             if (targetIndex != -1) {
 
                 val provideFocus = providerManager.provideFocus(targetIndex.toSingleWindowRequest())
-                val resourceLocation = provideFocus[focused.id]
+                val texture = provideFocus[focused.id]
 
-                if (resourceLocation != null) {
-                    val textureManager = Minecraft.getMinecraft().textureManager
-                    val texture = textureManager.getTexture(resourceLocation) as PixelBufferTexture?
-                    if (texture != null) {
-                        textureState.set(texture)
-                        aspectConstraint.set(texture.imageWidth / texture.imageHeight.toFloat())
-                        return
-                    }
+                if (texture != null) {
+                    textureState.set(texture)
+                    aspectConstraint.set(texture.imageWidth / texture.imageHeight.toFloat())
+                    return
                 }
             }
         }
@@ -147,9 +143,7 @@ class FocusEditComponent(
             canvas.exportImage(
                 source.id,
                 screenshotBrowser.screenshotManager,
-                screenshotBrowser,
                 temp = true,
-                viewAfter = false
             )
         } else {
             null

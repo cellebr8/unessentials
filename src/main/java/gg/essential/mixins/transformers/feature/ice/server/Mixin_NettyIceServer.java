@@ -12,7 +12,6 @@
 package gg.essential.mixins.transformers.feature.ice.server;
 
 import gg.essential.mixins.ext.network.NetworkSystemExt;
-import gg.essential.network.connectionmanager.ice.IceManager;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -29,6 +28,8 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import java.net.SocketAddress;
 import java.util.List;
+
+import static gg.essential.network.connectionmanager.ice.IceEventLoopGroups.ICE_SERVER_EVENT_LOOP_GROUP;
 
 @Mixin(NetworkSystem.class)
 public abstract class Mixin_NettyIceServer implements NetworkSystemExt {
@@ -62,7 +63,7 @@ public abstract class Mixin_NettyIceServer implements NetworkSystemExt {
                 ChannelFuture channelFuture = new ServerBootstrap()
                     .channel(LocalServerChannel.class)
                     .childHandler(this.networkedChannelInitializer)
-                    .group(IceManager.ICE_SERVER_EVENT_LOOP_GROUP.getValue())
+                    .group(ICE_SERVER_EVENT_LOOP_GROUP.getValue())
                     .localAddress(LocalAddress.ANY)
                     .bind()
                     .syncUninterruptibly();

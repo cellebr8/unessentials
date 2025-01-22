@@ -19,6 +19,7 @@ import gg.essential.Essential
 import gg.essential.handlers.screenshot.ClientScreenshotMetadata
 import gg.essential.lib.gson.GsonBuilder
 import gg.essential.lib.gson.JsonSyntaxException
+import gg.essential.network.connectionmanager.media.IScreenshotMetadataManager
 import gg.essential.network.connectionmanager.media.ScreenshotManager
 import gg.essential.util.UUIDUtil
 import org.apache.commons.io.FileUtils
@@ -32,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap
 class ScreenshotMetadataManager(
     private val metadataFolder: File,
     private val screenshotChecksumManager: ScreenshotChecksumManager,
-) {
+) : IScreenshotMetadataManager {
     private val gson = GsonBuilder()
         .registerTypeAdapter(UUID::class.java, UUIDTypeAdapter())
         .registerTypeAdapter(DateTime::class.java, DateTimeTypeAdapter())
@@ -83,11 +84,11 @@ class ScreenshotMetadataManager(
         return metadata
     }
 
-    fun getMetadata(path: Path): ClientScreenshotMetadata? {
+    override fun getMetadata(path: Path): ClientScreenshotMetadata? {
         return getMetadata(path.toFile())
     }
 
-    fun getMetadata(file: File): ClientScreenshotMetadata? {
+    override fun getMetadata(file: File): ClientScreenshotMetadata? {
         val imageChecksum = screenshotChecksumManager[file] ?: return null
 
         return getMetadata(imageChecksum)
@@ -148,7 +149,7 @@ class ScreenshotMetadataManager(
     }
 
     @Synchronized
-    fun getOrCreateMetadata(path: Path): ClientScreenshotMetadata {
+    override fun getOrCreateMetadata(path: Path): ClientScreenshotMetadata {
         val file = path.toFile()
 
         val existingMetadata = getMetadata(file)

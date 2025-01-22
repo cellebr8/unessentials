@@ -100,7 +100,7 @@ public abstract class Mixin_ApplyPoseTransform_Elytra implements ElytraPoseSuppl
         CosmeticsRenderState cState = new CosmeticsRenderState.Live((AbstractClientPlayer) entity);
         //#endif
         PlayerPoseManager poseManager = cState.poseManager();
-        if (poseManager != null) {
+        if (poseManager == null) {
             return;
         }
 

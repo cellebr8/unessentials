@@ -24,6 +24,8 @@ import gg.essential.gui.common.constraints.CenterPixelConstraint
 import gg.essential.gui.common.shadow.EssentialUIText
 import gg.essential.gui.screenshot.DateRange
 import gg.essential.gui.screenshot.ScreenshotId
+import gg.essential.gui.screenshot.createDateOnlyCalendar
+import gg.essential.gui.screenshot.providers.RegisteredTexture
 import gg.essential.gui.util.hoveredState
 import gg.essential.handlers.screenshot.ClientScreenshotMetadata
 import gg.essential.universal.UDesktop
@@ -31,11 +33,10 @@ import gg.essential.universal.UMatrixStack
 import gg.essential.universal.USound
 import gg.essential.util.*
 import gg.essential.vigilance.utils.onLeftClick
-import net.minecraft.util.ResourceLocation
 import java.util.*
 
 class ListViewComponent(val screenshotBrowser: ScreenshotBrowser) :
-    ScreenshotView(View.LIST, screenshotBrowser) {
+    ScreenshotView(View.LIST, screenshotBrowser.currentView) {
 
     private val numberOfItemsPerRow = BasicState(EssentialConfig.screenshotBrowserItemsPerRow).apply {
         onSetValue {
@@ -256,7 +257,7 @@ class ListViewComponent(val screenshotBrowser: ScreenshotBrowser) :
         updateTexturesFromProvider(screenshotBrowser.providerManager.updateItems(items.map { (properties, _) -> properties.id }))
     }
 
-    private fun updateTexturesFromProvider(providedTextures: Map<ScreenshotId, ResourceLocation>) {
+    private fun updateTexturesFromProvider(providedTextures: Map<ScreenshotId, RegisteredTexture>) {
         for (entry in imageMap) {
             entry.value.updateTexture(providedTextures[entry.key])
         }

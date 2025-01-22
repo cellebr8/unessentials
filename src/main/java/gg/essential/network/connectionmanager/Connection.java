@@ -15,6 +15,7 @@ import com.google.common.primitives.Bytes;
 import gg.essential.Essential;
 import gg.essential.connectionmanager.common.packet.Packet;
 import gg.essential.connectionmanager.common.packet.connection.ConnectionKeepAlivePacket;
+import gg.essential.data.VersionInfo;
 import gg.essential.handlers.CertChain;
 import gg.essential.network.connectionmanager.ConnectionManagerKt.CloseInfo;
 import gg.essential.network.connectionmanager.legacyjre.LegacyJre;
@@ -34,7 +35,9 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
@@ -73,6 +76,25 @@ public class Connection extends WebSocketClient {
         }
     });
 
+    private static final URI CM_HOST_URI;
+    static {
+        String defaultUri = "wss://connect.essential.gg/v1";
+        URI uri = URI.create(
+            System.getProperty(
+                "essential.cm.host",
+                System.getenv().getOrDefault("ESSENTIAL_CM_HOST", defaultUri)
+            )
+        );
+        String[] knownHosts = {".essential.gg",".modcore.dev"};
+        boolean schemeGood = uri.getScheme().equals("wss");
+        boolean hostGood = Arrays.stream(knownHosts).anyMatch(uri.getHost()::endsWith);
+        if (!schemeGood || !hostGood) {
+            Essential.logger.error("Potentially insecure ESSENTIAL_CM_HOST found, using default instead");
+            uri = URI.create(defaultUri);
+        }
+        CM_HOST_URI = uri;
+    }
+
     @NotNull
     private final Executor sendExecutor = new LimitedExecutor(Multithreading.getPool(), 1, new ConcurrentLinkedQueue<>());
 
@@ -87,14 +109,7 @@ public class Connection extends WebSocketClient {
     private static final int MAX_PROTOCOL = 6;
 
     public Connection(@NotNull Callbacks callbacks) {
-        super(
-            URI.create(
-                System.getProperty(
-                    "essential.cm.host",
-                    System.getenv().getOrDefault("ESSENTIAL_CM_HOST", "wss://connect.essential.gg/v1")
-                )
-            )
-        );
+        super(CM_HOST_URI);
 
         this.callbacks = callbacks;
 
@@ -189,7 +204,7 @@ public class Connection extends WebSocketClient {
         codec.encode(packet, this::send);
     }
 
-    public void setupAndConnect(String userName, byte[] secret) {
+    public void setupAndConnect(UUID uuid, String userName, byte[] secret) {
         byte[] colon = ":".getBytes(StandardCharsets.UTF_8);
         byte[] name = userName.getBytes(StandardCharsets.UTF_8);
         byte[] nameSecret = Bytes.concat(name, colon, secret);
@@ -202,6 +217,14 @@ public class Connection extends WebSocketClient {
         } else {
             this.addHeader("Essential-Protocol-Version", protocolProperty);
         }
+
+        this.addHeader("Essential-User-UUID", uuid.toString());
+        this.addHeader("Essential-User-Name", userName);
+
+        VersionInfo versionInfo = new VersionInfo();
+        this.addHeader("Essential-Mod-Version", versionInfo.getEssentialVersion());
+        this.addHeader("Essential-Mod-Commit", versionInfo.getEssentialCommit());
+        this.addHeader("Essential-Mod-Branch", versionInfo.getEssentialBranch());
 
         // Attempt to connect.
         try {

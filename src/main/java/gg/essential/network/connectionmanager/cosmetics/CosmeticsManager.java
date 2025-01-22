@@ -129,7 +129,10 @@ public class CosmeticsManager implements NetworkedManager, ICosmeticsManager {
 
         this.infraCosmeticsData = new InfraCosmeticsData(connectionManager, assetLoader);
 
-        Path repoPath = baseDir.toPath().resolve("cosmetics");
+        Path repoPath = baseDir.toPath().resolve("configuration");
+        if (Files.notExists(repoPath)) {
+            repoPath = baseDir.toPath().resolve("cosmetics");
+        }
         if (Files.exists(repoPath)) {
             this.localCosmeticsData = new LocalCosmeticsData(repoPath, assetLoader);
             this.cosmeticsDataWithChanges = new CosmeticsDataWithChanges(localCosmeticsData);

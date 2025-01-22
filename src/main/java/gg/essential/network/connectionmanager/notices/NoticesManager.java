@@ -22,6 +22,7 @@ import gg.essential.connectionmanager.common.packet.notices.ServerNoticeRemovePa
 import gg.essential.gui.elementa.state.v2.MutableState;
 import gg.essential.gui.elementa.state.v2.State;
 import gg.essential.gui.state.Sale;
+import gg.essential.handlers.ShutdownHook;
 import gg.essential.network.connectionmanager.ConnectionManager;
 import gg.essential.network.connectionmanager.NetworkedManager;
 import gg.essential.network.connectionmanager.notices.handler.ServerNoticePopulatePacketHandler;
@@ -85,6 +86,7 @@ public class NoticesManager implements NetworkedManager, INoticesManager {
 
         listeners.add(new GiftedCosmeticNoticeListener(this));
 
+        ShutdownHook.INSTANCE.register(this::flushDismissNotices);
     }
 
     @NotNull
@@ -208,6 +210,14 @@ public class NoticesManager implements NetworkedManager, INoticesManager {
         flushDismissNotices();
     }
 
+    /**
+     * Queues the notice to be dismissed until the queue is flushed using {@link #flushDismissNotices()}
+     * @param noticeId the notice id to queue for dismissal
+     */
+    public void queueDismissNotice(String noticeId) {
+        dismissNoticesQueue.add(noticeId);
+    }
+
     public void flushDismissNotices() {
         if (dismissNoticesQueue.isEmpty()) {
             return;
@@ -283,6 +293,30 @@ public class NoticesManager implements NetworkedManager, INoticesManager {
 
         public State<Boolean> getNewState(String cosmeticId) {
             return cosmeticToNewStateMap.computeIfAbsent(cosmeticId, ignored -> mutableStateOf(false));
+        }
+
+        private Notice getNotice(String cosmeticId) {
+            List<Notice> notices = getNotices(NoticeType.NEW_BANNER, null, new HashMap<String, Object>() {{
+                put(METADATA_KEY, cosmeticId);
+            }});
+            if (!notices.isEmpty()) {
+                return notices.get(0);
+            }
+            return null;
+        }
+
+        public void clearNewState(String cosmeticId) {
+            MutableState<Boolean> booleanState = cosmeticToNewStateMap.get(cosmeticId);
+            if (booleanState != null) {
+                booleanState.set(false);
+            }
+
+            Notice notice = getNotice(cosmeticId);
+            if (notice != null) {
+                queueDismissNotice(notice.getId());
+            }
+
+            updateGlobalState();
         }
 
         private void updateGlobalState() {

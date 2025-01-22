@@ -34,8 +34,6 @@ import gg.essential.gui.screenshot.ScreenshotId;
 import gg.essential.gui.screenshot.ScreenshotOverlay;
 import gg.essential.gui.screenshot.ScreenshotUploadToast;
 import gg.essential.gui.screenshot.action.PostScreenshotAction;
-import gg.essential.gui.screenshot.components.HSBColor;
-import gg.essential.gui.screenshot.components.ScreenshotBrowser;
 import gg.essential.gui.screenshot.components.ScreenshotComponentsKt;
 import gg.essential.gui.screenshot.components.ScreenshotProperties;
 import gg.essential.gui.screenshot.components.ScreenshotProviderManager;
@@ -65,6 +63,7 @@ import gg.essential.universal.UDesktop;
 import gg.essential.util.EssentialSounds;
 import gg.essential.util.ExtensionsKt;
 import gg.essential.util.GuiUtil;
+import gg.essential.util.HSBColor;
 import gg.essential.util.HelpersKt;
 import gg.essential.util.MinecraftUtils;
 import gg.essential.util.Multithreading;
@@ -115,7 +114,7 @@ import java.util.function.Consumer;
 
 import static gg.essential.gui.screenshot.providers.WindowProviderKt.toSingleWindowRequest;
 
-public class ScreenshotManager implements NetworkedManager {
+public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
 
     private final NativeImageReader nativeImageReader;
     private final File editorStateFile;
@@ -551,6 +550,7 @@ public class ScreenshotManager implements NetworkedManager {
         return screenshotChecksumManager.get(file);
     }
 
+    @Override
     public Collection<Media> getUploadedMedia() {
         return uploadedScreenshots.values();
     }
@@ -602,6 +602,7 @@ public class ScreenshotManager implements NetworkedManager {
         }
     }
 
+    @Override
     public ClientScreenshotMetadata setFavorite(Path path, boolean favorite) {
         final ClientScreenshotMetadata metadata = screenshotMetadataManager.getOrCreateMetadata(path);
         metadata.setFavorite(favorite);
@@ -609,6 +610,7 @@ public class ScreenshotManager implements NetworkedManager {
         return metadata;
     }
 
+    @Override
     public ClientScreenshotMetadata setFavorite(Media media, boolean favorite) {
         connectionManager.send(new ClientMediaUpdatePacket(media.getId(), null, null, favorite), maybeReply -> {
             Packet reply = maybeReply.orElse(null);
@@ -625,6 +627,7 @@ public class ScreenshotManager implements NetworkedManager {
         return HelpersKt.getImageTime(new ScreenshotProperties(new LocalScreenshot(path), metadata), includeEditTime);
     }
 
+    @Override
     public ScreenshotMetadataManager getScreenshotMetadataManager() {
         return screenshotMetadataManager;
     }
@@ -725,6 +728,7 @@ public class ScreenshotManager implements NetworkedManager {
         });
     }
 
+    @Override
     @NotNull
     public List<Path> getOrderedPaths() {
         return HelpersKt.getOrderedPaths(this.screenshotFiles, HelpersKt.getScreenshotFolder().toPath(), path -> getImageTime(path, screenshotMetadataManager.getMetadata(path), true));
@@ -744,7 +748,7 @@ public class ScreenshotManager implements NetworkedManager {
         }
     }
 
-    public File handleScreenshotEdited(@NotNull ScreenshotId source, @NotNull ClientScreenshotMetadata originalMetadata, @NotNull BufferedImage screenshot, @NotNull ScreenshotBrowser browser, boolean favorite, boolean viewAfter) {
+    public File handleScreenshotEdited(@NotNull ScreenshotId source, @NotNull ClientScreenshotMetadata originalMetadata, @NotNull BufferedImage screenshot, boolean favorite) {
         File output = getEditedName(source);
 
         try {
@@ -757,7 +761,6 @@ public class ScreenshotManager implements NetworkedManager {
 
             ExtensionsKt.getExecutor(Minecraft.getMinecraft()).execute(() -> {
                 NotificationsKt.sendCheckmarkNotification("Picture saved as copy");
-                browser.editCallback(output.toPath(), viewAfter);
             });
             return output;
 

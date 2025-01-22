@@ -30,6 +30,7 @@ import gg.essential.gui.screenshot.providers.FileCachedWindowedImageProvider
 import gg.essential.gui.screenshot.providers.MaxScopeExpansionWindowProvider
 import gg.essential.gui.screenshot.providers.MinecraftWindowedTextureProvider
 import gg.essential.gui.screenshot.providers.PriorityDelegatedWindowProvider
+import gg.essential.gui.screenshot.providers.RegisteredTexture
 import gg.essential.gui.screenshot.providers.ScopeExpansionWindowProvider
 import gg.essential.gui.screenshot.providers.ScopePreservingWindowedProvider
 import gg.essential.gui.screenshot.providers.ThreadedWindowedProvider
@@ -38,9 +39,9 @@ import gg.essential.gui.screenshot.providers.WindowedProvider
 import gg.essential.gui.screenshot.providers.WindowedTextureProvider
 import gg.essential.handlers.screenshot.ClientScreenshotMetadata
 import gg.essential.universal.UMinecraft
+import gg.essential.util.GuiEssentialPlatform.Companion.platform
 import gg.essential.util.findChildOfTypeOrNull
 import io.netty.buffer.PooledByteBufAllocator
-import net.minecraft.util.ResourceLocation
 import java.util.concurrent.TimeUnit
 
 class SimpleScreenshotProvider {
@@ -79,7 +80,7 @@ class SimpleScreenshotProvider {
         )
     )
 
-    private val providerArray: Array<WindowedProvider<ResourceLocation>> = arrayOf(
+    private val providerArray: Array<WindowedProvider<RegisteredTexture>> = arrayOf(
 
         // First item is the primary and provider
         // This is updated to be the target resolution when the target resolution changes
@@ -105,7 +106,7 @@ class SimpleScreenshotProvider {
     // In the event a new screenshot is taken, we will need to update this or reload the GUI
     val allPaths: MutableListState<ScreenshotId> = mutableListStateOf()
 
-    var imageMap: Map<ScreenshotId, ResourceLocation> = mapOf()
+    var imageMap: Map<ScreenshotId, RegisteredTexture> = mapOf()
 
     init {
 
@@ -119,7 +120,7 @@ class SimpleScreenshotProvider {
      * Reloads the paths because of a newly taken screenshot or external changes
      */
     fun reloadItems() {
-        val screenshotManager = Essential.getInstance().connectionManager.screenshotManager
+        val screenshotManager = platform.screenshotManager
         val remoteMedia = screenshotManager.uploadedMedia.associateBy { it.id }.toMutableMap()
         val localScreenshots = screenshotManager.orderedPaths
             .map { path ->
@@ -150,7 +151,7 @@ class SimpleScreenshotProvider {
     /**
      * Queries [provider] with [renderedLastFrame] and returns the result
      */
-    fun provide(): Map<ScreenshotId, ResourceLocation> {
+    fun provide(): Map<ScreenshotId, RegisteredTexture> {
         val windows = listOfNotNull(renderedLastFrame?.inRange(provider.items.indices))
         if (windows.isEmpty()) {
             // If we call the provider with an empty list, it will unnecessarily clean up all resources.

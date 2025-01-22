@@ -26,8 +26,8 @@ import gg.essential.gui.layoutdsl.fillParent
 import gg.essential.gui.layoutdsl.layout
 import gg.essential.gui.screenshot.ScreenshotId
 import gg.essential.gui.screenshot.constraints.AspectPreservingFillConstraint
-import gg.essential.gui.screenshot.image.PixelBufferTexture
 import gg.essential.gui.screenshot.image.ScreenshotImage
+import gg.essential.gui.screenshot.providers.RegisteredTexture
 import gg.essential.gui.screenshot.providers.WindowedProvider
 import gg.essential.universal.UKeyboard
 import gg.essential.universal.UResolution
@@ -35,8 +35,6 @@ import gg.essential.universal.USound
 import gg.essential.util.centered
 import gg.essential.gui.util.hoveredState
 import gg.essential.vigilance.utils.onLeftClick
-import net.minecraft.client.Minecraft
-import net.minecraft.util.ResourceLocation
 
 class FocusListComponent(
     private val screenshotBrowser: ScreenshotBrowser,
@@ -159,14 +157,10 @@ class FocusListComponent(
         /**
          * Applies the texture for the supplied focus screenshot if its present
          */
-        private fun readTexture(focusScreenshot: FocusScreenshot, map: Map<ScreenshotId, ResourceLocation>) {
-            val resourceLocation = map[focusScreenshot.properties.id]
-            if (resourceLocation != null) {
-                val textureManager = Minecraft.getMinecraft().textureManager
-                val texture = textureManager.getTexture(resourceLocation) as PixelBufferTexture?
-                if (texture != null) {
-                    focusScreenshot.applyTexture(texture)
-                }
+        private fun readTexture(focusScreenshot: FocusScreenshot, map: Map<ScreenshotId, RegisteredTexture>) {
+            val texture = map[focusScreenshot.properties.id]
+            if (texture != null) {
+                focusScreenshot.applyTexture(texture)
             }
         }
 
@@ -250,8 +244,8 @@ class FocusListComponent(
             }
 
 
-            fun applyTexture(texture: PixelBufferTexture) {
-                image.texture.set(texture)
+            fun applyTexture(texture: RegisteredTexture) {
+                image.texture.set(texture.identifier)
                 aspectRatio.set(texture.imageWidth / texture.imageHeight.toFloat())
 
                 isScreenshotErrored.set(texture.error)

@@ -61,6 +61,7 @@ val subprojects = listOf(
     ":lwjgl3:impl",
     ":mixin-compat",
     ":plasmo",
+    ":pseudotcp",
     ":quic-connector",
     ":slf4j-to-log4j",
     ":utils",

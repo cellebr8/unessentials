@@ -162,9 +162,13 @@ class EssentialMultiplayerGui {
             }
 
             if (shouldShowServerPrivacyModal) {
-                GuiUtil.pushModal { manager -> 
+                GuiUtil.pushModal { manager ->
                     ConfirmDenyModal(manager, false).configure {
-                        titleText = "Do you want your friends to see what servers you are playing on?"
+                        titleText = "Share your activity with friends?"
+                        contentText = "Display the server or world you\n" +
+                        "are playing on to your friends in\n" +
+                        "the social and multiplayer menu."
+                        contentTextColor = EssentialPalette.TEXT_MID_GRAY
                         primaryButtonText = "Yes"
                         cancelButtonText = "No"
                     }.onPrimaryAction {

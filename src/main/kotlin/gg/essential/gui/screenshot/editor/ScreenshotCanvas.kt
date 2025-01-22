@@ -26,17 +26,16 @@ import gg.essential.gui.common.weak
 import gg.essential.gui.screenshot.LocalScreenshot
 import gg.essential.gui.screenshot.RemoteScreenshot
 import gg.essential.gui.screenshot.ScreenshotId
-import gg.essential.gui.screenshot.components.ScreenshotBrowser
 import gg.essential.gui.screenshot.editor.change.Change
 import gg.essential.gui.screenshot.editor.change.CropChange
 import gg.essential.gui.screenshot.editor.change.VectorStroke
-import gg.essential.gui.screenshot.image.PixelBufferTexture
 import gg.essential.gui.screenshot.image.ScreenshotImage
 import gg.essential.handlers.screenshot.ClientScreenshotMetadata
-import gg.essential.network.connectionmanager.media.ScreenshotManager
+import gg.essential.network.connectionmanager.media.IScreenshotManager
 import gg.essential.universal.UMatrixStack
 import gg.essential.universal.UResolution
 import gg.essential.util.Multithreading
+import gg.essential.util.UIdentifier
 import gg.essential.util.animateColor
 import gg.essential.util.lwjgl3.api.nanovg.NanoVG
 import gg.essential.vigilance.gui.VigilancePalette
@@ -53,7 +52,7 @@ import javax.imageio.ImageIO
 /**
  * Can be improved by abstracting cropping functions to a cropping [Tool] class
  */
-class ScreenshotCanvas(val screenshot: State<PixelBufferTexture?>) : UIContainer() {
+class ScreenshotCanvas(val screenshot: State<UIdentifier?>) : UIContainer() {
     var onDraw: UIContainer.(Float, Float, Int) -> Unit = { _, _, _ -> }
 
     var mouseButton = -1
@@ -129,7 +128,7 @@ class ScreenshotCanvas(val screenshot: State<PixelBufferTexture?>) : UIContainer
     /**
      * NanoVG based editing overlay which handles drawing all edits as well as drawing the parts of the screenshot retained from cropping. [UINanoVG]
      */
-    open inner class VectorEditingOverlay(val image: State<PixelBufferTexture?>) : UINanoVG() {
+    open inner class VectorEditingOverlay(val image: State<UIdentifier?>) : UINanoVG() {
         private val history: Stack<Change> = Stack()
         private val future: Stack<Change> = Stack()
         private val screenshotImage = ScreenshotImage(image)
@@ -227,15 +226,13 @@ class ScreenshotCanvas(val screenshot: State<PixelBufferTexture?>) : UIContainer
      * Exports the screenshot currently being edited to a file
      * If [temp] is true, the output is a temporary file.
      * Otherwise, the output is stored inside the screenshot folder
-     * and added to the view
+     * and the caller may refresh the view on completion.
      */
     fun exportImage(
         source: ScreenshotId,
-        screenshotManager: ScreenshotManager,
-        screenshotBrowser: ScreenshotBrowser,
+        screenshotManager: IScreenshotManager,
         temp: Boolean,
         favorite: Boolean = false,
-        viewAfter: Boolean,
     ): CompletableFuture<File> {
 
         // Cloned because the values are accessed on another thread and may have been reset
@@ -320,9 +317,7 @@ class ScreenshotCanvas(val screenshot: State<PixelBufferTexture?>) : UIContainer
                             is RemoteScreenshot -> ClientScreenshotMetadata(source.media)
                         },
                         croppedImage,
-                        screenshotBrowser,
                         favorite,
-                        viewAfter
                     )
                 )
             }

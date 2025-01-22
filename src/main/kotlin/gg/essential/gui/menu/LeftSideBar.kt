@@ -225,7 +225,7 @@ class LeftSideBar(
                 bindEssentialTooltip(hoveredState() and currentSale.map { it?.tooltip != null }.toV1(this), currentSale.map { it?.tooltip ?: ""}.toV1(this), EssentialTooltip.Position.ABOVE)
             }
 
-        val hasAnyNewCosmetics = connectionManager.cosmeticsManager.cosmetics.map { it.any { it.isCosmeticNew } }
+        val hasAnyNewCosmetics = connectionManager.noticesManager.cosmeticNotices.hasAnyNewCosmetics
 
         // New cosmetics flag
         TextFlag(

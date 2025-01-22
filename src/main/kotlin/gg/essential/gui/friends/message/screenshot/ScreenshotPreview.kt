@@ -17,21 +17,17 @@ import gg.essential.gui.elementa.state.v2.combinators.map
 import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.elementa.state.v2.toV1
 import gg.essential.gui.screenshot.ScreenshotId
-import gg.essential.gui.screenshot.image.PixelBufferTexture
 import gg.essential.gui.screenshot.image.ScreenshotImage
+import gg.essential.gui.screenshot.providers.RegisteredTexture
 import gg.essential.gui.screenshot.providers.WindowedProvider
 import gg.essential.universal.UMatrixStack
-import net.minecraft.client.Minecraft
-import net.minecraft.util.ResourceLocation
 
 abstract class ScreenshotPreview(
     val screenshotId: ScreenshotId,
     private val provider: SimpleScreenshotProvider,
 ) : UIContainer() {
 
-    private val imgIdentifier = mutableStateOf<ResourceLocation?>(null)
-    protected val imgTexture =
-        imgIdentifier.map { it?.let(Minecraft.getMinecraft().textureManager::getTexture) as PixelBufferTexture? }
+    protected val imgTexture = mutableStateOf<RegisteredTexture?>(null)
     protected val imageAspectState =
         imgTexture.map {
             if (it == null || it.error) {
@@ -40,10 +36,10 @@ abstract class ScreenshotPreview(
                 it.imageWidth / it.imageHeight.toFloat()
             }
         }
-    protected val img by ScreenshotImage(imgTexture.toV1(this))
+    protected val img by ScreenshotImage(imgTexture.map { it?.identifier }.toV1(this))
 
     override fun draw(matrixStack: UMatrixStack) {
-        imgIdentifier.set(provider.imageMap[screenshotId])
+        imgTexture.set(provider.imageMap[screenshotId])
         super.draw(matrixStack)
         val index = provider.currentPaths.indexOf(screenshotId)
         provider.renderedLastFrame =

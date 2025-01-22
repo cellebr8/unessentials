@@ -67,6 +67,8 @@ fun handleCosmeticOrEmoteLeftClick(item: Item.CosmeticOrEmote, category: Wardrob
     val previouslySelectedItem = wardrobeState.selectedItem.getUntracked()
     wardrobeState.selectedItem.set(item)
 
+    Essential.getInstance().connectionManager.noticesManager.cosmeticNotices.clearNewState(cosmetic.id)
+
     if (slot == CosmeticSlot.EMOTE && !isOwned) {
         if (previouslySelectedItem == item && !wardrobeState.inEmoteWheel.getUntracked()) {
             wardrobeState.selectedItem.set(null)

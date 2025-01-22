@@ -21,7 +21,7 @@ import gg.essential.gui.common.ImageLoadCallback
 import gg.essential.gui.elementa.essentialmarkdown.EssentialMarkdown
 import gg.essential.gui.friends.SocialMenu
 import gg.essential.gui.screenshot.LocalScreenshot
-import gg.essential.gui.screenshot.components.ScreenshotBrowser
+import gg.essential.gui.screenshot.SCREENSHOT_DATETIME_FORMAT
 import gg.essential.gui.screenshot.components.ScreenshotProperties
 import gg.essential.universal.UDesktop
 import gg.essential.universal.UMinecraft
@@ -330,7 +330,7 @@ fun getImageTime(properties: ScreenshotProperties, useEditIfPresent: Boolean): D
             // and in any case, remove the file extension
             .removeSuffix(".png")
         val millis = try {
-            ScreenshotBrowser.DATE_FORMAT.parse(name).time
+            SCREENSHOT_DATETIME_FORMAT.parse(name).time
         } catch (e: Exception) {
             try {
                 Files.getLastModifiedTime(path).toMillis()
@@ -521,14 +521,4 @@ val essentialUriListener: EssentialMarkdown.(EssentialMarkdown.LinkClickEvent) -
         }
         event.stopImmediatePropagation()
     }
-}
-
-fun createDateOnlyCalendar(time: Long = System.currentTimeMillis()): Calendar {
-    val date: Calendar = GregorianCalendar()
-    date.timeInMillis = time
-    date.set(Calendar.HOUR_OF_DAY, 0)
-    date.set(Calendar.MINUTE, 0)
-    date.set(Calendar.SECOND, 0)
-    date.set(Calendar.MILLISECOND, 0)
-    return date
 }

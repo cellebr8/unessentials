@@ -196,14 +196,6 @@ fun MCMinecraft.setSession(session: USession) {
     (this as MinecraftExt).setSession(session.toMC())
 }
 
-fun IntRange.reversed(reversed: Boolean): IntProgression {
-    return if (reversed) {
-        this.last downTo this.first
-    } else {
-        this
-    }
-}
-
 fun GuiScreen.findButtonByLabel(vararg label: String): () -> GuiButton? = {
     //#if MC==11903
     //$$ // 1.19.3 uses a unique system for grids

@@ -36,7 +36,7 @@ import gg.essential.network.connectionmanager.handler.connection.ClientConnectio
 import gg.essential.network.connectionmanager.handler.connection.ServerConnectionReconnectPacketHandler;
 import gg.essential.network.connectionmanager.handler.mojang.ServerUuidNameMapPacketHandler;
 import gg.essential.network.connectionmanager.handler.multiplayer.ServerMultiplayerJoinServerPacketHandler;
-import gg.essential.network.connectionmanager.ice.IIceManager;
+import gg.essential.network.connectionmanager.ice.IceManager;
 import gg.essential.network.connectionmanager.ice.IceManagerMcImpl;
 import gg.essential.network.connectionmanager.knownservers.KnownServersManager;
 import gg.essential.network.connectionmanager.media.ScreenshotManager;
@@ -103,7 +103,7 @@ public class ConnectionManager extends ConnectionManagerKt {
     @NotNull
     private final SocialManager socialManager;
     @NotNull
-    private final IIceManager iceManager;
+    private final IceManager iceManager;
     @NotNull
     private final ScreenshotManager screenshotManager;
     @NotNull
@@ -306,7 +306,7 @@ public class ConnectionManager extends ConnectionManagerKt {
     }
 
     @NotNull
-    public IIceManager getIceManager() {
+    public IceManager getIceManager() {
         return this.iceManager;
     }
 

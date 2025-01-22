@@ -29,6 +29,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class Mixin_RenderTickEvent_LoadingScreen {
     @Shadow @Final private Minecraft mc;
 
+    @Inject(method = "setLoadingProgress", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/shader/Framebuffer;bindFramebuffer(Z)V"))
+    private void renderTickPre(CallbackInfo callbackInfo) {
+        //#if MC>=11200
+        float partialTicks = this.mc.getRenderPartialTicks();
+        //#else
+        //$$ float partialTicks = 0; // FIXME could get this via Accessor, but we don't really need it atm anyway
+        //#endif
+        Essential.EVENT_BUS.post(new RenderTickEvent(true, true, new UMatrixStack(), partialTicks, partialTicks));
+    }
+
     @Inject(method = "setLoadingProgress", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/shader/Framebuffer;unbindFramebuffer()V"))
     private void renderTickPost(CallbackInfo callbackInfo) {
         //#if MC>=11200

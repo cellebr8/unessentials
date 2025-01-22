@@ -30,7 +30,6 @@ import io.netty.buffer.Unpooled
 import io.netty.buffer.UnpooledByteBufAllocator
 import net.minecraft.client.Minecraft
 import java.nio.file.Path
-import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -246,8 +245,9 @@ class ScreenshotBrowser(editPath: Path? = null): InternalEssentialGUI(
         providerManager.externalDelete(paths)
         listViewComponent.reload()
         val focused = focusing.get() ?: return
+        val focusedId = focused.id
         // Return to list if the item currently being focused is deleted
-        if (focused.id is LocalScreenshot && focused.id.path in paths) {
+        if (focusedId is LocalScreenshot && focusedId.path in paths) {
             stateToRestore = View.LIST
             closeFocus()
         } else if (focusType.get() == FocusType.VIEW) {
@@ -293,10 +293,6 @@ class ScreenshotBrowser(editPath: Path? = null): InternalEssentialGUI(
      */
     fun closeOperation(function: () -> Unit) {
         closeOperations.add(function)
-    }
-
-    companion object {
-        val DATE_FORMAT: DateFormat = SimpleDateFormat("yyyy-MM-dd_HH.mm.ss")
     }
 
 }

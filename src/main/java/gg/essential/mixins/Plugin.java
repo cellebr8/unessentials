@@ -49,6 +49,9 @@ public class Plugin implements IMixinConfigPlugin {
     private final boolean hasOptifine = hasClass("optifine.OptiFineForgeTweaker") || hasClass("me.modmuss50.optifabric.mod.OptifineInjector");
 
     private final EssentialTransformer[] transformers = new EssentialTransformer[]{
+            //#if MC>=11600 && MC<11700
+            //$$ new gg.essential.asm.compat.RandomPatchesTransformer(),
+            //#endif
     };
 
     static {
@@ -180,7 +183,7 @@ public class Plugin implements IMixinConfigPlugin {
         IntegrationTestsPlugin.enableInjectionCounting(mixinInfo);
 
         for (EssentialTransformer transformer : transformerMap.get(targetClassName)) {
-            transformer.transform(targetClass);
+            transformer.preApply(targetClass);
         }
 
         //#if MC==11602 && FABRIC || MC==12004 && FABRIC
@@ -218,7 +221,9 @@ public class Plugin implements IMixinConfigPlugin {
 
     @Override
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
-
+        for (EssentialTransformer transformer : transformerMap.get(targetClassName)) {
+            transformer.postApply(targetClass);
+        }
     }
 
     static boolean hasClass(String name) {

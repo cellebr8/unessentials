@@ -625,8 +625,8 @@ object EssentialConfig : Vigilant2(), GuiEssentialPlatform.Config {
         category("Privacy") {
             subcategory("Privacy") {
                 switch(sendServerUpdatesState) {
-                    name = "Show joined server to friends"
-                    description = "Displays the server you are currently connected to to your friends in the Social and Multiplayer menu."
+                    name = "Show game activity status to friends"
+                    description = "Displays the server or world you are currently playing on to your friends in the social and multiplayer menu."
                 }
                 selector(friendRequestPrivacyState) {
                     name = "Friend request permission"
