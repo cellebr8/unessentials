@@ -87,7 +87,6 @@ class SelectModal<T>(
         val isEmpty = stateBy {
             sections.all { it.identifiers().isEmpty() }
         }
-
         scroller.layout {
             if_(isEmpty) {
                 box(Modifier.fillWidth()) {
@@ -108,11 +107,14 @@ class SelectModal<T>(
                         }
                     }
 
+
                     sections.forEach { section ->
                         if_(shouldDisplaySection(section)) {
                             column(Modifier.fillWidth(), Arrangement.spacedBy(2f)) {
                                 sectionTitle(section.title)
-                                sectionRows(section)
+                                column(Modifier.fillWidth(), Arrangement.spacedBy(2f)) {
+                                    sectionRows(section)
+                                }
                             }
                         }
                     }
@@ -148,6 +150,7 @@ class SelectModal<T>(
         }
         val aboveLineHeight = basicHeightConstraint { dividerLine.getTop() }
         middleSpacer.setHeight(topPadding.pixels - aboveLineHeight)
+
         scrollbarContainer.constrain {
             height -= aboveLineHeight
         }
@@ -167,7 +170,7 @@ class SelectModal<T>(
                 sections.any { selectedIdentifiersFor(it)().isNotEmpty() }
             }
 
-            primaryActionButton.rebindEnabled(enabledState.toV1(scroller))
+            bindConfirmAvailable(enabledState.toV1(scroller))
         }
 
         if (shadowsOnEntries) {
@@ -252,7 +255,7 @@ class SelectModal<T>(
     private fun <S : Any> filteredStateFor(identifier: S, section: Section<T, S>): State<Boolean> {
         val mappedIdentifier = section.map(identifier)
         return filteredStates.getOrPut(mappedIdentifier) {
-            section.filter(identifier, searchbar.textContentV2)
+            section.filter(identifier, searchBarTextState)
         }
     }
 
@@ -269,8 +272,10 @@ class SelectModal<T>(
                     entryStyle = entryStyle.shadow(Color.BLACK)
                 }
 
+                var entryInnerStyle = Modifier.color(EssentialPalette.COMPONENT_HIGHLIGHT)
+
                 box(entryStyle.height(19f).fillWidth()) {
-                    box(Modifier.fillParent(padding = 1f).color(EssentialPalette.COMPONENT_HIGHLIGHT)) {
+                    box(entryInnerStyle.fillParent(padding = 1f)) {
                         section.layout(this, selected, identifier)
                     }
                 }

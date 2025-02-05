@@ -117,7 +117,7 @@ class CoinsManager(val connectionManager: CMConnection) : NetworkedManager {
         mutableCoinsSpent.set(0)
     }
 
-    fun purchaseBundle(bundle: CoinBundle, loadedPartnerIds: Set<String>, callback: (URI) -> Unit) {
+    fun purchaseBundle(bundle: CoinBundle, callback: (URI) -> Unit) {
         // If we are already waiting for a response, prevent spamming
         if (purchaseRequestInProgress) return
         purchaseRequestInProgress = true
@@ -125,9 +125,9 @@ class CoinsManager(val connectionManager: CMConnection) : NetworkedManager {
         val creatorCode = if (creatorCodeValid.get() == true) creatorCode.get() else null
 
         val packet = if (bundle.isSpecificAmount) {
-            ClientCheckoutDynamicCoinBundlePacket(bundle.numberOfCoins, bundle.currency, creatorCode, loadedPartnerIds)
+            ClientCheckoutDynamicCoinBundlePacket(bundle.numberOfCoins, bundle.currency, creatorCode)
         } else {
-            ClientCheckoutCoinBundlePacket(bundle.id, bundle.currency, creatorCode, loadedPartnerIds)
+            ClientCheckoutCoinBundlePacket(bundle.id, bundle.currency, creatorCode)
         }
         connectionManager.send(packet) { maybeResponse ->
             purchaseRequestInProgress = false

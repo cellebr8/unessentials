@@ -265,6 +265,12 @@ object EssentialPalette {
     @JvmField
     val CART_ACTIVE_HOVER: Color = Color(0x4BA4FF)
 
+    @JvmField
+    val SEARCHBAR_BACKGROUND: Color = Color(0x444444)
+
+    @JvmField
+    val SEARCHBAR_BLUE_OUTLINE: Color = Color(0x2D4670)
+
     /** Accent/Blue */
     @JvmField
     val FEATURED_BLUE: Color = Color(0x0A82FD)
@@ -450,6 +456,9 @@ object EssentialPalette {
     val LOCKED_ICON: Color = Color(0xF68822)
 
     val BONUS_COINS_COLOR: Color = Color(0xFDC80A)
+
+    @JvmField
+    val PURCHASE_CONFIRMATION_MODAL_SECONDARY: Color = Color(0x232323)
 
     @JvmField
     val MODAL_TITLE_BLUE: Color = Color(0x0A82FD)

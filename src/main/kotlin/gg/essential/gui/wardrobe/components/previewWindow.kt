@@ -12,6 +12,7 @@
 package gg.essential.gui.wardrobe.components
 
 import com.mojang.authlib.GameProfile
+import gg.essential.Essential
 import gg.essential.api.gui.NotificationType
 import gg.essential.api.gui.Slot
 import gg.essential.api.profile.wrapped
@@ -67,7 +68,8 @@ import gg.essential.gui.wardrobe.Item
 import gg.essential.gui.wardrobe.WardrobeCategory
 import gg.essential.gui.wardrobe.WardrobeState
 import gg.essential.gui.wardrobe.modals.CoinsPurchaseModal
-import gg.essential.gui.wardrobe.modals.PurchaseConfirmModal
+import gg.essential.gui.wardrobe.modals.PurchaseConfirmationModal
+import gg.essential.gui.wardrobe.modals.StoreDisabledModal
 import gg.essential.gui.wardrobe.purchaseEquippedCosmetics
 import gg.essential.gui.wardrobe.purchaseSelectedBundle
 import gg.essential.gui.wardrobe.purchaseSelectedEmote
@@ -82,6 +84,7 @@ import gg.essential.model.util.Color
 import gg.essential.model.util.toJavaColor
 import gg.essential.network.connectionmanager.coins.CoinsManager
 import gg.essential.network.connectionmanager.cosmetics.AssetLoader
+import gg.essential.network.connectionmanager.features.Feature
 import gg.essential.network.cosmetics.Cosmetic
 import gg.essential.universal.UKeyboard
 import gg.essential.universal.USound
@@ -526,6 +529,11 @@ private fun LayoutScope.purchaseBannerContentOld(state: WardrobeState, modifier:
             )
         }.onLeftClick { click ->
             handleClick(click) {
+                if (Essential.getInstance().connectionManager.disabledFeaturesManager.isFeatureDisabled(Feature.COSMETIC_PURCHASE)) {
+                    GuiUtil.pushModal { StoreDisabledModal(it) }
+                    return@handleClick
+                }
+
                 val bundle = state.selectedBundle.getUntracked()
                 val emote = state.selectedEmote.getUntracked()
                 if (cost.getUntracked() == 0) {
@@ -547,16 +555,11 @@ private fun LayoutScope.purchaseBannerContentOld(state: WardrobeState, modifier:
                     }
                 }
 
-                val modalText = when {
-                    bundle != null -> "Are you sure you want\nto purchase this bundle?"
-                    emote != null -> "Are you sure you want\nto purchase this emote?"
-                    else -> if (state.equippedCosmeticsPurchasable.get().size > 1) "Are you sure you want\nto purchase these cosmetics?" else "Are you sure you want\nto purchase this cosmetic?"
-                }
                 if (state.coins.get() < cost.get()) {
-                    GuiUtil.pushModal { CoinsPurchaseModal(it, state, cost.get()) }
+                    CoinsPurchaseModal.open(state, cost.getUntracked())
                 } else {
                     GuiUtil.pushModal { manager ->
-                        PurchaseConfirmModal(manager, modalText, cost.get()) {
+                        val purchaseAction: () -> Unit = {
                             when {
                                 bundle != null -> state.purchaseSelectedBundle { purchaseCallback(it) }
                                 emote != null -> state.purchaseSelectedEmote { successful ->
@@ -568,6 +571,11 @@ private fun LayoutScope.purchaseBannerContentOld(state: WardrobeState, modifier:
                                 }
                                 else -> state.purchaseEquippedCosmetics { purchaseCallback(it) }
                             }
+                        }
+                        when {
+                            bundle != null -> PurchaseConfirmationModal.forBundle(manager, bundle, state, purchaseAction)
+                            emote != null -> PurchaseConfirmationModal.forItem(manager, emote, state, purchaseAction)
+                            else -> PurchaseConfirmationModal.forEquippedItemsPurchasable(manager, state, purchaseAction)
                         }
                     }
                 }

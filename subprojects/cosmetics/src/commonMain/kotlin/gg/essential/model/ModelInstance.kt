@@ -11,6 +11,7 @@
  */
 package gg.essential.model
 
+import gg.essential.cosmetics.CosmeticsState
 import gg.essential.cosmetics.events.AnimationTarget
 import gg.essential.cosmetics.state.EssentialAnimationSystem
 import gg.essential.cosmetics.state.TextureAnimationSync
@@ -92,7 +93,7 @@ class ModelInstance(
      * when the player entity that spawned them is not) are update correctly.
      * In such cases where no reliable pose information is available, pass `null`.
      */
-    fun updateLocators(renderedPose: PlayerPose?) {
+    fun updateLocators(renderedPose: PlayerPose?, state: CosmeticsState) {
         // Locators are fairly expensive to update, so only do it if we need to
         if (animationState.locatorsNeedUpdating()) {
             val pose = renderedPose
@@ -109,6 +110,15 @@ class ModelInstance(
             val rootBone = model.rootBone
             animationState.apply(rootBone, false)
             model.applyPose(rootBone, pose, entity)
+
+            // process visibility and sided-ness from cosmetic state for Locator.isVisible update
+            model.propagateVisibilityToRootBone(
+                state.sides[cosmetic.id],
+                rootBone,
+                state.hiddenBones[cosmetic.id] ?: emptySet(),
+                EnumPart.values().toSet() - state.hiddenParts.getOrDefault(cosmetic.id, emptySet()),
+            )
+
             animationState.updateLocators(rootBone, 1 / 16f)
         }
     }

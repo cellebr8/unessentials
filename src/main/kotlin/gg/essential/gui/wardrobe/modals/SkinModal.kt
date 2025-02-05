@@ -236,7 +236,7 @@ class SkinModal private constructor(
                 Multithreading.runAsync {
                     val tempFilePath = Files.createTempFile("skin-by-url", ".png")
                     try {
-                        WebUtil.downloadToFile(url, tempFilePath.toFile(), "Mozilla/4.76 (Essential)")
+                        httpGetToFileBlocking(url, tempFilePath)
                     } catch (e: Exception) {
                         Essential.logger.warn("Error downloading skin file from $url!", e)
                         Window.enqueueRenderOperation {

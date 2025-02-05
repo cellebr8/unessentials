@@ -18,6 +18,7 @@ import gg.essential.event.client.InitializationEvent;
 import gg.essential.event.essential.TosAcceptedEvent;
 import gg.essential.event.network.server.ServerJoinEvent;
 import gg.essential.gui.elementa.state.v2.ReferenceHolderImpl;
+import gg.essential.gui.elementa.state.v2.StateKt;
 import gg.essential.lib.gson.Gson;
 import gg.essential.lib.gson.JsonElement;
 import gg.essential.lib.gson.JsonObject;
@@ -26,7 +27,10 @@ import gg.essential.network.connectionmanager.ConnectionManager;
 import gg.essential.network.connectionmanager.NetworkedManager;
 import gg.essential.network.connectionmanager.queue.SequentialPacketQueue;
 import gg.essential.universal.UMinecraft;
+import gg.essential.util.ModLoaderUtil;
 import gg.essential.util.Multithreading;
+import kotlin.jvm.functions.Function0;
+import kotlin.Unit;
 import me.kbrewster.eventbus.Subscribe;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -62,6 +66,8 @@ public class TelemetryManager implements NetworkedManager {
     private final List<ClientTelemetryPacket> packetList = new ArrayList<>();
     @NotNull
     private final ReferenceHolder referenceHolder = new ReferenceHolderImpl();
+    @Nullable
+    private Function0<Unit> modPartnerEffect = null;
 
     public TelemetryManager(@NotNull final ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
@@ -103,6 +109,24 @@ public class TelemetryManager implements NetworkedManager {
     public void onConnected() {
         packetList.forEach(telemetryQueue::enqueue);
         packetList.clear();
+        modPartnerEffect = StateKt.effect(referenceHolder, observer -> {
+            List<String> loadedPartnerModIds = ModLoaderUtil.loadedPartnerModIds.get(observer);
+            if (loadedPartnerModIds == null) {
+                return Unit.INSTANCE;
+            }
+            enqueue(new ClientTelemetryPacket("PARTNERED_MODS", new HashMap<String, Object>() {{
+                put("partnered_mod_ids", loadedPartnerModIds);
+            }}));
+            return Unit.INSTANCE;
+        });
+    }
+
+    @Override
+    public void onDisconnect() {
+        if (modPartnerEffect != null) {
+            modPartnerEffect.invoke();
+            modPartnerEffect = null;
+        }
     }
 
     @Subscribe

@@ -31,6 +31,7 @@ import gg.essential.network.connectionmanager.cosmetics.CosmeticsManager;
 import gg.essential.network.connectionmanager.cosmetics.EmoteWheelManager;
 import gg.essential.network.connectionmanager.cosmetics.OutfitManager;
 import gg.essential.network.connectionmanager.cosmetics.PacketHandlers;
+import gg.essential.network.connectionmanager.features.DisabledFeaturesManager;
 import gg.essential.network.connectionmanager.handler.PacketHandler;
 import gg.essential.network.connectionmanager.handler.connection.ClientConnectionDisconnectPacketHandler;
 import gg.essential.network.connectionmanager.handler.connection.ServerConnectionReconnectPacketHandler;
@@ -87,6 +88,8 @@ public class ConnectionManager extends ConnectionManagerKt {
     @NotNull
     private final NoticesManager noticesManager;
     @NotNull
+    private final DisabledFeaturesManager disabledFeaturesManager;
+    @NotNull
     private final SubscriptionManager subscriptionManager;
     @NotNull
     private final RelationshipManager relationshipManager;
@@ -121,7 +124,6 @@ public class ConnectionManager extends ConnectionManagerKt {
     // @NotNull
     private /* final */ KnownServersManager knownServersManager;
 
-    private boolean modsLoaded = false;
     private boolean modsSent = false;
 
     public enum Status {
@@ -165,6 +167,9 @@ public class ConnectionManager extends ConnectionManagerKt {
 
         // Notices
         this.managers.add((this.noticesManager = new NoticesManager(this)));
+
+        // Disabled Features
+        this.managers.add(this.disabledFeaturesManager = new DisabledFeaturesManager(this));
 
         // Cosmetics
         this.cosmeticsManager = new CosmeticsManager(this, baseDir);
@@ -263,6 +268,11 @@ public class ConnectionManager extends ConnectionManagerKt {
     @NotNull
     public NoticesManager getNoticesManager() {
         return noticesManager;
+    }
+
+    @NotNull
+    public DisabledFeaturesManager getDisabledFeaturesManager() {
+        return disabledFeaturesManager;
     }
 
     @NotNull
@@ -387,7 +397,7 @@ public class ConnectionManager extends ConnectionManagerKt {
         }
 
         // Do not want to block the current thread for this (reads mod files to create checksums)
-        if (modsLoaded && !modsSent) {
+        if (ModLoaderUtil.areModsLoaded.getUntracked() && !modsSent) {
             Multithreading.runAsync(() -> {
                 send(ModLoaderUtil.createModsAnnouncePacket());
             });
@@ -475,7 +485,7 @@ public class ConnectionManager extends ConnectionManagerKt {
 
     @Subscribe
     public void onPostInit(PostInitializationEvent event) {
-        modsLoaded = true;
+        ModLoaderUtil.setModsLoaded();
         if (!modsSent && isAuthenticated()) {
             Multithreading.runAsync(() -> {
                 send(ModLoaderUtil.createModsAnnouncePacket());

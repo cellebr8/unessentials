@@ -97,9 +97,21 @@ object ModLoaderUtil {
             "ChromaHUD"
         )
 
-    private val mutablePartnerMods = mutableStateOf<List<PartneredMod>>(listOf())
-    val partnerMods: State<List<PartneredMod>> = mutablePartnerMods
-    val partnerModIds = memo { partnerMods().map { it.id } }
+    private val mutablePartnerMods = mutableStateOf<List<PartneredMod>?>(null)
+    val partnerMods: State<List<PartneredMod>?> = mutablePartnerMods
+    val partnerModIds = memo { partnerMods()?.map { it.id } }
+
+    private val mutableAreModsLoaded = mutableStateOf(false)
+    @JvmField
+    val areModsLoaded: State<Boolean> = mutableAreModsLoaded
+
+    val loadedPartnerMods = memo {
+        if (!areModsLoaded()) return@memo null
+        val mods = getMods()
+        partnerMods()?.filter { partnerMod -> mods.any { it.id == partnerMod.id } }?.toSet()
+    }
+    @JvmField
+    val loadedPartnerModIds = memo { loadedPartnerMods()?.map { it.id } }
 
     private val modpackId by lazy {
         val modpackProps = UMinecraft.getMinecraft().mcDataDir.toPath() / "config" / "essential-modpack.properties"
@@ -128,9 +140,9 @@ object ModLoaderUtil {
         mutablePartnerMods.set(list)
     }
 
-    fun getLoadedPartnerModIds(): Set<String> {
-        val mods = getMods()
-        return partnerModIds.getUntracked().filter { partnerId -> mods.any { it.id == partnerId } }.toSet()
+    @JvmStatic
+    fun setModsLoaded() {
+        mutableAreModsLoaded.set(true)
     }
 
     /**

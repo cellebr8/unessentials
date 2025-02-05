@@ -242,7 +242,7 @@ class WardrobeState(
                 bundle.id in unlockedCosmetics
                     || bundle.id == bundlePurchaseInProgress() && bundleCosmeticsUnlocked
                     || outfitItems.any { outfit ->
-                        ((outfit.name == bundle.name && outfit.skin == bundle.skin.toMod()) || outfit.cosmetics == bundle.cosmetics)
+                        ((outfit.name == bundle.name && outfit.skin == bundle.skin?.toMod()) || outfit.cosmetics == bundle.cosmetics)
                     } && bundleCosmeticsUnlocked
             }
             .map { it.id }

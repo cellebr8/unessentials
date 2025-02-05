@@ -90,7 +90,7 @@ data class PlayerPose(
 
         companion object {
             // Parts that weren't rendered, we'll just draw far away so they'll appear is if they weren't there
-            val MISSING = Part(pivotY = -10000f)
+            val MISSING = Part(pivotY = 160000f)
         }
     }
 

@@ -61,7 +61,7 @@ fun LayoutScope.outfitRenderPreview(state: WardrobeState, outfit: Item.OutfitIte
 
 fun LayoutScope.bundleRenderPreview(state: WardrobeState, bundle: Item.Bundle, modifier: Modifier = Modifier) {
     fullBodyRenderPreview(
-        state, bundle.skin.toMod(), bundle.cosmetics, bundle.settings,
+        state, bundle.skin?.toMod(), bundle.cosmetics, bundle.settings,
         showEmotes = true, constantRotation = bundle.rotateOnPreview, modifier = modifier
     )
 }

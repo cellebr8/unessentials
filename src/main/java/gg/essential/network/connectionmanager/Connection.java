@@ -106,7 +106,7 @@ public class Connection extends WebSocketClient {
     private int usingProtocol = 1;
     private ScheduledFuture<?> timeoutTask;
 
-    private static final int MAX_PROTOCOL = 6;
+    private static final int MAX_PROTOCOL = 8;
 
     public Connection(@NotNull Callbacks callbacks) {
         super(CM_HOST_URI);

@@ -47,7 +47,7 @@ class NotAuthenticatedModal(
         }
 
         bindPrimaryButtonText(buttonText)
-        primaryActionButton.rebindEnabled(!connecting)
+        bindConfirmAvailable(!connecting)
 
         // Immediately move on if a connection is established and authenticated
         authStatus.onSetValueAndNow {

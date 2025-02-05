@@ -11,25 +11,16 @@
  */
 package gg.essential.util
 
-import gg.essential.data.VersionInfo
 import gg.essential.elementa.UIComponent
 import gg.essential.elementa.components.UIContainer
 import gg.essential.elementa.components.UIImage
 import gg.essential.elementa.components.image.BlurHashImage
-import gg.essential.gui.layoutdsl.Modifier
-import gg.essential.gui.layoutdsl.fillParent
-import gg.essential.gui.layoutdsl.heightAspect
-import gg.essential.gui.layoutdsl.layout
-import gg.essential.gui.layoutdsl.width
-import gg.essential.handlers.CertChain
+import gg.essential.gui.layoutdsl.*
 import gg.essential.lib.caffeine.cache.CacheLoader
 import gg.essential.lib.caffeine.cache.Caffeine
 import gg.essential.util.GuiEssentialPlatform.Companion.platform
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClientBuilder
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.nio.file.Path
@@ -42,6 +33,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.writeBytes
 
 object CachedAvatarImage {
+
     private val LOGGER = LoggerFactory.getLogger(CachedAvatarImage::class.java)
 
     private val cacheBasePath = platform.essentialBaseDir.resolve("avatar-cache")
@@ -72,8 +64,6 @@ object CachedAvatarImage {
 
     private val fallbackImage = BlurHashImage("U9QuA+e8vyu48wVsVYkq_~tlP9Z~Y7pIyXVX")
 
-    private val httpClient by lazy { createHttpClient() }
-
     private fun loadFromDisk(uuid: UUID): BufferedImage? {
         val path = cachePath[uuid]
         if (!path.exists()) {
@@ -91,15 +81,7 @@ object CachedAvatarImage {
         val url = "https://crafthead.net/helm/${uuid.toDashlessString()}"
 
         val bytes = try {
-            val request = HttpGet(url)
-            val response = httpClient.execute(request)
-            val content = response.entity.content.use { it.readBytes() }
-            if (response.statusLine.statusCode != 200) {
-                LOGGER.warn("Non-OK status code received when fetching $url: ${content.toString(Charsets.UTF_8)}")
-                return null
-            }
-
-            content
+            httpGetToBytesBlocking(url)
         } catch (e: Exception) {
             LOGGER.warn("Failed to fetch $url: ", e)
             return null
@@ -124,18 +106,6 @@ object CachedAvatarImage {
         }
 
         return image
-    }
-
-    private fun createHttpClient(): CloseableHttpClient {
-        val (sslContext, _) = CertChain()
-            .loadEmbedded()
-            .done()
-
-        return HttpClientBuilder
-            .create()
-            .setUserAgent("Essential/${VersionInfo().essentialVersion} (https://essential.gg)")
-            .setSslcontext(sslContext)
-            .build()
     }
 
     /**

@@ -73,8 +73,9 @@ class Bone(
     var side: Side? = null
     @JvmField
     var visible: Boolean? = null // determines visibility for all bones in this tree unless overwritten in a child
-    private var isVisible = true // actual visibility for this specific bone, set in propagateVisibility
     private var fullyInvisible = false // propagateVisibility has determined that we can skip this entire tree
+    var isVisible = true // actual visibility for this specific bone, set in propagateVisibility
+        private set // private to ensure isVisible is still only set by propagateVisibility
 
     /** Whether an animation targeting this bone will have an effect on the player pose. */
     var affectsPose = false // initialized by ModelParser

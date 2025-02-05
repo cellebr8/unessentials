@@ -19,14 +19,14 @@ import gg.essential.event.client.ReAuthEvent;
 import gg.essential.gui.notification.Notifications;
 import gg.essential.lib.gson.JsonObject;
 import gg.essential.mod.Model;
+import gg.essential.mod.Skin;
 import gg.essential.util.DispatchersKt;
+import gg.essential.util.HttpUtils;
 import gg.essential.util.JsonHolder;
 import gg.essential.util.ModelKt;
 import gg.essential.util.MojangAPI;
-import gg.essential.mod.Skin;
 import gg.essential.util.SkinKt;
 import gg.essential.util.UUIDUtil;
-import gg.essential.util.WebUtil;
 import kotlinx.coroutines.Dispatchers;
 import me.kbrewster.eventbus.Subscribe;
 import net.minecraft.client.Minecraft;
@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -77,16 +78,22 @@ public class MojangSkinManager {
 
     @Nullable
     public static Property getTextureProperty(UUID uuid) {
-        final JsonHolder jsonHolder = WebUtil.fetchJSON(String.format(Locale.ROOT, SESSION_URL, uuid.toString().replace("-", "")));
-        //Http error
-        if(jsonHolder.getKeys().isEmpty())
-            return null;
+        try {
+            final JsonHolder jsonHolder = new JsonHolder(HttpUtils.httpGetToStringBlocking(String.format(Locale.ROOT, SESSION_URL, uuid.toString().replace("-", ""))));
+            if (jsonHolder.getKeys().isEmpty()) {
+                return null;
+            }
 
-        final JsonObject properties = jsonHolder.optJSONArray("properties").get(0).getAsJsonObject();
-        return new com.mojang.authlib.properties.Property(
-            "textures",
-            properties.get("value").getAsString(),
-            properties.get("signature").getAsString());
+            final JsonObject properties = jsonHolder.optJSONArray("properties").get(0).getAsJsonObject();
+            return new com.mojang.authlib.properties.Property(
+                    "textures",
+                    properties.get("value").getAsString(),
+                    properties.get("signature").getAsString()
+            );
+        } catch (IOException e) {
+            Essential.logger.error("Failed to fetch texture property", e);
+            return null;
+        }
     }
 
     @Nullable

@@ -32,12 +32,14 @@ import gg.essential.gui.wardrobe.WardrobeCategory
 import gg.essential.gui.wardrobe.WardrobeState
 import gg.essential.gui.wardrobe.hasEnoughCoins
 import gg.essential.gui.wardrobe.modals.CoinsPurchaseModal
+import gg.essential.gui.wardrobe.modals.StoreDisabledModal
 import gg.essential.gui.wardrobe.openPurchaseItemModal
 import gg.essential.gui.wardrobe.purchaseAndCreateOutfitForBundle
 import gg.essential.gui.wardrobe.purchaseCosmeticOrEmote
 import gg.essential.mod.cosmetics.CosmeticSlot
 import gg.essential.mod.cosmetics.settings.CosmeticProperty
 import gg.essential.mod.cosmetics.settings.CosmeticSetting
+import gg.essential.network.connectionmanager.features.Feature
 import gg.essential.universal.UDesktop
 import gg.essential.universal.USound
 import gg.essential.util.EssentialSounds
@@ -213,6 +215,11 @@ private fun getBundleRightClickOptions(item: Item.Bundle, wardrobeState: Wardrob
     val unlocked = wardrobeState.unlockedBundles.map { item.id in it }
 
     fun purchaseOrClaim() {
+        if (Essential.getInstance().connectionManager.disabledFeaturesManager.isFeatureDisabled(Feature.COSMETIC_PURCHASE)) {
+            GuiUtil.pushModal { StoreDisabledModal(it) }
+            return
+        }
+
         wardrobeState.purchaseAndCreateOutfitForBundle(item, false) { success ->
             if (success) {
                 EssentialSounds.playPurchaseConfirmationSound()
@@ -233,13 +240,7 @@ private fun getBundleRightClickOptions(item: Item.Bundle, wardrobeState: Wardrob
                 if (cost() > 0) {
                     ContextOptionMenu.Option("Purchase", EssentialPalette.SHOPPING_CART_8X7) {
                         if (!wardrobeState.hasEnoughCoins(item)) {
-                            GuiUtil.pushModal { manager -> 
-                                CoinsPurchaseModal(
-                                    manager,
-                                    wardrobeState,
-                                    item.getCost(wardrobeState).get()
-                                )
-                            }
+                            CoinsPurchaseModal.open(wardrobeState, item.getCost(wardrobeState).getUntracked())
                             return@Option
                         }
 
@@ -288,13 +289,7 @@ private fun getRightClickOptions(item: Item.CosmeticOrEmote, wardrobeState: Ward
             options.add {
                 ContextOptionMenu.Option("Purchase", image = EssentialPalette.SHOPPING_CART_8X7) {
                     if (!wardrobeState.hasEnoughCoins(item)) {
-                        GuiUtil.pushModal { manager -> 
-                            CoinsPurchaseModal(
-                                manager,
-                                wardrobeState,
-                                item.getCost(wardrobeState).get()
-                            )
-                        }
+                        CoinsPurchaseModal.open(wardrobeState, item.getCost(wardrobeState).getUntracked())
                         return@Option
                     }
                     wardrobeState.openPurchaseItemModal(item) {
@@ -374,6 +369,11 @@ private fun sendItemPreviewTelemetry(item: Item, category: WardrobeCategory, war
 }
 
 fun claimFreeItemNow(item: Item.CosmeticOrEmote, wardrobeState: WardrobeState) {
+    if (Essential.getInstance().connectionManager.disabledFeaturesManager.isFeatureDisabled(Feature.COSMETIC_PURCHASE)) {
+        GuiUtil.pushModal { StoreDisabledModal(it) }
+        return
+    }
+
     val cosmetic = item.cosmetic
     val cosmeticsManager = wardrobeState.cosmeticsManager
     wardrobeState.unlockedCosmetics.set { it + cosmetic.id }

@@ -89,7 +89,7 @@ class WearablesManager(
     /** @see ModelInstance.updateLocators */
     fun updateLocators(renderedPose: PlayerPose?) {
         for ((_, model) in models) {
-            model.updateLocators(renderedPose)
+            model.updateLocators(renderedPose, state)
         }
     }
 

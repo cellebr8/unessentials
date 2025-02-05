@@ -64,15 +64,15 @@ class EssentialAutoInstalledModal(modalManager: ModalManager) : EssentialModal(m
         }
 
         val okayButton by MenuButton(
-            "Okay", defaultStyle = BasicState(MenuButton.BLUE), hoverStyle = BasicState(MenuButton.LIGHT_BLUE)
-        ) {
-            replaceWith(null)
-            updatePreviouslyLaunchedWithContainer()
-        }.constrain {
-            x = SiblingConstraint(8f)
-            width = CopyConstraintFloat() boundTo primaryActionButton
-            height = 20.pixels
-        }
+                "Okay", defaultStyle = BasicState(MenuButton.BLUE), hoverStyle = BasicState(MenuButton.LIGHT_BLUE)
+            ) {
+                replaceWith(null)
+                updatePreviouslyLaunchedWithContainer()
+            }.constrain {
+                x = SiblingConstraint(8f)
+                width = CopyConstraintFloat() boundTo primaryActionButton
+                height = 20.pixels
+            }
 
         buttonContainer.insertChildAfter(okayButton, primaryActionButton)
 

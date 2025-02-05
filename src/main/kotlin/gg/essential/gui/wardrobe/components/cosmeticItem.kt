@@ -613,8 +613,8 @@ private fun LayoutScope.cosmeticTimer(item: Item, owned: State<Boolean>, wardrob
 
     bind(availableUntilState) { availableUntil ->
         if (availableUntil == null) return@bind
-        val saleTime = containerDontUseThisUnlessYouReallyHaveTo.pollingState { availableUntil.toCosmeticOptionTime() }
-        box(Modifier.height(13f).widthAspect(1f).color(EssentialPalette.RED).hoverTooltip(saleTime).hoverScope()) {
+        val saleTime = containerDontUseThisUnlessYouReallyHaveTo.pollingState { availableUntil.toCosmeticOptionTime() }.toV2()
+        box(Modifier.height(13f).widthAspect(1f).color(EssentialPalette.RED).hoverTooltip({"Leaving in ${saleTime()}"}).hoverScope()) {
             SequenceAnimatedUIImage(
                 "/assets/essential/textures/studio/clock_", ".png",
                 4,

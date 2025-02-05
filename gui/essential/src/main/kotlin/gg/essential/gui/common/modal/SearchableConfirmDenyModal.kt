@@ -17,6 +17,12 @@ import gg.essential.elementa.dsl.*
 import gg.essential.elementa.effects.ScissorEffect
 import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.*
+import gg.essential.gui.elementa.state.v2.mutableStateOf
+import gg.essential.gui.elementa.state.v2.onChange
+import gg.essential.gui.layoutdsl.color
+import gg.essential.gui.layoutdsl.height
+import gg.essential.gui.layoutdsl.layout
+import gg.essential.gui.layoutdsl.width
 import gg.essential.gui.overlay.ModalManager
 import gg.essential.util.*
 
@@ -33,9 +39,9 @@ open class SearchableConfirmDenyModal(
         height = ChildBasedSizeConstraint()
     } childOf customContent
 
-    val searchbar by EssentialSearchbar() childOf searchContainer
+    val searchBarTextState = mutableStateOf("")
 
-    protected val middleSpacer by Spacer(height = searchbarPadding) childOf searchContainer
+    protected val middleSpacer by Spacer(height = searchbarPadding)
 
     protected val scrollContainer by UIContainer().constrain {
         y = SiblingConstraint()
@@ -49,17 +55,17 @@ open class SearchableConfirmDenyModal(
     } childOf scrollContainer scrollGradient 30.pixels
 
     val scrollbarContainer by UIContainer().constrain {
-        x = 0.pixels(alignOpposite = true)
-        y = 0.pixels(alignOpposite = true)
-        width = ChildBasedSizeConstraint() * 2
-        height = 100.percent boundTo scroller
-    } childOf scrollContainer
+            x = 0.pixels(alignOpposite = true)
+            y = 0.pixels(alignOpposite = true)
+            width = ChildBasedSizeConstraint() * 2
+            height = 100.percent boundTo scroller
+        } childOf scrollContainer
 
     private val scrollBarBackground by UIBlock(EssentialPalette.COMPONENT_BACKGROUND).constrain {
-        x = 0.pixels(alignOpposite = true)
-        width = ChildBasedSizeConstraint()
-        height = 100.percent
-    } childOf scrollbarContainer
+            x = 0.pixels(alignOpposite = true)
+            width = ChildBasedSizeConstraint()
+            height = 100.percent
+        } childOf scrollbarContainer
 
     private val scrollBar by UIBlock(EssentialPalette.SCROLLBAR).setWidth(2.pixels) childOf scrollBarBackground
 
@@ -72,6 +78,13 @@ open class SearchableConfirmDenyModal(
     init {
         configure {
             titleTextColor = EssentialPalette.TEXT_HIGHLIGHT
+        }
+
+        searchContainer.layout {
+            val searchbar by EssentialSearchbar()
+            searchbar()
+            searchbar.textContentV2.onChange(stateScope) { searchBarTextState.set(it) }
+            middleSpacer()
         }
 
         scroller.emptyText.constrain {

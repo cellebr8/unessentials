@@ -9,24 +9,17 @@
  * commercialize, or otherwise exploit, or create derivative works based
  * upon, this file or any other in this repository, all of which is reserved by Essential.
  */
-package gg.essential.gui.layoutdsl
+package gg.essential.util
 
-import gg.essential.gui.common.Checkbox
+import gg.essential.universal.UMatrixStack
 
-fun LayoutScope.checkbox(
-    initialValue: Boolean,
-    onValueChange: (Boolean) -> Unit
-): Checkbox {
-    return Checkbox(initialValue)().apply {
-        isChecked.onSetValue {
-            onValueChange(it)
-        }
-    }
-}
+//#if MC>=12000
+//$$ import net.minecraft.client.gui.DrawContext
+//#endif
 
-fun LayoutScope.checkbox(
-    initialValue: Boolean,
-): Checkbox {
-    return Checkbox(initialValue)()
-}
-
+class UDrawContext(
+    //#if MC>=12000
+    //$$ val mc: DrawContext,
+    //#endif
+    val matrixStack: UMatrixStack,
+)

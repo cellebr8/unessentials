@@ -362,7 +362,7 @@ class Wardrobe(
     }
 
     private fun displayCartWarningModal() {
-        GuiUtil.pushModal { manager -> 
+        GuiUtil.pushModal { manager ->
             val modal = ConfirmDenyModal(manager, false).configure {
                 titleText = "Unowned items equipped..."
                 titleTextColor = EssentialPalette.MODAL_WARNING

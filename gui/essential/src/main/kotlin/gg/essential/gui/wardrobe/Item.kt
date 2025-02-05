@@ -126,7 +126,7 @@ sealed interface Item {
         override val tier: Tier,
         val discountPercent: Float,
         val rotateOnPreview: Boolean,
-        val skin: CosmeticBundle.Skin,
+        val skin: CosmeticBundle.Skin?,
         val cosmetics: Map<CosmeticSlot, CosmeticId>,
         val settings: Map<CosmeticId, List<CosmeticSetting>>,
     ) : Item {

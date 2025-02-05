@@ -843,7 +843,7 @@ class GitRepoCosmeticsDatabase(
         val discount: Float,
         @SerialName("rotate_on_preview")
         val rotateOnPreview: Boolean = false,
-        var skin: CosmeticBundle.Skin,
+        var skin: CosmeticBundle.Skin? = null,
         val cosmetics: Map<CosmeticSlot, CosmeticId>,
         val settings: Map<CosmeticId, List<CosmeticSetting>>,
     )

@@ -9,24 +9,9 @@
  * commercialize, or otherwise exploit, or create derivative works based
  * upon, this file or any other in this repository, all of which is reserved by Essential.
  */
-package gg.essential.gui.layoutdsl
+package gg.essential.network.connectionmanager.features
 
-import gg.essential.gui.common.Checkbox
-
-fun LayoutScope.checkbox(
-    initialValue: Boolean,
-    onValueChange: (Boolean) -> Unit
-): Checkbox {
-    return Checkbox(initialValue)().apply {
-        isChecked.onSetValue {
-            onValueChange(it)
-        }
-    }
+enum class Feature {
+    COSMETIC_PURCHASE,
+    COIN_BUNDLE_PURCHASE
 }
-
-fun LayoutScope.checkbox(
-    initialValue: Boolean,
-): Checkbox {
-    return Checkbox(initialValue)()
-}
-

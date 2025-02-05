@@ -285,6 +285,11 @@ public class PlayerMolangQuery implements MolangQueryEntity, ParticleSystem.Loca
         });
     }
 
+    @Override
+    public boolean isVisible() {
+        return true;
+    }
+
     public interface RealYawAccess {
         float essential$getRealRenderYaw();
         float essential$getRealPrevRenderYaw();

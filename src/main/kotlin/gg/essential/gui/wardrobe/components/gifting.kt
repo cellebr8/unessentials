@@ -47,7 +47,9 @@ import gg.essential.gui.wardrobe.WardrobeCategory
 import gg.essential.gui.wardrobe.WardrobeState
 import gg.essential.gui.wardrobe.giftCosmeticOrEmote
 import gg.essential.gui.wardrobe.modals.CoinsPurchaseModal
+import gg.essential.gui.wardrobe.modals.StoreDisabledModal
 import gg.essential.network.connectionmanager.coins.CoinsManager
+import gg.essential.network.connectionmanager.features.Feature
 import gg.essential.network.cosmetics.Cosmetic
 import gg.essential.universal.ChatColor
 import gg.essential.universal.UMinecraft
@@ -61,10 +63,15 @@ import gg.essential.vigilance.utils.onLeftClick
 import java.util.UUID
 
 fun openGiftModal(item: Item.CosmeticOrEmote, state: WardrobeState) {
+    if (Essential.getInstance().connectionManager.disabledFeaturesManager.isFeatureDisabled(Feature.COSMETIC_PURCHASE)) {
+        GuiUtil.pushModal { StoreDisabledModal(it) }
+        return
+    }
+
     val requiredCoinsSpent = state.settings.giftingCoinSpendRequirement.get()
     val coinsSpent = state.coinsSpent.get()
     if (coinsSpent < requiredCoinsSpent) {
-        GuiUtil.pushModal { manager -> 
+        GuiUtil.pushModal { manager ->
             val modal = EssentialModal(manager, false).configure {
                 titleText = "You can't gift yet..."
                 titleTextColor = EssentialPalette.MODAL_WARNING
@@ -123,7 +130,7 @@ fun openGiftModal(item: Item.CosmeticOrEmote, state: WardrobeState) {
     }
 
     val selectedFriends = mutableListStateOf<UUID>()
-    GuiUtil.pushModal { manager -> 
+    GuiUtil.pushModal { manager ->
         selectModal(manager, "Select friends to\ngift them ${ChatColor.WHITE + item.name + ChatColor.RESET}.") {
             modalSettings {
                 primaryButtonText = "Purchase"
@@ -142,9 +149,11 @@ fun openGiftModal(item: Item.CosmeticOrEmote, state: WardrobeState) {
             requiresSelection = true
 
             users("Friends", validFriends) {selected, uuid ->
-                row(Modifier.fillParent(padding = 3f)) {
-                    playerEntry(selected, uuid)
-                    addRemoveCheckbox(selected)
+                box(Modifier.fillParent()) {
+                    row(Modifier.fillParent(padding = 3f)) {
+                        playerEntry(selected, uuid)
+                        addRemoveCheckbox(selected)
+                    }
                 }.onLeftClick { event ->
                     USound.playButtonPress()
                     event.stopPropagation()
@@ -204,7 +213,7 @@ private fun showErrorToast(message: String) {
 private fun giftItemToFriends(item: Item.CosmeticOrEmote, uuids: Set<UUID>, state: WardrobeState, modal: EssentialModal) {
     val cost = (item.getCost(state).get() ?: 0) * uuids.size
     if (cost > state.coins.get()) {
-        modal.replaceWith(CoinsPurchaseModal(modal.modalManager, state, cost))
+        modal.replaceWith(CoinsPurchaseModal.create(modal.modalManager, state, cost))
         return
     }
 

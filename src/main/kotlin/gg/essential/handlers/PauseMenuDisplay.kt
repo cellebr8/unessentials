@@ -21,7 +21,6 @@ import gg.essential.data.VersionData
 import gg.essential.data.VersionInfo
 import gg.essential.elementa.components.UIBlock
 import gg.essential.elementa.components.UIContainer
-import gg.essential.elementa.components.UIText
 import gg.essential.elementa.components.Window
 import gg.essential.elementa.constraints.*
 import gg.essential.elementa.dsl.*
@@ -36,6 +35,7 @@ import gg.essential.gui.common.modal.Modal
 import gg.essential.gui.common.modal.configure
 import gg.essential.gui.elementa.VanillaButtonConstraint.Companion.constrainTo
 import gg.essential.gui.elementa.VanillaButtonGroupConstraint.Companion.constrainTo
+import gg.essential.gui.elementa.state.v2.combinators.not
 import gg.essential.gui.elementa.state.v2.stateOf
 import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.elementa.state.v2.toV2
@@ -60,6 +60,7 @@ import gg.essential.gui.util.onAnimationFrame
 import gg.essential.gui.util.pollingState
 import gg.essential.network.connectionmanager.serverdiscovery.NewServerDiscoveryManager
 import gg.essential.network.connectionmanager.sps.SPSSessionSource
+import gg.essential.universal.USound
 import gg.essential.util.FirewallUtil
 import gg.essential.util.MinecraftUtils
 import gg.essential.util.findChildOfTypeOrNull
@@ -483,29 +484,26 @@ class PauseMenuDisplay {
 
                 onPrimaryAction { callback(this) }
             }.configureLayout { customContent ->
-                val notifyContainer by UIContainer().constrain {
-                    x = CenterConstraint()
-                    y = SiblingConstraint()
-                    width = ChildBasedSizeConstraint()
-                    height = ChildBasedMaxSizeConstraint()
-                }.onLeftClick { findChildOfTypeOrNull<Checkbox>()?.toggle() } childOf customContent
-
-                val notifyToggle by Checkbox(checkmarkColor = BasicState(EssentialPalette.TEXT)).constrain {
-                    width = 9.pixels
-                    height = AspectConstraint()
-                    y = CenterConstraint()
-                } childOf notifyContainer
-
-                UIText("Do not show this warning again", shadow = false).constrain {
-                    x = SiblingConstraint(5f)
-                    y = CenterConstraint()
-                    color = EssentialPalette.TEXT_DISABLED.toConstraint()
-                } childOf notifyContainer
-
-                val notifySpacer by Spacer(height = 14f) childOf customContent
-
-                notifyToggle.isChecked.onSetValue {
-                    EssentialConfig.spsIPWarning = !it
+                customContent.layout {
+                    val checkBoxState = !EssentialConfig.spsIPWarningState
+                    column(Modifier.alignBoth(Alignment.Center)) {
+                        row(Modifier.hoverScope(), Arrangement.spacedBy(5f)) {
+                            val notifyToggle by Checkbox(checkmarkColor = BasicState(EssentialPalette.TEXT)).constrain {
+                                width = 9.pixels
+                                height = AspectConstraint()
+                            }
+                            notifyToggle.isChecked.onSetValue {
+                                checkBoxState.set(it)
+                            }
+                            notifyToggle()
+                            text("Do not show this warning again", shadow = false, modifier = Modifier.color(EssentialPalette.TEXT_DISABLED))
+                        }.onLeftClick {
+                            it.stopPropagation()
+                            USound.playButtonPress()
+                            findChildOfTypeOrNull<Checkbox>(true)?.toggle()
+                        }
+                        spacer(height = 14f)
+                    }
                 }
             }
         }

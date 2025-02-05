@@ -17,11 +17,10 @@ import gg.essential.gui.screenshot.downsampling.BufferBackedImage
 import gg.essential.gui.screenshot.downsampling.ErrorImage
 import gg.essential.gui.screenshot.downsampling.PixelBuffer
 import gg.essential.media.model.Media
-import gg.essential.util.httpClient
+import gg.essential.util.httpGetToBytesBlocking
 import gg.essential.util.lwjgl3.api.NativeImageReader
 import io.netty.buffer.ByteBufAllocator
 import io.netty.buffer.Unpooled
-import okhttp3.Request
 import java.io.IOException
 
 /**
@@ -64,11 +63,7 @@ class CloudflareImageProvider(
             media.variants["original"]?.url ?: return null
         }
         return try {
-            val request = Request.Builder().url(url).build()
-            val bytes = httpClient.join().newCall(request).execute().use { response ->
-                if (!response.isSuccessful) throw IOException("Server returned $response for $request")
-                response.body()!!.bytes()
-            }
+            val bytes = httpGetToBytesBlocking(url)
             val imageData = nativeImageReader.getImageData(Unpooled.wrappedBuffer(bytes), allocator)
             BufferBackedImage(imageData)
         } catch (e: IOException) {

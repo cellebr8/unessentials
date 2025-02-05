@@ -27,6 +27,7 @@ import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.util.hoverScope
 import gg.essential.util.*
 import gg.essential.vigilance.utils.onLeftClick
+import java.awt.Color
 import java.time.Instant
 import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
@@ -255,6 +256,15 @@ fun LayoutScope.essentialInput(
     check: (String) -> State<String?> = { stateOf(null) },
     checkImmediately: Boolean = false,
     icon: ImageFactory? = null,
+    backgroundColor: State<Color> = stateOf(EssentialPalette.GUI_BACKGROUND),
+    iconColor: State<Color> = stateOf(EssentialPalette.TEXT_MID_GRAY),
+    iconShadowColor: State<Color> = stateOf(EssentialPalette.TEXT_SHADOW),
+    errorColor: State<Color> = stateOf(EssentialPalette.TEXT_WARNING),
+    errorShadowColor: State<Color> = stateOf(EssentialPalette.BLACK),
+    outlineColor: Color = EssentialPalette.LIGHTEST_BACKGROUND,
+    outlineFocusedColor: Color = EssentialPalette.BLUE_BUTTON,
+    outlineHoveredColor: Color = EssentialPalette.TEXT_DARK_DISABLED,
+    outlineErrorColor: Color = EssentialPalette.TEXT_WARNING,
 ) {
     val errorTextState = stateDelegatingTo(stateOf<String?>(null))
     val errorState = errorTextState.map { it != null }
@@ -263,10 +273,10 @@ fun LayoutScope.essentialInput(
     val inputHoveredState = input.hoverScope().toV2()
     val outlineColorState = stateBy {
         when {
-            errorState() -> EssentialPalette.TEXT_WARNING
-            inputFocusedState() -> EssentialPalette.BLUE_BUTTON
-            inputHoveredState() -> EssentialPalette.TEXT_DARK_DISABLED
-            else -> EssentialPalette.LIGHTEST_BACKGROUND
+            errorState() -> outlineErrorColor
+            inputFocusedState() -> outlineFocusedColor
+            inputHoveredState() -> outlineHoveredColor
+            else -> outlineColor
         }
     }
     input.onFocus { inputFocusedState.set(true) }
@@ -290,11 +300,11 @@ fun LayoutScope.essentialInput(
     }
 
     box(Modifier.fillParent().color(outlineColorState).hoverScope() then modifier) {
-        box(Modifier.fillParent(padding = 1f).color(EssentialPalette.GUI_BACKGROUND)) {
+        box(Modifier.fillParent(padding = 1f).color(backgroundColor)) {
             if(icon != null) {
                 row(Modifier.fillWidth(padding = 5f).alignVertical(Alignment.Center(true)), Arrangement.spacedBy(6f, FloatPosition.START)) {
                     box(Modifier.width(10f).heightAspect(1f)) {
-                        image(icon, Modifier.color(EssentialPalette.TEXT_MID_GRAY).shadow(EssentialPalette.TEXT_SHADOW))
+                        image(icon, Modifier.color(iconColor).shadow(iconShadowColor))
                     }
                     input()
                 }
@@ -307,7 +317,7 @@ fun LayoutScope.essentialInput(
                     gradient(Modifier.fillParent())
                     icon(
                         EssentialPalette.ROUND_WARNING_7X,
-                        Modifier.alignHorizontal(Alignment.End(4f)).color(EssentialPalette.TEXT_WARNING).shadow(EssentialPalette.BLACK),
+                        Modifier.alignHorizontal(Alignment.End(4f)).color(errorColor).shadow(errorShadowColor),
                     ).bindHoverEssentialTooltip(errorTextState.map { it ?: "" }.toV1(stateScope), EssentialTooltip.Position.ABOVE, wrapAtWidth = 150f)
                 }
             }

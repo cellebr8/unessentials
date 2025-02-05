@@ -15,6 +15,7 @@ import gg.essential.gui.common.modal.Modal
 import gg.essential.gui.layoutdsl.LayoutScope
 import gg.essential.gui.overlay.ModalFlow.ModalContinuation
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine

@@ -11,6 +11,7 @@
  */
 package gg.essential.gui.common.modal
 
+import gg.essential.elementa.UIComponent
 import gg.essential.elementa.constraints.*
 import gg.essential.elementa.dsl.*
 import gg.essential.elementa.state.BasicState
@@ -34,6 +35,8 @@ open class ConfirmDenyModal(
 ) {
 
     private val cancelButtonTextState = BasicState("Cancel").map { it }
+    private val cancelButtonStyleState = BasicState(StyledButton.Style.GRAY).map { it }
+    private val cancelButtonEnabledState = BasicState(true).map { it }
 
     private val cancelActions = mutableListOf<(Boolean) -> Unit>()
 
@@ -41,13 +44,22 @@ open class ConfirmDenyModal(
         get() = cancelButtonTextState.get()
         set(value) = cancelButtonTextState.set(value)
 
-    val cancelButton by MenuButton(cancelButtonTextState, hoverStyle = BasicState(MenuButton.GRAY)) {
-        fireCancel(true)
-        replaceWith(null)
-    }.constrain {
-        width = CopyConstraintFloat() boundTo primaryActionButton
-        height = 20.pixels
-    }
+    var cancelButtonEnabled: Boolean
+        get() = cancelButtonEnabledState.get()
+        set(value) = cancelButtonEnabledState.set(value)
+
+    val cancelButton: UIComponent by MenuButton(
+            cancelButtonTextState,
+            hoverStyle = BasicState(MenuButton.GRAY),
+        ) {
+            fireCancel(true)
+            replaceWith(null)
+        }.apply {
+            rebindEnabled(cancelButtonEnabledState)
+        }.constrain {
+            width = CopyConstraintFloat() boundTo primaryActionButton
+            height = 20.pixels
+        }
 
     // Top padding
     val spacer by Spacer(height = 14f) childOf customContent

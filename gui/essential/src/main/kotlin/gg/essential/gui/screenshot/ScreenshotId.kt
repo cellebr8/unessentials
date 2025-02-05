@@ -12,9 +12,7 @@
 package gg.essential.gui.screenshot
 
 import gg.essential.media.model.Media
-import gg.essential.util.httpClient
-import okhttp3.Request
-import java.io.IOException
+import gg.essential.util.httpGetToInputStreamBlocking
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -38,15 +36,7 @@ data class RemoteScreenshot(val media: Media) : ScreenshotId {
     override val name: String
         get() = SCREENSHOT_DATETIME_FORMAT.format(media.createdAt)
 
-    override fun open(): InputStream {
-        val url = media.variants.getValue("original").url
-        val request = Request.Builder().url(url).build()
-        val response = httpClient.join().newCall(request).execute()
-        if (!response.isSuccessful) {
-            response.use { throw IOException("Server returned $response for $request") }
-        }
-        return response.body()!!.byteStream()
-    }
+    override fun open(): InputStream = httpGetToInputStreamBlocking(media.variants.getValue("original").url)
 
     override fun hashCode(): Int {
         return media.id.hashCode()

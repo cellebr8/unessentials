@@ -47,6 +47,7 @@ import java.util.List;
 
 public class EssentialKeybindingRegistry {
     public static final String CATEGORY = "Essential";
+    private static final EssentialKeybindingRegistry INSTANCE = new EssentialKeybindingRegistry();
     private EssentialKeybinding cosmetics_visibility_toggle;
     private EssentialKeybinding emote_wheel_open;
     private EssentialKeybinding zoom;
@@ -220,5 +221,9 @@ public class EssentialKeybindingRegistry {
 
     public boolean isHoldingChatPeek() {
         return holdingChatPeek;
+    }
+
+    public static EssentialKeybindingRegistry getInstance() {
+        return INSTANCE;
     }
 }

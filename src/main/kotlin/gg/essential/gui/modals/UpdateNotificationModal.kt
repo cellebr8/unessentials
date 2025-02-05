@@ -28,13 +28,19 @@ import gg.essential.gui.about.Category
 import gg.essential.gui.common.Checkbox
 import gg.essential.gui.common.modal.VerticalConfirmDenyModal
 import gg.essential.gui.common.modal.configure
+import gg.essential.gui.layoutdsl.color
+import gg.essential.gui.layoutdsl.shadow
 import gg.essential.gui.overlay.ModalManager
 import gg.essential.util.GuiUtil
 import gg.essential.util.findChildOfTypeOrNull
 import gg.essential.vigilance.utils.onLeftClick
 import java.awt.Color
 
-class UpdateNotificationModal(modalManager: ModalManager) : VerticalConfirmDenyModal(modalManager, requiresButtonPress = false) {
+class UpdateNotificationModal(modalManager: ModalManager) : VerticalConfirmDenyModal(
+    modalManager,
+    requiresButtonPress = false,
+    buttonPadding = 12f
+) {
 
     init {
         configure {
@@ -67,6 +73,11 @@ class UpdateNotificationModal(modalManager: ModalManager) : VerticalConfirmDenyM
             color = EssentialPalette.TEXT_DISABLED.toConstraint()
         } childOf notifyContainer
 
+        notifyToggle.isChecked.onSetValue {
+            EssentialConfig.updateModal = !it
+        }
+
+
         onCancel { buttonClicked ->
             if (buttonClicked) {
                 GuiUtil.openScreen { AboutMenu(Category.CHANGELOG) }
@@ -76,10 +87,6 @@ class UpdateNotificationModal(modalManager: ModalManager) : VerticalConfirmDenyM
 
         onPrimaryAction {
             VersionData.updateLastSeenModal()
-        }
-
-        notifyToggle.isChecked.onSetValue {
-            EssentialConfig.updateModal = !it
         }
 
         val current = VersionData.getMajorComponents(VersionData.essentialVersion)

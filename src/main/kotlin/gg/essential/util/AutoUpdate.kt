@@ -117,7 +117,7 @@ object AutoUpdate {
         } else {
             changelogFuture = CompletableFuture.supplyAsync {
                 val encodedVersion = URLEncoder.encode(version, StandardCharsets.UTF_8.toString()).replace("+", "%20").replace("#", "%23")
-                val versionResponse = WebUtil.fetchString("${MenuData.BASE_URL}/mods/v1/essential:loader-stage2/versions/$encodedVersion/changelog")
+                val versionResponse = httpGetToStringBlocking("${MenuData.BASE_URL}/mods/v1/essential:loader-stage2/versions/$encodedVersion/changelog")
                 val changelog = Gson().fromJson(versionResponse, ChangelogComponent.Changelog::class.java)
                 changelog.summary
             }

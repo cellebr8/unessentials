@@ -132,8 +132,6 @@ public class Essential implements EssentialAPI {
     @NotNull
     private final ConnectionManager connectionManager = new ConnectionManager(new NetworkHook(), baseDir, lwjgl3, integratedServerManager);
     private final List<SessionFactory> sessionFactories = new ArrayList<>();
-    @NotNull
-    private final EssentialKeybindingRegistry keybindingRegistry = new EssentialKeybindingRegistry();
     private ImageCache imageCache;
 
     private PlayerWearableManager playerWearableManager;
@@ -180,7 +178,7 @@ public class Essential implements EssentialAPI {
 
     @NotNull
     public EssentialKeybindingRegistry getKeybindingRegistry() {
-        return this.keybindingRegistry;
+        return EssentialKeybindingRegistry.getInstance();
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -290,8 +288,8 @@ public class Essential implements EssentialAPI {
         imageCache = new FileImageCache(new File(getBaseDir(), "image-cache"), 1, TimeUnit.HOURS, true);
 
         EVENT_BUS.register(EssentialCommandRegistry.INSTANCE);
-        keybindingRegistry.refreshBinds(); // config is ready now, time to refresh which bindings we actually want
-        registerListener(keybindingRegistry);
+        getKeybindingRegistry().refreshBinds(); // config is ready now, time to refresh which bindings we actually want
+        registerListener(getKeybindingRegistry());
         registerListenerRequiresEssential(new NetworkSubscriptionStateHandler());
         registerListener(MinecraftUtils.INSTANCE);
         registerListenerRequiresEssential(new ServerStatusHandler());
@@ -364,6 +362,8 @@ public class Essential implements EssentialAPI {
 
         EssentialChannelHandler.registerEssentialChannel();
 
+        // Fetch update changelog now so it is preloaded for later use
+        AutoUpdate.INSTANCE.getChangelog();
     }
 
     private File createEssentialDir() {

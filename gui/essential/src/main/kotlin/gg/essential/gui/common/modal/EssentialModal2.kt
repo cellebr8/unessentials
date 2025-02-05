@@ -256,8 +256,11 @@ abstract class EssentialModal2(
 
                     coroutineScope.launch {
                         actionRunning.set(true)
-                        action()
-                        actionRunning.set(false)
+                        try {
+                            action()
+                        } finally {
+                            actionRunning.set(false)
+                        }
                     }
                 }
                 .focusable(effectiveDisabled)

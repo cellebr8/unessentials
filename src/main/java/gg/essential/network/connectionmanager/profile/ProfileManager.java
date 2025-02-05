@@ -50,15 +50,16 @@ import gg.essential.network.connectionmanager.subscription.SubscriptionManager;
 import gg.essential.profiles.model.TrustedHost;
 import gg.essential.util.CachedAvatarImage;
 import gg.essential.util.GuiUtil;
+import gg.essential.util.HttpUtils;
 import gg.essential.util.Multithreading;
 import gg.essential.util.StringsKt;
 import gg.essential.util.UUIDUtil;
-import gg.essential.util.WebUtil;
 import kotlin.Pair;
 import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -116,11 +117,11 @@ public class ProfileManager extends StateCallbackManager<IStatusManager> impleme
             try {
                 final Gson gson = ConnectionCodec.gson;
                 String trustedHostURL = "https://api.essential.gg/v2/trusted_hosts";
-                final TrustedHost[] trustedHosts = gson.fromJson(WebUtil.fetchString(trustedHostURL), TrustedHost[].class);
+                final TrustedHost[] trustedHosts = gson.fromJson(HttpUtils.httpGetToStringBlocking(trustedHostURL), TrustedHost[].class);
                 for (TrustedHost trustedHost : trustedHosts) {
                     addTrustedHost(trustedHost);
                 }
-            } catch (JsonParseException e) {
+            } catch (JsonParseException | IOException e) {
                 e.printStackTrace();
             }
         }

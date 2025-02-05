@@ -71,7 +71,7 @@ fun InfraCosmeticType.toMod() = CosmeticType(id, slot.toMod(), displayNames, ski
 
 fun CosmeticStoreBundleSkin.toMod() = CosmeticBundle.Skin(Skin(hash, model.toMod()), name)
 
-fun CosmeticStoreBundle.toMod() = CosmeticBundle(id, name, tier.toMod(), discount, rotateOnPreview, skin.toMod(), cosmetics.toMod(), settings.toModSetting())
+fun CosmeticStoreBundle.toMod() = CosmeticBundle(id, name, tier.toMod(), discount, rotateOnPreview, skin?.toMod(), cosmetics.toMod(), settings.toModSetting())
 
 fun Model.toInfra() = when (this) {
     Model.STEVE -> SkinModel.CLASSIC

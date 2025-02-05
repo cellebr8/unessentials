@@ -35,12 +35,13 @@ import gg.essential.gui.wardrobe.components.coinPackImage
 import gg.essential.gui.wardrobe.components.coinsText
 import gg.essential.gui.wardrobe.components.infoIcon
 import gg.essential.network.connectionmanager.coins.CoinBundle
+import gg.essential.network.connectionmanager.features.Feature
 import gg.essential.universal.USound
 import gg.essential.util.*
 import gg.essential.vigilance.utils.onLeftClick
 import kotlin.math.max
 
-class CoinsPurchaseModal(
+class CoinsPurchaseModal private constructor(
     modalManager: ModalManager,
     val state: WardrobeState,
     coinsNeeded: Int? = null,
@@ -172,7 +173,7 @@ class CoinsPurchaseModal(
                     */
                 }.onLeftClick {
                     USound.playButtonPress()
-                    coinsManager.purchaseBundle(bundle, ModLoaderUtil.getLoadedPartnerModIds()) { uri ->
+                    coinsManager.purchaseBundle(bundle) { uri ->
                         close()
                         openInBrowser(uri)
                     }
@@ -233,4 +234,17 @@ class CoinsPurchaseModal(
         state.coinsManager.refreshPricing()
     }
 
+    companion object {
+        fun open(state: WardrobeState, coinsNeeded: Int? = null) {
+            GuiUtil.pushModal { create(it, state, coinsNeeded) }
+        }
+
+        fun create(modalManager: ModalManager, state: WardrobeState, coinsNeeded: Int? = null): Modal {
+            return if (Essential.getInstance().connectionManager.disabledFeaturesManager.isFeatureDisabled(Feature.COIN_BUNDLE_PURCHASE)) {
+                StoreDisabledModal(modalManager)
+            } else {
+                CoinsPurchaseModal(modalManager, state, coinsNeeded)
+            }
+        }
+    }
 }

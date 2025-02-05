@@ -45,7 +45,6 @@ class VersionDownloadModal(modalManager: ModalManager, private val recommendedVe
     override fun LayoutScope.layoutButtons() {
         row(Arrangement.spacedBy(8f)) {
             cancelButton("Cancel")
-
             styledButton(
                 Modifier.width(91f).tag(PrimaryAction),
                 style = StyledButton.Style.BLUE,

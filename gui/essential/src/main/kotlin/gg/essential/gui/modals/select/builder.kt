@@ -79,9 +79,11 @@ class SelectModalBuilder<T>(
     private val sections = mutableListOf<Section<T, *>>()
     internal val defaultUserRow: SectionLayoutBlock<UUID>
         get() = { selected, uuid ->
-            row(Modifier.fillParent(padding = 3f)) {
-                playerEntry(selected, uuid)
-                defaultAddRemoveButton(selected)
+            box(Modifier.fillParent()) {
+                row(Modifier.fillParent(padding = 3f)) {
+                    playerEntry(selected, uuid)
+                    defaultAddRemoveButton(selected)
+                }
             }.onLeftClick { event ->
                 USound.playButtonPress()
                 event.stopPropagation()
@@ -91,9 +93,11 @@ class SelectModalBuilder<T>(
 
     internal val defaultGroupRow: SectionLayoutBlock<Long>
         get() = { selected, id ->
-            row(Modifier.fillParent(padding = 3f)) {
-                groupEntry(selected, id)
-                defaultAddRemoveButton(selected)
+            box(Modifier.fillParent()) {
+                row(Modifier.fillParent(padding = 3f)) {
+                    groupEntry(selected, id)
+                    defaultAddRemoveButton(selected)
+                }
             }.onLeftClick { event ->
                 USound.playButtonPress()
                 event.stopPropagation()
@@ -106,13 +110,15 @@ class SelectModalBuilder<T>(
             val otherUser =
                 if (channel.type != ChannelType.DIRECT_MESSAGE) null
                 else channel.members.find { it != USession.activeNow().uuid }
-            row(Modifier.fillParent(padding = 3f)) {
-                if (otherUser == null) {
-                    groupEntry(selected, channel.id)
-                } else {
-                    playerEntry(selected, otherUser)
+            box(Modifier.fillParent()) {
+                row(Modifier.fillParent(padding = 3f)) {
+                    if (otherUser == null) {
+                        groupEntry(selected, channel.id)
+                    } else {
+                        playerEntry(selected, otherUser)
+                    }
+                    defaultAddRemoveButton(selected)
                 }
-                defaultAddRemoveButton(selected)
             }.onLeftClick { event ->
                 USound.playButtonPress()
                 event.stopPropagation()

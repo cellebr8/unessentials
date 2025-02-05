@@ -14,22 +14,25 @@ package gg.essential.gui.account
 import com.mojang.authlib.GameProfile
 import com.mojang.authlib.exceptions.AuthenticationUnavailableException
 import com.mojang.authlib.exceptions.InvalidCredentialsException
-import gg.essential.handlers.CertChain
 import gg.essential.handlers.account.WebAccountManager
-import gg.essential.lib.gson.*
+import gg.essential.lib.gson.Gson
+import gg.essential.lib.gson.GsonBuilder
+import gg.essential.lib.gson.JsonDeserializationContext
+import gg.essential.lib.gson.JsonDeserializer
+import gg.essential.lib.gson.JsonElement
+import gg.essential.lib.gson.JsonObject
+import gg.essential.lib.gson.JsonPrimitive
+import gg.essential.lib.gson.JsonSerializationContext
+import gg.essential.lib.gson.JsonSerializer
 import gg.essential.lib.gson.annotations.JsonAdapter
 import gg.essential.util.UUIDUtil
+import gg.essential.util.httpClient
+import okhttp3.FormBody
+import okhttp3.MediaType
+import okhttp3.Request
+import okhttp3.RequestBody
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.digest.DigestUtils
-import org.apache.http.client.entity.EntityBuilder
-import org.apache.http.client.entity.UrlEncodedFormEntity
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.client.methods.HttpUriRequest
-import org.apache.http.entity.ContentType
-import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClientBuilder
-import org.apache.http.message.BasicNameValuePair
 import java.io.IOException
 import java.lang.reflect.Type
 import java.net.URI
@@ -51,6 +54,8 @@ class MicrosoftUserAuthentication {
         private const val URL_XSTS = "https://xsts.auth.xboxlive.com/xsts/authorize"
         private const val URL_MINECRAFT = "https://api.minecraftservices.com/authentication/login_with_xbox"
         private const val URL_PROFILE = "https://api.minecraftservices.com/minecraft/profile"
+
+        private val JSON = MediaType.parse("application/json")
     }
 
 
@@ -143,10 +148,14 @@ class MicrosoftUserAuthentication {
             "scope" to SCOPE,
             "redirect_uri" to (redirectUri ?: "")
         )
-        val response = HttpPost(URL_OAUTH_TOKEN).apply {
-            setHeader("Content-Type", "application/x-www-form-urlencoded")
-            entity = UrlEncodedFormEntity(fullProps.map { (name, value) -> BasicNameValuePair(name, value) })
-        }.execute() ?: throw InvalidCredentialsException()
+        val formBody = FormBody.Builder()
+        fullProps.forEach { (key, value) -> formBody.add(key, value) }
+        val response = Request.Builder()
+            .url(URL_OAUTH_TOKEN)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .post(formBody.build())
+            .build()
+            .execute() ?: throw InvalidCredentialsException()
         val accessToken = response["access_token"].asString
         val refreshToken = response["refresh_token"].asString
         val expiresIn = response["expires_in"].asLong
@@ -229,9 +238,12 @@ class MicrosoftUserAuthentication {
 
         profile?.let { return it }
 
-        val response = HttpGet(URL_PROFILE).apply {
-            setHeader("Authorization", "Bearer $token")
-        }.execute() ?: throw InvalidCredentialsException()
+        val response = Request.Builder()
+            .url(URL_PROFILE)
+            .header("Authorization", "Bearer $token")
+            .get()
+            .build()
+            .execute() ?: throw InvalidCredentialsException()
         response["error"]?.asString?.let {
             if (it == "NOT_FOUND") {
                 // We use this response as an indicator for whether the given account
@@ -251,19 +263,18 @@ class MicrosoftUserAuthentication {
     }
 
     private fun post(uri: String, content: Any): JsonObject? {
-        val request = HttpPost(uri)
-        request.entity = EntityBuilder.create().apply {
-            text = Gson().toJson(content)
-            contentType = ContentType.APPLICATION_JSON
-        }.build()
+        val request = Request.Builder()
+            .url(uri)
+            .post(RequestBody.create(JSON, Gson().toJson(content)))
+            .build()
         return request.execute()
     }
 
-    private fun HttpUriRequest.execute(): JsonObject? {
-        setHeader("Accept", "application/json")
-        val response = createHttpClient().execute(this)
-        val status = response.statusLine.statusCode
-        val content = response.entity.content.use { it.bufferedReader().readText() }
+    private fun Request.execute(): JsonObject? {
+        val response = httpClient.join().newCall(this.newBuilder().header("Accept", "application/json").build()).execute()
+        val status = response.code()
+        val content = response.body()!!.string()
+
         if (DEBUG || status >= 300) {
             println("$status: $content")
         }
@@ -273,17 +284,6 @@ class MicrosoftUserAuthentication {
         }
         // MS APIs return 400 on invalid token, Mojang returns 401, 429 for rate limit
         return if (status == 400 || status == 401 || status == 429) null else json
-    }
-
-    private fun createHttpClient(): CloseableHttpClient {
-        // Microsoft is transitioning their certificates to other root CAs because the current one expires in 2025.
-        // https://docs.microsoft.com/en-us/azure/security/fundamentals/tls-certificate-changes
-        val (sslContext, _) = CertChain()
-            .loadEmbedded()
-            .done()
-        return HttpClientBuilder.create()
-            .setSslcontext(sslContext)
-            .build()
     }
 
     private fun String.urlEncode() = URLEncoder.encode(this, "utf-8")

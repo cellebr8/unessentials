@@ -31,9 +31,11 @@ import gg.essential.gui.elementa.state.v2.toListState
 import gg.essential.gui.layoutdsl.layout
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.notification.error
-import gg.essential.gui.wardrobe.modals.PurchaseConfirmModal
+import gg.essential.gui.wardrobe.modals.PurchaseConfirmationModal
+import gg.essential.gui.wardrobe.modals.StoreDisabledModal
+import gg.essential.mod.cosmetics.CosmeticOutfit
+import gg.essential.network.connectionmanager.features.Feature
 import gg.essential.network.connectionmanager.handler.cosmetics.ServerCosmeticsUserUnlockedPacketHandler
-import gg.essential.universal.ChatColor
 import gg.essential.util.GuiUtil
 import java.util.UUID
 
@@ -138,13 +140,15 @@ fun WardrobeState.giftCosmeticOrEmote(item: Item.CosmeticOrEmote, giftTo: UUID, 
 }
 
 fun WardrobeState.openPurchaseItemModal(item: Item, primaryAction: () -> Unit) {
-    val modalText = if (item is Item.Bundle) {
-        "${ChatColor.GRAY}Do you want to purchase the\n${ChatColor.RESET}${item.name}${ChatColor.GRAY} bundle?"
-    } else {
-        "${ChatColor.GRAY}Do you want to purchase\n${ChatColor.RESET}${item.name}${ChatColor.GRAY}?"
+    if (Essential.getInstance().connectionManager.disabledFeaturesManager.isFeatureDisabled(Feature.COSMETIC_PURCHASE)) {
+        GuiUtil.pushModal { StoreDisabledModal(it) }
+        return
     }
-    GuiUtil.pushModal {
-        PurchaseConfirmModal(it, modalText, item.getCost(this@openPurchaseItemModal).get(), primaryAction)
+
+    if (item is Item.Bundle) {
+        GuiUtil.pushModal { PurchaseConfirmationModal.forBundle(it, item, this, primaryAction) }
+    } else if (item is Item.CosmeticOrEmote) {
+        GuiUtil.pushModal { PurchaseConfirmationModal.forItem(it, item, this, primaryAction) }
     }
 }
 
@@ -244,41 +248,49 @@ private fun sendPurchaseBundlePacket(item: Item.Bundle, callback: (success: Bool
 }
 
 private fun WardrobeState.createOutfitForBundle(item: Item.Bundle, changeSelectedOutfit: Boolean = true, callback: (success: Boolean) -> Unit) {
-    skinsManager.addSkin(item.skin.name ?: skinsManager.getNextIncrementalSkinName(), item.skin.toMod())
-        .whenComplete { skin, _ ->
-            if (skin == null) {
-                callback(false)
-                return@whenComplete
-            }
+    val bundleSkin = item.skin
 
-            outfitManager.addOutfit(item.name, skin.id, item.cosmetics, item.settings) { outfit ->
-                if (outfit == null) {
-                    callback(false)
-                    return@addOutfit
-                }
-
-                Notifications.push("", "§f${item.name}§r bundle has been unlocked.") {
-                    val component = UIBlock(EssentialPalette.BUTTON).constrain {
-                        width = 28.pixels
-                        height = AspectConstraint()
-                    }
-
-                    component.layout {
-                        fullBodyRenderPreview(this@createOutfitForBundle, item.skin.toMod(), item.cosmetics, item.settings, true)
-                    }
-
-                    withCustomComponent(Slot.SMALL_PREVIEW, component)
-                }
-
-                Notifications.push("Outfit created", "") {
-                    withCustomComponent(Slot.ICON, EssentialPalette.COSMETICS_10X7.create())
-                }
-
-                if (changeSelectedOutfit) {
-                    outfitManager.setSelectedOutfit(outfit.id)
-                }
-
-                callback(true)
-            }
+    fun outfitCallback(outfit: CosmeticOutfit?) {
+        if (outfit == null) {
+            callback(false)
+            return
         }
+
+        Notifications.push("", "§f${item.name}§r bundle has been unlocked.") {
+            val component = UIBlock(EssentialPalette.BUTTON).constrain {
+                width = 28.pixels
+                height = AspectConstraint()
+            }
+
+            component.layout {
+                fullBodyRenderPreview(this@createOutfitForBundle, bundleSkin?.toMod(), item.cosmetics, item.settings, true)
+            }
+
+            withCustomComponent(Slot.SMALL_PREVIEW, component)
+        }
+
+        Notifications.push("Outfit created", "") {
+            withCustomComponent(Slot.ICON, EssentialPalette.COSMETICS_10X7.create())
+        }
+
+        if (changeSelectedOutfit) {
+            outfitManager.setSelectedOutfit(outfit.id)
+        }
+
+        callback(true)
+    }
+    // If there's no skin, setup outfit immediately, otherwise add the skin first
+    if (bundleSkin == null) {
+        outfitManager.addOutfit(item.name, equippedCosmetics = item.cosmetics, cosmeticSettings = item.settings, callback = ::outfitCallback)
+    } else {
+        skinsManager.addSkin(bundleSkin.name ?: skinsManager.getNextIncrementalSkinName(), bundleSkin.toMod())
+            .whenComplete { skin, _ ->
+                if (skin == null) {
+                    callback(false)
+                    return@whenComplete
+                }
+
+                outfitManager.addOutfit(item.name, skin.id, item.cosmetics, item.settings, ::outfitCallback)
+            }
+    }
 }

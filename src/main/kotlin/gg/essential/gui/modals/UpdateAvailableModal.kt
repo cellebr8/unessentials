@@ -16,12 +16,14 @@ import gg.essential.elementa.constraints.SiblingConstraint
 import gg.essential.elementa.dsl.pixels
 import gg.essential.elementa.state.BasicState
 import gg.essential.gui.EssentialPalette
+import gg.essential.gui.common.EssentialTooltip
 import gg.essential.gui.common.MenuButton
 import gg.essential.gui.common.compactFullEssentialToggle
 import gg.essential.gui.common.modal.ConfirmDenyModal
 import gg.essential.gui.common.modal.configure
 import gg.essential.gui.common.state
 import gg.essential.gui.elementa.state.v2.mutableStateOf
+import gg.essential.gui.elementa.state.v2.stateOf
 import gg.essential.gui.elementa.state.v2.toV1
 import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.notification.Notifications
@@ -29,6 +31,7 @@ import gg.essential.gui.overlay.ModalManager
 import gg.essential.universal.USound
 import gg.essential.util.AutoUpdate
 import gg.essential.util.MinecraftUtils.shutdown
+import gg.essential.util.bindHoverEssentialTooltip
 import gg.essential.vigilance.utils.onLeftClick
 import java.awt.Color
 
@@ -75,9 +78,15 @@ class UpdateAvailableModal(modalManager: ModalManager) : ConfirmDenyModal(modalM
 
         spacer.setHeight(0.pixels)
 
-        AutoUpdate.changelog.whenCompleteAsync({ changelog, _ ->
-            changelog?.let { contentText = it }
-        }, Window::enqueueRenderOperation)
+        if(AutoUpdate.changelog.isDone) {
+            AutoUpdate.changelog.join()?.let {
+                contentText = it
+            }
+        } else {
+            AutoUpdate.changelog.whenCompleteAsync({ changelog, _ ->
+                changelog?.let { contentText = it }
+            }, Window::enqueueRenderOperation)
+        }
 
         onPrimaryAction {
             AutoUpdate.update(autoUpdate.get())
@@ -86,7 +95,11 @@ class UpdateAvailableModal(modalManager: ModalManager) : ConfirmDenyModal(modalM
                 contentText = "Essential will update the next time\nyou launch the game."
                 primaryButtonText = "Okay"
                 cancelButtonText = "Quit & Update"
-                cancelButton.setTooltip("This will close your game!")
+                cancelButton.bindHoverEssentialTooltip(
+                    stateOf("This will close your game!").toV1(this),
+                    EssentialTooltip.Position.ABOVE,
+                    4f,
+                )
             }.onCancel {
                 shutdown()
             }.onPrimaryAction {
@@ -105,8 +118,11 @@ class UpdateRequiredModal(modalManager: ModalManager) : ConfirmDenyModal(modalMa
         primaryButtonText = "Quit & Update"
         primaryButtonStyle = MenuButton.DARK_GRAY
         primaryButtonHoverStyle = MenuButton.GRAY
-        primaryActionButton.setTooltip("This will close your game!")
-
+        primaryActionButton.bindHoverEssentialTooltip(
+            stateOf("This will close your game!").toV1(this),
+            EssentialTooltip.Position.ABOVE,
+            4f,
+        )
         onPrimaryAction { shutdown() }
     }
 }

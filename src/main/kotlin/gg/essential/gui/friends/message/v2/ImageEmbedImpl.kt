@@ -152,7 +152,7 @@ class ImageEmbedImpl(
     }
 
     private fun download(): BufferedImage? {
-        val original = WebUtil.downloadToBytes(url.toString(), "Essential Embeds")
+        val original = httpGetToBytesBlocking(url.toString())
 
         try {
             ImageIO.read(ByteArrayInputStream(original))?.let { return it }
@@ -168,7 +168,7 @@ class ImageEmbedImpl(
             return noImage
         }
 
-        val embedUrlBytes = WebUtil.downloadToBytes(embedUrl, "Essential Embeds")
+        val embedUrlBytes = httpGetToBytesBlocking(embedUrl)
 
         return try {
             ImageIO.read(ByteArrayInputStream(embedUrlBytes))

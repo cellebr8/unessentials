@@ -28,6 +28,7 @@ import gg.essential.universal.UMatrixStack
 import gg.essential.universal.UMouse
 import gg.essential.universal.UResolution
 import gg.essential.universal.UScreen
+import gg.essential.util.UDrawContext
 import me.kbrewster.eventbus.Subscribe
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiScreen
@@ -356,14 +357,19 @@ object OverlayManagerImpl : OverlayManager {
             unlockMouseIfRequired()
         }
 
-        private fun flushVanillaBuffers() {
+        private fun flushVanillaBuffers(drawContext: UDrawContext) {
             // We need to flush the vanilla vertex consumers so that our rendering doesn't mess up their state.
             // Minecraft already flushes these at the *end* of GUI rendering, but we inject somewhere in the "middle",
             // so that buffer can be full, but not flushed yet.
             // `bufferSource` / `entityVertexConsumers` is the only one that we need to flush at the time of writing
             // this comment, since it's the only one that Minecraft uses during GUI rendering.
+            // As of 1.20, the DrawContext which MC passes around has an explicit `draw` method, so we can simply call
+            // that one. This is also required with ImmediatelyFast as of 1.21.2 because it uses a custom vertex
+            // consumer provider separate from the vanilla global one.
 
-            //#if MC>=11600
+            //#if MC>=12000
+            //$$ drawContext.mc.draw()
+            //#elseif MC>=11600
             //$$ Minecraft.getInstance().getRenderTypeBuffers().getBufferSource().finish()
             //#endif
         }
@@ -375,7 +381,7 @@ object OverlayManagerImpl : OverlayManager {
         fun handleDraw(event: GuiDrawScreenEvent.Priority) {
             if (!event.screen.isReal()) return
 
-            flushVanillaBuffers()
+            flushVanillaBuffers(event.drawContext)
             if (event.isPre) {
                 firstDraw(event)
                 sawPriorityPreDrawEvent = true
@@ -389,7 +395,7 @@ object OverlayManagerImpl : OverlayManager {
         fun handleDraw(event: GuiDrawScreenEvent) {
             if (!event.screen.isReal()) return
 
-            flushVanillaBuffers()
+            flushVanillaBuffers(event.drawContext)
 
             if (event.isPre) {
                 if (!sawPriorityPreDrawEvent) {
@@ -415,7 +421,7 @@ object OverlayManagerImpl : OverlayManager {
             }
 
             if (event.isLoadingScreen) {
-                flushVanillaBuffers()
+                flushVanillaBuffers(event.drawContext!!)
                 layersWithTrueMousePos = emptySet() // the loading screen isn't a real screen and can't handle input
                 // The loading screen is drawn on top of whatever screen is active, so the actual active screen isn't
                 // visible, so we don't want to render screen-related layers either.
@@ -427,7 +433,7 @@ object OverlayManagerImpl : OverlayManager {
                 return // more specific GuiDrawScreenEvents will be emitted
             }
 
-            flushVanillaBuffers()
+            flushVanillaBuffers(event.drawContext!!)
             nonScreenDraw(event)
         }
 

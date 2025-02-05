@@ -94,7 +94,7 @@ class WorldSelectionModal(modalManager: ModalManager) : SearchableConfirmDenyMod
     init {
         titleText = "Select World"
         primaryButtonText = "Next"
-        primaryActionButton.rebindEnabled(selectedWorld.map { it != null })
+        bindConfirmAvailable(selectedWorld.map { it != null })
 
         //#if MC>=11900
         //$$ val worldSummaries = UMinecraft.getMinecraft().levelStorage.loadSummaries(UMinecraft.getMinecraft().levelStorage.levelList).get()
@@ -107,7 +107,7 @@ class WorldSelectionModal(modalManager: ModalManager) : SearchableConfirmDenyMod
             hideSearchbar()
         }
 
-        val searchState = searchbar.textContentV2
+        val searchState = searchBarTextState
         val filteredWorlds = stateBy {
             val search = searchState()
             worldSummaries.filter { it.displayName.contains(search, ignoreCase = true) }
@@ -250,8 +250,10 @@ class WorldSelectionModal(modalManager: ModalManager) : SearchableConfirmDenyMod
             width = width.coerceAtMost(100.percent)
         } childOf info
 
-        private val date = Date.from(Instant.ofEpochMilli(worldSummary.lastTimePlayed))
-        private val lastPlayed = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(date)
+        private val lastPlayed = let {
+            val date = Date.from(Instant.ofEpochMilli(worldSummary.lastTimePlayed))
+            DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(date)
+        }
 
         //#if MC>=11202
         private val versionName = worldSummary.versionName

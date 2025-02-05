@@ -161,7 +161,7 @@ class TOSModal(
                 contentText = "To use Essential's features, you must first accept our Terms of Service."
                 cancelButtonText = "Deny"
                 primaryButtonText = "Accept"
-                cancelButton.rebindStyle(BasicState(MenuButton.RED), BasicState(MenuButton.LIGHT_RED))
+                (cancelButton as? MenuButton)?.rebindStyle(BasicState(MenuButton.RED), BasicState(MenuButton.LIGHT_RED))
             } else {
                 contentText = "An Essential feature you are trying\n to use requires you to accept our\n Terms of Service."
                 cancelButtonText = "Back"
@@ -192,8 +192,8 @@ class TOSModal(
                         if (requiresAuth && !Essential.getInstance().connectionManager.isAuthenticated) {
                             primaryButtonText = "Connecting..."
                             requiresButtonPress = true
-                            primaryActionButton.rebindEnabled(false.state())
-                            cancelButton.rebindEnabled(false.state())
+                            primaryButtonEnableStateOverride.set(false)
+                            cancelButtonEnabled = false
                             val connectionManager = Essential.getInstance().connectionManager
 
                             coroutineScope.launch {

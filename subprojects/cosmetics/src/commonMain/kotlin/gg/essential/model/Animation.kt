@@ -151,6 +151,8 @@ class ModelAnimationState(
                 if (lastPosition != vecZero() && dt > 0f) {
                     locator.velocity = nextPosition.minus(lastPosition).timesSelf(1 / dt)
                 }
+
+                locator.isVisible = isVisible
             }
 
             extra?.let {
@@ -264,7 +266,8 @@ class ModelAnimationState(
     private inner class BoneLocator(
         override var position: Vec3,
         override var rotation: Quaternion,
-        override var velocity: Vec3
+        override var velocity: Vec3,
+        override var isVisible: Boolean = true,
     ) : ParticleSystem.Locator {
         override val parent: ParticleSystem.Locator?
             get() = parentLocator

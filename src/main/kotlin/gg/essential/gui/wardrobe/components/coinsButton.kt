@@ -29,6 +29,6 @@ fun LayoutScope.coinsButton(state: WardrobeState, modifier: Modifier = Modifier)
         coinsText(stateOf(9999), Modifier.effect { ScissorEffect(0f, 0f, 0f, 0f) })
     }.onLeftClick {
         USound.playButtonPress()
-        GuiUtil.pushModal { CoinsPurchaseModal(it, state) }
+        CoinsPurchaseModal.open(state)
     }
 }

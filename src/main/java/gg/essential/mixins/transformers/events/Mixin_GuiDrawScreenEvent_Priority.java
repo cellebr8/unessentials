@@ -15,6 +15,7 @@ import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import gg.essential.Essential;
 import gg.essential.event.gui.GuiDrawScreenEvent;
 import gg.essential.universal.UMatrixStack;
+import gg.essential.util.UDrawContext;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.EntityRenderer;
 import org.spongepowered.asm.mixin.Dynamic;
@@ -65,7 +66,7 @@ public abstract class Mixin_GuiDrawScreenEvent_Priority {
     private GuiScreen screen;
 
     @Unique
-    private UMatrixStack matrixStack;
+    private UDrawContext drawContext;
 
     @Unique
     private int mouseX;
@@ -99,11 +100,11 @@ public abstract class Mixin_GuiDrawScreenEvent_Priority {
     ) {
         this.screen = screen;
         //#if MC>=12000
-        //$$ this.matrixStack = new UMatrixStack(context.getMatrices());
+        //$$ this.drawContext = new UDrawContext(context, new UMatrixStack(context.getMatrices()));
         //#elseif MC>=11400
-        //$$ this.matrixStack = new UMatrixStack(vMatrixStack);
+        //$$ this.drawContext = new UDrawContext(new UMatrixStack(vMatrixStack));
         //#else
-        this.matrixStack = new UMatrixStack();
+        this.drawContext = new UDrawContext(new UMatrixStack());
         //#endif
         this.mouseX = mouseX;
         this.mouseY = mouseY;
@@ -132,14 +133,14 @@ public abstract class Mixin_GuiDrawScreenEvent_Priority {
         }
         //#if MC>=12000
         //$$ if (args[++i] instanceof DrawContext) {
-        //$$     this.matrixStack = new UMatrixStack(((DrawContext) args[i]).getMatrices());
+        //$$     this.drawContext = new UDrawContext((DrawContext) args[i], new UMatrixStack(((DrawContext) args[i]).getMatrices()));
         //$$ }
         //#elseif MC>=11400
         //$$ if (args[++i] instanceof MatrixStack) {
-        //$$     this.matrixStack = new UMatrixStack((MatrixStack) args[i]);
+        //$$     this.drawContext = new UDrawContext(new UMatrixStack((MatrixStack) args[i]));
         //$$ }
         //#else
-        this.matrixStack = new UMatrixStack();
+        this.drawContext = new UDrawContext(new UMatrixStack());
         //#endif
         if (args[++i] instanceof Integer) {
             this.mouseX = (Integer) args[i];
@@ -160,7 +161,7 @@ public abstract class Mixin_GuiDrawScreenEvent_Priority {
     //$$ @Inject(method = RENDER, at = @At(value = "INVOKE", target = VANILLA_DRAW_SCREEN, shift = At.Shift.AFTER))
     //#endif
     private void updateCameraAndRender(CallbackInfo ci) {
-        Essential.EVENT_BUS.post(new GuiDrawScreenEvent.Priority(this.screen, this.matrixStack, this.mouseX, this.mouseY, this.partialTicks, true));
+        Essential.EVENT_BUS.post(new GuiDrawScreenEvent.Priority(this.screen, this.drawContext, this.mouseX, this.mouseY, this.partialTicks, true));
     }
 
     @Group(name = "post_event", min = 1)
@@ -172,7 +173,7 @@ public abstract class Mixin_GuiDrawScreenEvent_Priority {
     private void drawScreenEventOptiFine(CallbackInfo ci) {
         if (this.isDrawScreenCall) this.isDrawScreenCall = false;
         else return;
-        Essential.EVENT_BUS.post(new GuiDrawScreenEvent.Priority(this.screen, this.matrixStack, this.mouseX, this.mouseY, this.partialTicks, true));
+        Essential.EVENT_BUS.post(new GuiDrawScreenEvent.Priority(this.screen, this.drawContext, this.mouseX, this.mouseY, this.partialTicks, true));
     }
 
 

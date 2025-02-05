@@ -47,12 +47,6 @@ class CoinsReceivedModal private constructor(
 
         coinsManager.areCoinsVisuallyFrozen.set(true)
 
-        val okButton by MenuButton(buttonText, BasicState(MenuButton.BLUE), BasicState(MenuButton.LIGHT_BLUE)) {
-            playCoinsSound()
-            coinsManager.areCoinsVisuallyFrozen.set(false)
-            super.close()
-        }
-
         container.contentContainer.layoutAsBox(Modifier.width(222f).childBasedHeight()) {
             column {
                 spacer(height = 19f)
@@ -70,6 +64,11 @@ class CoinsReceivedModal private constructor(
                     coinPackImage(coinsManager, receivedAmount)
                 }
                 spacer(height = 17f)
+                val okButton by MenuButton(buttonText, BasicState(MenuButton.BLUE), BasicState(MenuButton.LIGHT_BLUE)) {
+                    playCoinsSound()
+                    coinsManager.areCoinsVisuallyFrozen.set(false)
+                    super.close()
+                }
                 okButton(Modifier.width(91f).height(20f))
                 spacer(height = 16f)
             }

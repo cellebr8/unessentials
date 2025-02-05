@@ -424,6 +424,9 @@ class ParticleSystem(
         }
 
         fun emit(dt: Float, inheritVelocity: Boolean = false) {
+            // Don't emit particle if the locator bone is not visible
+            if (locator?.isVisible == false) return
+
             val localSpace = if (components.emitterLocalSpace?.position == true) locator else null
 
             val particle = Particle(this, localSpace)
@@ -542,6 +545,8 @@ class ParticleSystem(
                 get() = emitter.rotation
             override val velocity: Vec3
                 get() = emitter.velocity
+            override val isVisible: Boolean
+                get() = parent?.isVisible ?: true
         }
     }
 
@@ -1072,6 +1077,8 @@ class ParticleSystem(
                 get() = Quaternion.Identity
             override val velocity: Vec3
                 get() = particle.globalVelocity
+            override val isVisible: Boolean
+                get() = parent?.isVisible ?: true
         }
     }
 
@@ -1081,6 +1088,7 @@ class ParticleSystem(
         val position: Vec3
         val rotation: Quaternion
         val velocity: Vec3
+        val isVisible: Boolean
 
         // May be more efficient than calling [position] and [rotation] separately for some implementations
         val positionAndRotation: Pair<Vec3, Quaternion>
@@ -1097,6 +1105,8 @@ class ParticleSystem(
                 get() = Quaternion.Identity
             override val velocity: Vec3
                 get() = vecZero()
+            override val isVisible: Boolean
+                get() = true
         }
     }
 

@@ -12,9 +12,9 @@
 package gg.essential.gui.wardrobe.configuration
 
 import gg.essential.cosmetics.CosmeticBundleId
+import gg.essential.gui.common.compactFullEssentialToggle
 import gg.essential.gui.common.input.StateTextInput
 import gg.essential.gui.common.input.essentialStateTextInput
-import gg.essential.gui.common.state
 import gg.essential.gui.elementa.state.v2.*
 import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.wardrobe.WardrobeState
@@ -25,6 +25,7 @@ import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledNullabl
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledRow
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledStringInputRow
 import gg.essential.gui.wardrobe.configuration.cosmetic.settings.*
+import gg.essential.mod.Model
 import gg.essential.mod.cosmetics.CosmeticBundle
 import gg.essential.mod.cosmetics.CosmeticSlot
 import gg.essential.mod.cosmetics.settings.CosmeticSettingType
@@ -43,9 +44,19 @@ class CosmeticBundleConfiguration(
         labeledEnumInputRow("Tier:", bundle.tier) { bundle.update(bundle.copy(tier = it)) }
         labeledFloatInputRow("Discount %:", mutableStateOf(bundle.discountPercent)).state.onSetValue(stateScope) { bundle.update(bundle.copy(discountPercent = it)) }
         labeledBooleanInputRow("Rotate on Preview:", bundle.rotateOnPreview) { bundle.update(bundle.copy(rotateOnPreview = it)) }
-        labeledEnumInputRow("Skin model:", skin.model) { bundle.update(bundle.copy(skin = bundle.skin.copy(model = it))) }
-        labeledStringInputRow("Skin hash:", mutableStateOf(skin.hash), Modifier.fillRemainingWidth(), Arrangement.spacedBy(10f)).state.onSetValue(stateScope) { bundle.update(bundle.copy(skin = bundle.skin.copy(hash = it))) }
-        labeledNullableStringInputRow("Skin name:", mutableStateOf(skin.name)).state.onSetValue(stateScope) { bundle.update(bundle.copy(skin = bundle.skin.copy(name = it))) }
+        val hasSkinState = mutableStateOf(skin != null)
+        hasSkinState.onSetValue(stateScope) { bundle.update(bundle.copy(skin = if (it) CosmeticBundle.Skin("bff1570fdf623153e6b4a4d2ca97559b471f1ec776584ceec2ebb8bf0b7ba504", Model.ALEX) else null)) }
+        labeledRow("Has skin: ") {
+            box(Modifier.childBasedWidth(3f).childBasedHeight(3f).hoverScope()) {
+                compactFullEssentialToggle(hasSkinState.toV1(stateScope))
+                spacer(1f, 1f)
+            }
+        }
+        if (skin != null) {
+            labeledEnumInputRow("Skin model:", skin.model) { bundle.update(bundle.copy(skin = bundle.skin?.copy(model = it))) }
+            labeledStringInputRow("Skin hash:", mutableStateOf(skin.hash), Modifier.fillRemainingWidth(), Arrangement.spacedBy(10f)).state.onSetValue(stateScope) { bundle.update(bundle.copy(skin = bundle.skin?.copy(hash = it))) }
+            labeledNullableStringInputRow("Skin name:", mutableStateOf(skin.name)).state.onSetValue(stateScope) { bundle.update(bundle.copy(skin = bundle.skin?.copy(name = it))) }
+        }
 
         for (slot in CosmeticSlot.values()) {
             labeledRow(slot.id + ":") {
