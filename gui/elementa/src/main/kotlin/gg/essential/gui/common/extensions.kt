@@ -24,7 +24,6 @@ import gg.essential.elementa.utils.ObservableClearEvent
 import gg.essential.elementa.utils.ObservableList
 import gg.essential.elementa.utils.ObservableRemoveEvent
 import gg.essential.gui.elementa.state.v2.toV1
-import gg.essential.gui.util.hasWindow
 import kotlin.reflect.KProperty
 
 @Deprecated("Using StateV1 is discouraged, use StateV2 instead")
@@ -59,14 +58,6 @@ fun <T : UIComponent> T.bindParent(
     delayed: Boolean = false,
     index: Int? = null
 ) = bindParent(parent, state.toV1(parent), delayed, index)
-
-fun <T : UIComponent> T.bindFloating(state: State<Boolean>) = apply {
-    state.onSetValueAndNow {
-        if (hasWindow) {
-            this.setFloating(it)
-        }
-    }
-}
 
 fun <T : UIComponent> T.bindEffect(effect: Effect, state: State<Boolean>, delayed: Boolean = true) = apply {
     state.onSetValueAndNow {

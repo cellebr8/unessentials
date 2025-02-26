@@ -170,7 +170,6 @@ object InviteFriendsModal {
                 height = ChildBasedSizeConstraint()
             } childOf customContent
 
-            val oldDropdowns = mutableListOf<OldEssentialDropDown>()
             val dropdowns = mutableListOf<EssentialDropDown<*>>()
 
             val gamemodes = GameType.values()
@@ -470,10 +469,12 @@ object InviteFriendsModal {
     }
 
     fun sendInviteNotification(uuid: UUID) {
-        UUIDUtil.getName(uuid).thenAcceptOnMainThread { username ->
-            Notifications.push("", "") {
-                iconAndMarkdownBody(EssentialPalette.ENVELOPE_9X7.create(), "${username.colored(EssentialPalette.TEXT_HIGHLIGHT)} invited")
-            }
+        UUIDUtil.getName(uuid).thenAcceptOnMainThread { sendInviteNotification(it) }
+    }
+
+    fun sendInviteNotification(name: String) {
+        Notifications.push("", "") {
+            iconAndMarkdownBody(EssentialPalette.ENVELOPE_9X7.create(), "${name.colored(EssentialPalette.TEXT_HIGHLIGHT)} invited")
         }
     }
 

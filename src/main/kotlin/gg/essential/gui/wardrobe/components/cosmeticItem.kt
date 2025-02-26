@@ -12,16 +12,8 @@
 package gg.essential.gui.wardrobe.components
 
 import gg.essential.Essential
-import gg.essential.elementa.UIComponent
 import gg.essential.elementa.components.GradientComponent
-import gg.essential.elementa.components.UIContainer
-import gg.essential.elementa.components.Window
-import gg.essential.elementa.constraints.MousePositionConstraint
-import gg.essential.elementa.dsl.basicXConstraint
-import gg.essential.elementa.dsl.basicYConstraint
-import gg.essential.elementa.dsl.constrain
 import gg.essential.elementa.dsl.minus
-import gg.essential.elementa.dsl.pixels
 import gg.essential.elementa.dsl.plus
 import gg.essential.elementa.dsl.provideDelegate
 import gg.essential.elementa.events.UIClickEvent
@@ -29,7 +21,6 @@ import gg.essential.elementa.font.DefaultFonts
 import gg.essential.elementa.utils.withAlpha
 import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.CosmeticPreview
-import gg.essential.gui.common.EssentialTooltip
 import gg.essential.gui.common.SequenceAnimatedUIImage
 import gg.essential.gui.common.bundleRenderPreview
 import gg.essential.gui.common.modal.OpenLinkModal
@@ -60,16 +51,11 @@ import gg.essential.mod.cosmetics.settings.CosmeticSetting
 import gg.essential.model.util.toJavaColor
 import gg.essential.network.connectionmanager.coins.CoinsManager
 import gg.essential.network.connectionmanager.cosmetics.AssetLoader
-import gg.essential.network.cosmetics.Cosmetic
-import gg.essential.universal.UMouse
 import gg.essential.universal.USound
 import gg.essential.util.MinecraftUtils
 import gg.essential.util.Multithreading
 import gg.essential.util.UuidNameLookup
-import gg.essential.util.findParentOfTypeOrNull
 import gg.essential.gui.util.hoverScope
-import gg.essential.gui.util.isInComponentTree
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.util.onRightClick
 import gg.essential.gui.util.pollingState
 import gg.essential.gui.wardrobe.*
@@ -82,7 +68,6 @@ import gg.essential.vigilance.utils.onLeftClick
 import java.awt.Color
 import java.net.URI
 import java.util.concurrent.TimeUnit
-import kotlin.math.abs
 
 data class CosmeticItemTag(val item: Item) : Tag
 
@@ -104,7 +89,7 @@ fun LayoutScope.cosmeticItem(item: Item, category: WardrobeCategory, state: Ward
                 val isEmote = slot == CosmeticSlot.EMOTE
                 when {
                     state.selectedBundle() != null -> false
-                    isEmote && inEmoteWheel -> state.emoteWheel().contains(item.cosmetic.id)
+                    isEmote && inEmoteWheel -> state.emoteWheelManager.selectedEmoteWheelSlots().contains(item.cosmetic.id)
                     selectedEmote != null -> selectedEmote.itemId == item.itemId
                     !isEmote && !inEmoteWheel -> state.equippedCosmeticsState()[slot] == item.cosmetic.id
                     else -> false
@@ -210,7 +195,7 @@ fun LayoutScope.cosmeticItem(item: Item, category: WardrobeCategory, state: Ward
                                     // This is used to ensure featured page items initially show as they were configured
                                     val settings = state.selectedPreviewingEquippedSettings.map { settings ->
                                         val variantSetting = settings[item.cosmetic.id]?.setting<CosmeticSetting.Variant>()
-                                            ?: item.settingsOverride?.setting<CosmeticSetting.Variant>()
+                                            ?: item.settingsOverride.setting<CosmeticSetting.Variant>()
                                         listOfNotNull(variantSetting)
                                     }
                                     CosmeticPreview(item.cosmetic, settings)(Modifier.fillParent())
@@ -277,130 +262,14 @@ fun LayoutScope.cosmeticItem(item: Item, category: WardrobeCategory, state: Ward
     }.onRightClick {
         handleItemRightClick(item, category, state, it)
     }.apply {
-        // This has been copied from EmoteWheelPage, if something is changed here, you should probably change it there too.
-        if (item is Item.CosmeticOrEmote && item.cosmetic.type.slot == CosmeticSlot.EMOTE) {
-            fun LayoutScope.thumbnail(cosmetic: Cosmetic, modifier: Modifier): UIComponent {
-                return CosmeticPreview(cosmetic)(modifier)
-            }
-
-            fun tooltip(parent: UIComponent, text: String) =
-                EssentialTooltip(parent, position = EssentialTooltip.Position.RIGHT, notchSize = 0)
-                    .constrain {
-                        x = MousePositionConstraint() + 10.pixels
-                        y = MousePositionConstraint() - 15.pixels
-                    }
-                    .addLine(text)
-
-            fun isDraggable(): Boolean {
-                return item.id in state.unlockedCosmetics.getUntracked()
-            }
-
-            var maybeDragging = false
-            var clickStart = Pair(0f, 0f)
-            val dragging = mutableStateOf(false)
-
-            val draggable by lazy {
-                val container = object : UIContainer() {
-                    // when we hitTest, we want the thing below the dragging graphic
-                    override fun isPointInside(x: Float, y: Float): Boolean = false
-
-                    // `getMousePosition` is protected in UIComponent, so we have to expose it here
-                    fun mousePosition() = getMousePosition()
-                }
-
-                container.layout(EmoteWheelPage.slotModifier) {
-                    thumbnail(item.cosmetic, Modifier.fillParent())
-                }
-
-                container.onAnimationFrame {
-                    val (mouseX, mouseY) = container.mousePosition()
-                    val target = Window.of(container).hitTest(mouseX, mouseY)
-                    val slotTarget = target as? EmoteWheelPage.EmoteSlot
-                        ?: target.findParentOfTypeOrNull<EmoteWheelPage.EmoteSlot>()
-                    val removeTarget = target.findParentOfTypeOrNull<WardrobeContainer>()
-                    state.draggingOntoEmoteSlot.set(when {
-                        slotTarget != null -> slotTarget.index
-                        removeTarget != null -> -1
-                        else -> null
-                    })
-                }
-
-                val nameTooltip by tooltip(this, item.cosmetic.displayName)
-                val replace by tooltip(container, "Replace")
-                replace.bindVisibility(state.draggingOntoOccupiedEmoteSlot and dragging)
-                nameTooltip.bindVisibility(!state.draggingOntoOccupiedEmoteSlot and dragging)
-
-                container.onMouseRelease {
-                    val target = state.draggingOntoEmoteSlot.get()
-                    if (target != null && target != -1) {
-                        if (item.cosmetic.isCosmeticFree && !owned.get()) {
-                            claimFreeItemNow(item, state)
-                        }
-
-                        state.emoteWheelManager.setEmote(target, item.cosmetic.id)
-                        USound.playButtonPress()
-                    }
-
-                    state.draggingEmoteSlot.set(null)
-                    state.draggingOntoEmoteSlot.set(null)
-
-                    Window.enqueueRenderOperation {
-                        hide(instantly = true)
-                    }
-                    maybeDragging = false
-                    dragging.set(false)
-                }
-
-                container
-            }
-
-            onLeftClick {
-                val xOffset = UMouse.Scaled.x.toFloat() - getLeft()
-                val yOffset = UMouse.Scaled.y.toFloat() - getTop()
-
-                clickStart = Pair(xOffset, yOffset)
-                maybeDragging = true
-
-                it.stopPropagation()
-            }
-
-            onMouseRelease {
-                // The click was not a drag, call the click handler
-                if (!dragging.get() && isHovered() && maybeDragging) {
-                    handleCosmeticOrEmoteLeftClick(item, category, state)
-                }
-                maybeDragging = false
-            }
-
-            onMouseDrag { mouseX, mouseY, _ ->
-                if (!maybeDragging) {
-                    return@onMouseDrag
-                }
-                if (!isDraggable()) {
-                    return@onMouseDrag
-                }
-                val distance = abs(clickStart.first - mouseX) + abs(clickStart.second - mouseY)
-                if (distance > 5 && !dragging.get()) {
-
-                    draggable.constrain {
-                        x = MousePositionConstraint() - basicXConstraint {
-                            draggable.getWidth() / 2
-                        }
-                        y = MousePositionConstraint() - basicYConstraint {
-                            draggable.getHeight() / 2
-                        }
-                    }
-                    Window.enqueueRenderOperation {
-                        if (!draggable.isInComponentTree()) {
-                            Window.of(this).addChild(draggable)
-                        }
-                        state.draggingEmoteSlot.set(-1)
-                    }
-                    dragging.set(true)
-                }
-            }
-        } else {
-            onLeftClick {
+        onLeftClick {
+            if (item is Item.CosmeticOrEmote && item.cosmetic.type.slot == CosmeticSlot.EMOTE) {
+                state.draggingEmote.set(WardrobeState.DraggedEmote(
+                    item.id,
+                    clickOffset = Pair(EmoteWheelPage.SLOT_SIZE / 2, EmoteWheelPage.SLOT_SIZE / 2),
+                    onInstantLeftClick = { handleCosmeticOrEmoteLeftClick(item, category, state) }
+                ))
+            } else {
                 handleItemLeftClick(item, category, state, it)
             }
         }
@@ -825,7 +694,7 @@ private fun LayoutScope.colorBar(item: Item, category: WardrobeCategory, wardrob
     // If the user doesn't have a variant selected yet, use the variant from the overrides if they have one, otherwise default
     // This is used to ensure featured page items show as configured initially, before the user manually sets a color
     val selected = wardrobeState.getVariant(item).map { variant ->
-        variant ?: (item.settingsOverride?.setting<CosmeticSetting.Variant>() ?: item.cosmetic.defaultVariantSetting)?.data?.variant
+        variant ?: (item.settingsOverride.setting<CosmeticSetting.Variant>() ?: item.cosmetic.defaultVariantSetting)?.data?.variant
     }
 
     column(Modifier.alignHorizontal(Alignment.End(2f))) {

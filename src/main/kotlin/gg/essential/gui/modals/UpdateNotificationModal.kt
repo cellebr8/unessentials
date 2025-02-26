@@ -124,4 +124,5 @@ class UpdateNotificationModal(modalManager: ModalManager) : VerticalConfirmDenyM
             }
         }, Window::enqueueRenderOperation)
     }
+
 }

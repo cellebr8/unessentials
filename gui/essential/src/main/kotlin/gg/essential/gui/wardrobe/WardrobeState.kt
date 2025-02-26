@@ -55,6 +55,7 @@ import gg.essential.network.connectionmanager.skins.SkinsManager
 import gg.essential.network.cosmetics.Cosmetic
 import gg.essential.gui.util.pollingStateV2
 import gg.essential.mod.cosmetics.featured.FeaturedItem
+import gg.essential.mod.cosmetics.featured.FeaturedItemRow
 import gg.essential.mod.cosmetics.settings.CosmeticSettings
 import gg.essential.mod.cosmetics.settings.setting
 import gg.essential.network.connectionmanager.cosmetics.EmoteWheelManager
@@ -321,19 +322,16 @@ class WardrobeState(
     /** Show purchase animation if true. **/
     val purchaseAnimationState = mutableStateOf(false)
 
-    val draggingEmoteSlot = mutableStateOf<Int?>(null).apply {
+    /** The [DraggedEmoteInfo] data for the emote currently being dragged or null if no emote is being dragged. */
+    val draggingEmote = mutableStateOf<DraggedEmote?>(null).apply {
         onChange(component) { inEmoteWheel.set(true) }
     }
 
-    /** Slot that a drag&drop is currently hovering on top of. `-1` for "Remove". */
-    val draggingOntoEmoteSlot = mutableStateOf<Int?>(null)
-
-    val emoteWheel = emoteWheelManager.selectedEmoteWheelSlots
-
-    val draggingOntoOccupiedEmoteSlot =
-        draggingOntoEmoteSlot.zip(emoteWheel).map { (slot, wheel) ->
-            slot != null && wheel.getOrNull(slot) != null
-        }
+    val draggingOntoOccupiedEmoteSlot = memo {
+        val dragged = draggingEmote()
+        dragged?.to != null && dragged.to != dragged.from &&
+                emoteWheelManager.getEmoteWheel(dragged.to.emoteWheelId)?.slots?.getOrNull(dragged.to.slotIndex) != null
+    }
 
     val equippedOutfitId = outfitManager.selectedOutfitId
 
@@ -432,7 +430,7 @@ class WardrobeState(
             return@memo listOf()
         }
 
-        layoutStateObject.second?.value?.rows?.flatten()?.mapNotNull {
+        layoutStateObject.second?.value?.rows?.filterIsInstance<FeaturedItemRow>()?.flatMap { it.items }?.mapNotNull {
             when (it) {
                 is FeaturedItem.Bundle -> it.bundle
                 is FeaturedItem.Cosmetic -> it.cosmetic
@@ -686,6 +684,22 @@ class WardrobeState(
     }
 
     data class CosmeticWithSortInfo(val cosmetic: Cosmetic, val owned: Boolean, val price: Int?, val collection: CosmeticCategory?)
+
+    /** The [emoteWheelId] and [slotIndex] for an emote in an emote wheel. */
+    data class EmoteSlotId(val emoteWheelId: String, val slotIndex: Int)
+    /**
+     *  The [EmoteSlotId] for an emote being dragged.
+     *  A null value for [from] indicates the emote originated from the Wardrobe container.
+     *  A null value for [to] indicates the emote's destination is the Wardrobe container and that it should be removed.
+     *  A same value for [from] and [to] indicate the emote currently has no destination and that it should not be removed.
+     */
+    data class DraggedEmote(
+        val emoteId: CosmeticId? = null,
+        val from: EmoteSlotId? = null,
+        val to: EmoteSlotId? = null,
+        val clickOffset: Pair<Float, Float> = Pair(0f, 0f),
+        val onInstantLeftClick: () -> Unit = {},
+    )
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(WardrobeState::class.java)

@@ -162,7 +162,7 @@ class CategoryComponent(
                 val group = groups.find { it.category == category } ?: return scroller.scrollToTopOf(this)
                 val cosmetics = group.sortedCosmetics.get()
 
-                val equipped = wardrobeState.equippedCosmeticsState.get().values.toSet() + wardrobeState.emoteWheel.get()
+                val equipped = wardrobeState.equippedCosmeticsState.get().values.toSet() + wardrobeState.emoteWheelManager.selectedEmoteWheelSlots.getUntracked()
 
                 val target = group.cosmeticsContainer.children.getOrNull(cosmetics.indexOfFirst { cosmetic ->
                     if (highlightedItem != null) {

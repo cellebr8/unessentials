@@ -123,7 +123,7 @@ class MessageTitleBar(
                 )
         }
 
-        if (!preview.channel.isAnnouncement()) {
+        if (!preview.channel.isAnnouncement() && preview.channel.type != ChannelType.GROUP_DIRECT_MESSAGE) {
 
             if (ServerType.current()?.supportsInvites == true) {
 
@@ -143,7 +143,7 @@ class MessageTitleBar(
                     if (!invited.get()) {
                         USound.playButtonPress()
                         invited.set(true)
-                        gui.handleInvitePlayers(preview.channel.members)
+                        gui.handleInvitePlayers(preview.channel.members, preview.titleState.getUntracked())
                     }
                 }
                 button.onMouseLeave {

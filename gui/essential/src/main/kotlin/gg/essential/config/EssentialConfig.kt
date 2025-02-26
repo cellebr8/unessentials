@@ -237,6 +237,9 @@ object EssentialConfig : Vigilant2(), GuiEssentialPlatform.Config {
     val showQuickActionBarState = property("General.Experience.Quick Action Bar", true)
     var showQuickActionBar by showQuickActionBarState
 
+    val replaceWindowTitleState = property("General.General.Replace Window Title", true)
+    var replaceWindowTitle by replaceWindowTitleState
+
     val screenshotBrowserItemsPerRowState = property("Hidden.Hidden.screenshotBrowserItemsPerRow", 3)
     var screenshotBrowserItemsPerRow by screenshotBrowserItemsPerRowState
 
@@ -384,24 +387,27 @@ object EssentialConfig : Vigilant2(), GuiEssentialPlatform.Config {
         category("Emotes") {
             subcategory("General") {
                 switch(!disableEmotesState) {
-                    name = "Show emotes"
-                    description = "Show emote animations on yourself and other players."
+                    name = "Emotes"
+                    description = "Better express yourself with emotes."
                 }
+                dynamic {
+                    if (!disableEmotesState()) {
+                        selector(allowEmoteSounds) {
+                            name = "Allow emote sounds"
+                            description = "Select who you can hear emote sounds from."
+                            options = AllowEmoteSounds.entries.map { it.label }
+                        }
 
-                selector(allowEmoteSounds) {
-                    name = "Allow emote sounds"
-                    description = "Select who you can hear emote sounds from."
-                    options = AllowEmoteSounds.entries.map { it.label }
-                }
+                        switch(thirdPersonEmotesState) {
+                            name = "Play emotes in third person view"
+                            description = "Emotes will be shown in third-person view. You can still toggle between front and back view."
+                        }
 
-                switch(thirdPersonEmotesState) {
-                    name = "Play emotes in third person view"
-                    description = "Emotes will be shown in third-person view. You can still toggle between front and back view."
-                }
-
-                switch(emotePreviewState) {
-                    name = "Emote preview"
-                    description = "When playing emotes, show a model of your character performing the emote in the upper left corner of the screen."
+                        switch(emotePreviewState) {
+                            name = "Emote preview"
+                            description = "When playing emotes, show a model of your character performing the emote in the upper left corner of the screen."
+                        }
+                    }
                 }
             }
         }
@@ -409,37 +415,42 @@ object EssentialConfig : Vigilant2(), GuiEssentialPlatform.Config {
         category("Cosmetics") {
             subcategory("General") {
                 switch(!disableCosmeticsState) {
-                    name = "Show cosmetics"
-                    description = "Show cosmetics on yourself and other players."
+                    name = "Cosmetics"
+                    description = "Enhance your Minecraft character with cosmetics."
                 }
-                switch(ownCosmeticsHiddenStateWithSource.bimap({ it.first }, { it to true })) {
-                    name = "Hide your cosmetics"
-                    description = "Hides your equipped cosmetics for all players."
+                dynamic {
+                    if (!disableCosmeticsState()) {
+                        switch(ownCosmeticsHiddenStateWithSource.bimap({ it.first }, { it to true })) {
+                            name = "Hide your cosmetics"
+                            description = "Hide your equipped cosmetics for everyone."
+                        }
+
+                        val swapFirstTwo: (Int) -> Int = { if (it in 0..1) (it + 1) % 2 else it }
+
+                        selector(cosmeticArmorSettingSelfState.bimap(swapFirstTwo, swapFirstTwo)) {
+                            name = "Cosmetics & armor visibility on me"
+                            description = "Cosmetics and armor may conflict with each other on your player. This setting does not effect what other players see."
+                            options = listOf("Only cosmetics", "Only armor", "Cosmetics and armor")
+                        }
+
+                        selector(cosmeticArmorSettingOtherState.bimap(swapFirstTwo, swapFirstTwo)) {
+                            name = "Cosmetics & armor visibility on others"
+                            description = "Cosmetics and armor may conflict with each other on other players. This setting does not effect what other players see."
+                            options = listOf("Only cosmetics", "Only armor", "Cosmetics and armor")
+                        }
+
+                        switch(disableCosmeticsInInventoryState) {
+                            name = "Hide cosmetics in inventory"
+                            description = "Hides your equipped cosmetics on the player preview inside your inventory."
+                        }
+
+                        switch(hideCosmeticsWhenServerOverridesSkinState) {
+                            name = "Hide cosmetics on server skins"
+                            description = "Hides cosmetics on players when the joined server modifies the user’s skins."
+                        }
+                    }
                 }
 
-                val swapFirstTwo: (Int) -> Int = { if (it in 0..1) (it + 1) % 2 else it }
-
-                selector(cosmeticArmorSettingSelfState.bimap(swapFirstTwo, swapFirstTwo)) {
-                    name = "Cosmetics & armor visibility on me"
-                    description = "Cosmetics and armor may conflict with each other on your player. This setting does not effect what other players see."
-                    options = listOf("Only cosmetics", "Only armor", "Cosmetics and armor")
-                }
-
-                selector(cosmeticArmorSettingOtherState.bimap(swapFirstTwo, swapFirstTwo)) {
-                    name = "Cosmetics & armor visibility on others"
-                    description = "Cosmetics and armor may conflict with each other on other players. This setting does not effect what other players see."
-                    options = listOf("Only cosmetics", "Only armor", "Cosmetics and armor")
-                }
-
-                switch(disableCosmeticsInInventoryState) {
-                    name = "Hide cosmetics in inventory"
-                    description = "Hides your equipped cosmetics on the player preview inside your inventory."
-                }
-
-                switch(hideCosmeticsWhenServerOverridesSkinState) {
-                    name = "Hide cosmetics on server skins"
-                    description = "Hides cosmetics on players when the joined server modifies the user’s skins."
-                }
             }
         }
 
@@ -512,14 +523,17 @@ object EssentialConfig : Vigilant2(), GuiEssentialPlatform.Config {
                 }
             }
 
-            subcategory("Essential Indicator") {
-                switch(showEssentialIndicatorOnTabState) {
-                    name = "Essential indicator in tab-list"
-                    description = "Shows the indicator on other Essential players in the tab-list."
-                }
+            subcategory("Nameplates") {
                 switch(showEssentialIndicatorOnNametagState) {
-                    name = "Essential indicator on nameplates"
-                    description = "Shows the indicator on other Essential players’ nameplates."
+                    name = "Essential icon on nameplates"
+                    description = "Shows the Essential icon on Essential players’ nameplates."
+                }
+            }
+
+            subcategory("Tab-list") {
+                switch(showEssentialIndicatorOnTabState) {
+                    name = "Essential icon in tab-list"
+                    description = "Shows the Essential icon on Essential players in the tab-list."
                 }
             }
 

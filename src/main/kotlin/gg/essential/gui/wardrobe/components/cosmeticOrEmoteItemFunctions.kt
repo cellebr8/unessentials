@@ -90,21 +90,22 @@ fun handleCosmeticOrEmoteLeftClick(item: Item.CosmeticOrEmote, category: Wardrob
     }
 
     if (wardrobeState.inEmoteWheel.get()) {
-        val emoteWheel = wardrobeState.emoteWheel
-        val existingIndex = emoteWheel.getUntracked().indexOf(cosmetic.id)
+        val selectedEmoteWheelId = wardrobeState.emoteWheelManager.selectedEmoteWheelId.getUntracked() ?: return
+        val selectedEmoteWheelSlots = wardrobeState.emoteWheelManager.selectedEmoteWheelSlots
+        val existingIndex = selectedEmoteWheelSlots.getUntracked().indexOf(cosmetic.id)
         if (existingIndex != -1) {
             if (startedInEmoteWheel && !bundleWasSelected && !emoteWasSelected) {
                 // Only remove the emote if the emote wheel preview was open when the emote was clicked and a bundle was not selected
-                wardrobeState.emoteWheelManager.setEmote(existingIndex, null)
+                wardrobeState.emoteWheelManager.setEmote(selectedEmoteWheelId, existingIndex, null)
                 // Remove duplicates as well
-                while (emoteWheel.getUntracked().indexOf(cosmetic.id) != -1) {
-                    wardrobeState.emoteWheelManager.setEmote(emoteWheel.getUntracked().indexOf(cosmetic.id), null)
+                while (selectedEmoteWheelSlots.getUntracked().indexOf(cosmetic.id) != -1) {
+                    wardrobeState.emoteWheelManager.setEmote(selectedEmoteWheelId, selectedEmoteWheelSlots.getUntracked().indexOf(cosmetic.id), null)
                 }
             }
         } else {
-            val emptyIndex = emoteWheel.getUntracked().indexOfFirst { it == null }
+            val emptyIndex = selectedEmoteWheelSlots.getUntracked().indexOfFirst { it == null }
             if (emptyIndex != -1) {
-                wardrobeState.emoteWheelManager.setEmote(emptyIndex, cosmetic.id)
+                wardrobeState.emoteWheelManager.setEmote(selectedEmoteWheelId, emptyIndex, cosmetic.id)
             } else {
                 Notifications.warning("Emote wheel is full.", "")
             }
@@ -138,21 +139,18 @@ fun handleCosmeticOrEmoteLeftClick(item: Item.CosmeticOrEmote, category: Wardrob
 private fun updateSettingsToOverriddenIfNotSet(item: Item.CosmeticOrEmote, wardrobeState: WardrobeState) {
     // If we select an item with overridden settings, we override the player's settings too, if they don't have them already set
     // Used by the featured page, since it initially show the item with overridden settings, so those should apply those when first selected
-    val settingsOverride = item.settingsOverride
-    if (settingsOverride != null) {
-        for (setting in settingsOverride) {
-            when {
-                setting is CosmeticSetting.Variant -> {
-                    if (wardrobeState.getVariant(item).get() == null) wardrobeState.setVariant(item, setting.data.variant)
-                }
+    for (setting in item.settingsOverride) {
+        when {
+            setting is CosmeticSetting.Variant -> {
+                if (wardrobeState.getVariant(item).get() == null) wardrobeState.setVariant(item, setting.data.variant)
+            }
 
-                setting is CosmeticSetting.PlayerPositionAdjustment -> {
-                    if (wardrobeState.getSelectedPosition(item).get() == null) wardrobeState.setSelectedPosition(item, Triple(setting.data.x, setting.data.y, setting.data.z))
-                }
+            setting is CosmeticSetting.PlayerPositionAdjustment -> {
+                if (wardrobeState.getSelectedPosition(item).get() == null) wardrobeState.setSelectedPosition(item, Triple(setting.data.x, setting.data.y, setting.data.z))
+            }
 
-                setting is CosmeticSetting.Side -> {
-                    if (wardrobeState.getSelectedSide(item).get() == null) wardrobeState.setSelectedSide(item, setting.data.side)
-                }
+            setting is CosmeticSetting.Side -> {
+                if (wardrobeState.getSelectedSide(item).get() == null) wardrobeState.setSelectedSide(item, setting.data.side)
             }
         }
     }

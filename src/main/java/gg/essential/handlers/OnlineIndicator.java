@@ -41,6 +41,8 @@ import net.minecraft.util.text.ITextComponent;
 //$$ import net.minecraft.client.renderer.RenderType;
 //$$ import net.minecraft.util.ResourceLocation;
 //$$ import net.minecraft.client.renderer.IRenderTypeBuffer;
+//#else
+import net.minecraft.util.ResourceLocation;
 //#endif
 
 import java.awt.*;
@@ -72,6 +74,10 @@ public class OnlineIndicator {
         return nametagEntity != null;
         //#endif
     }
+
+    //#if MC<11600
+    private static final ResourceLocation whiteTexture = new ResourceLocation("essential", "textures/white.png");
+    //#endif
 
     public static void drawNametagIndicator(
         UMatrixStack matrixStack,
@@ -128,7 +134,10 @@ public class OnlineIndicator {
         //$$ TextRenderTypeVertexConsumer vertexConsumer = TextRenderTypeVertexConsumer.create(vertexConsumerProvider, alwaysOnTop);
         //#else
         UGraphics buffer = UGraphics.getFromTessellator();
-        TextRenderTypeVertexConsumer vertexConsumer = TextRenderTypeVertexConsumer.create(buffer);
+
+        // use createWithTexture() for under 1.16 to allow for the light map to apply, we also pass in a blank white texture
+        // @see createWithTexture() doc for details
+        TextRenderTypeVertexConsumer vertexConsumer = TextRenderTypeVertexConsumer.createWithTexture(buffer, whiteTexture);
         //#endif
 
         vertexConsumer.pos(matrixStack, x1, y1, z).color(0, 0, 0, backgroundOpacity).tex(0, 0).light(light).endVertex();
@@ -157,7 +166,8 @@ public class OnlineIndicator {
             //#if MC>=11600
             //$$ vertexConsumer = TextRenderTypeVertexConsumer.create(vertexConsumerProvider, false);
             //#else
-            vertexConsumer = TextRenderTypeVertexConsumer.create(buffer);
+            // use createWithTexture() for under 1.16 same reason as above
+            vertexConsumer = TextRenderTypeVertexConsumer.createWithTexture(buffer, whiteTexture);
             //#endif
             Diamond.drawDiamond(matrixStack, vertexConsumer, 6, vanillaX - 6, diamondCenter, color.getRGB(), light);
 

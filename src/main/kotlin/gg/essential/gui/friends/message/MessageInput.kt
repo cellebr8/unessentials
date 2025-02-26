@@ -21,6 +21,7 @@ import gg.essential.elementa.dsl.coerceAtMost
 import gg.essential.elementa.dsl.pixels
 import gg.essential.elementa.utils.roundToRealPixels
 import gg.essential.gui.EssentialPalette
+import gg.essential.gui.common.EssentialTooltip
 import gg.essential.gui.common.IconButton
 import gg.essential.gui.common.input.UIMultilineTextInput
 import gg.essential.gui.elementa.state.v2.MutableState
@@ -28,6 +29,7 @@ import gg.essential.gui.elementa.state.v2.State
 import gg.essential.gui.elementa.state.v2.combinators.map
 import gg.essential.gui.elementa.state.v2.effect
 import gg.essential.gui.elementa.state.v2.memo
+import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.friends.message.screenshot.ScreenshotAttacher
 import gg.essential.gui.friends.message.screenshot.ScreenshotAttachmentManager
 import gg.essential.gui.friends.message.screenshot.ScreenshotPicker
@@ -69,6 +71,9 @@ class MessageInput(
 
     private val usernameState = memo { replyTo()?.sender?.let(UUIDUtil::nameState)?.invoke() ?: "Nobody" }
 
+    private val message = mutableStateOf("")
+    private val messageLength = memo { message().length }
+
     private val input = UIMultilineTextInput(shadowColor = EssentialPalette.TEXT_SHADOW_LIGHT).apply {
         effect(this) {
             placeholder = "Message ${channelName()}"
@@ -100,6 +105,8 @@ class MessageInput(
                 }
 
             }
+
+            message.set(this@apply.getText())
         }
     }
 
@@ -252,6 +259,7 @@ class MessageInput(
                                     input(Modifier.fillWidth())
                                 }
                             }
+                            spacer(width = 67f)
                             box(Modifier.width(2f).maxSiblingHeight()) {
                                 scrollBar = box(Modifier.fillWidth().color(EssentialPalette.SCROLLBAR))
                             }
@@ -268,6 +276,10 @@ class MessageInput(
                         ).onActiveClick {
                             screenshotAttachmentManager.isPickingScreenshots.set { !it }
                         }
+                        characterLimit(Modifier
+                            .alignHorizontal(Alignment.End(11f))
+                            .alignVertical(Alignment.End(10f))
+                        )
                     }.onLeftClick {
                         screenshotAttachmentManager.isPickingScreenshots.set(false)
                     }
@@ -321,7 +333,7 @@ class MessageInput(
     private fun handleSendMessage() {
         var text = input.getText()
 
-        val charLimit = 500
+        val charLimit = MESSAGE_CHAR_LIMIT
         if (text.length > charLimit) {
             Notifications.warning("Too many characters", "You have exceeded the\n$charLimit character limit.")
             return
@@ -352,11 +364,27 @@ class MessageInput(
         }
     }
 
+    private fun LayoutScope.characterLimit(modifier: Modifier = Modifier) {
+        if_({ messageLength() >= MESSAGE_CHAR_WARNING }) {
+            text({ "${MESSAGE_CHAR_LIMIT - messageLength()}" }, Modifier
+                .color { if (messageLength() > MESSAGE_CHAR_LIMIT) EssentialPalette.TEXT_WARNING else EssentialPalette.TEXT }
+                .shadow { EssentialPalette.BLACK }
+                .hoverScope()
+                .hoverTooltip({ if (messageLength() <= MESSAGE_CHAR_LIMIT) "Remaining characters" else "Message is too long" }, position = EssentialTooltip.Position.ABOVE)
+                .then(modifier)
+            )
+        }
+    }
+
     override fun afterInitialization() {
         grabFocus()
     }
 
     companion object {
+
+        private const val MESSAGE_CHAR_LIMIT = 2500
+        private const val MESSAGE_CHAR_WARNING = 2000
+
         val colorSymbols = listOf("&sect;", "&#xA7", "&#167", "${ChatColor.COLOR_CHAR}")
     }
 

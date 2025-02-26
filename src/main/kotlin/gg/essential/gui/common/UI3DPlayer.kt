@@ -856,7 +856,7 @@ open class UI3DPlayer(
                 else -> Pair(getThirdPartyCape(), null)
             }
 
-            playerModel.update()
+            playerModel.essentialAnimationSystem.updateAnimationState() // processes arm swing
             wearablesManager.update()
             poseManager.update(wearablesManager)
 

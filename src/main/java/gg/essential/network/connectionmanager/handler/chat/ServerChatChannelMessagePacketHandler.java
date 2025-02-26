@@ -121,30 +121,34 @@ public class ServerChatChannelMessagePacketHandler extends PacketHandler<ServerC
 
         @Override
         public void accept(String name) {
-            String notificationTitle = channel.getType() == ChannelType.DIRECT_MESSAGE ? name : String.format(Locale.ROOT, "%s [%s]", name, channel.getName());
+            boolean dm = channel.getType() == ChannelType.DIRECT_MESSAGE;
 
-            if (EssentialConfig.INSTANCE.getMessageSound() && !EssentialConfig.INSTANCE.getStreamerMode()) {
-                USound.INSTANCE.playExpSound();
-            }
+            if((dm && EssentialConfig.INSTANCE.getMessageReceivedNotifications()) || (!dm && EssentialConfig.INSTANCE.getGroupMessageReceivedNotifications())) {
+                String notificationTitle = dm ? name : String.format(Locale.ROOT, "%s [%s]", name, channel.getName());
 
-            Notifications.INSTANCE.push(
-                notificationTitle,
-                message.getContents(),
-                4f,
-                () -> {
-                    GuiUtil.openScreen(SocialMenu.class, () -> new SocialMenu(channel.getId()));
-                    return Unit.INSTANCE;
-                },
-                () -> Unit.INSTANCE,
-                (notificationBuilder) -> {
-                    notificationBuilder.setTrimTitle(true);
-                    notificationBuilder.setTrimMessage(true);
-
-                    notificationBuilder.withCustomComponent(Slot.ICON, CachedAvatarImage.create(message.getSender()));
-
-                    return Unit.INSTANCE;
+                if (EssentialConfig.INSTANCE.getMessageSound() && !EssentialConfig.INSTANCE.getStreamerMode()) {
+                    USound.INSTANCE.playExpSound();
                 }
-            );
+               
+                Notifications.INSTANCE.push(
+                        notificationTitle,
+                        message.getContents(),
+                        4f,
+                        () -> {
+                            GuiUtil.openScreen(SocialMenu.class, () -> new SocialMenu(channel.getId()));
+                            return Unit.INSTANCE;
+                        },
+                        () -> Unit.INSTANCE,
+                        (notificationBuilder) -> {
+                            notificationBuilder.setTrimTitle(true);
+                            notificationBuilder.setTrimMessage(true);
+
+                            notificationBuilder.withCustomComponent(Slot.ICON, CachedAvatarImage.create(message.getSender()));
+
+                            return Unit.INSTANCE;
+                        }
+                );
+            }
         }
     }
 }

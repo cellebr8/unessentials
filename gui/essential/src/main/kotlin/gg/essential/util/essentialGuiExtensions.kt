@@ -39,6 +39,7 @@ import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.util.hoveredState
 import gg.essential.gui.util.isComponentInParentChain
 import gg.essential.gui.util.stateBy
+import gg.essential.universal.UMouse
 import gg.essential.vigilance.utils.onLeftClick
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
@@ -162,23 +163,38 @@ private fun UIComponent.positionTooltip(
         EssentialTooltip.Position.LEFT -> SiblingConstraint(padding = padding, alignOpposite = true)
         EssentialTooltip.Position.RIGHT -> SiblingConstraint(padding = padding)
         EssentialTooltip.Position.ABOVE, EssentialTooltip.Position.BELOW -> CenterConstraint()
-        is EssentialTooltip.Position.MOUSE -> MousePositionConstraint()
+        EssentialTooltip.Position.MOUSE -> MousePositionConstraint()
+        is EssentialTooltip.Position.MOUSE_OFFSET -> MousePositionConstraint()
     } boundTo this@positionTooltip
 
     var yConstraint: YConstraint = when (position) {
         EssentialTooltip.Position.LEFT, EssentialTooltip.Position.RIGHT -> CenterConstraint()
         EssentialTooltip.Position.ABOVE -> SiblingConstraint(padding = padding, alignOpposite = true)
         EssentialTooltip.Position.BELOW -> SiblingConstraint(padding = padding)
-        is EssentialTooltip.Position.MOUSE -> MousePositionConstraint()
+        EssentialTooltip.Position.MOUSE -> MousePositionConstraint()
+        is EssentialTooltip.Position.MOUSE_OFFSET -> MousePositionConstraint()
     } boundTo this@positionTooltip
 
     // Since an additive constraint can't be boundTo
-    if(position is EssentialTooltip.Position.MOUSE) {
+    if (position is EssentialTooltip.Position.MOUSE_OFFSET) {
         xConstraint += position.xOffset.pixels
         yConstraint += position.yOffset.pixels
     }
 
-    if (windowPadding != null) {
+    if (position is EssentialTooltip.Position.MOUSE) {
+        val xPadding = 7f
+        val yPadding = 16f
+        xConstraint += basicXConstraint {
+            if (Window.of(tooltip).getRight() - UMouse.Scaled.x <= tooltip.getWidth() + xPadding + (windowPadding ?: 0f)) {
+                -tooltip.getWidth() - xPadding
+            } else {
+                xPadding
+            }
+        }
+        yConstraint -= yPadding.pixels
+    }
+
+    if (windowPadding != null && position !is EssentialTooltip.Position.MOUSE) {
         val minConstraint = lazyPosition { windowPadding.pixels boundTo Window.of(this) }
         val maxConstraint = lazyPosition { windowPadding.pixels(alignOpposite = true) boundTo Window.of(this) }
 

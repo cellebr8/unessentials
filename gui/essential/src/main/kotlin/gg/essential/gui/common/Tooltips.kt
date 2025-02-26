@@ -263,28 +263,32 @@ class EssentialTooltip(
                     Position.RIGHT -> left - 2 - i
                     Position.ABOVE -> hCenter - (notchSize - i) - 0.5
                     Position.BELOW -> hCenter - (notchSize - i) - 0.5
-                    is Position.MOUSE -> continue
+                    Position.MOUSE -> continue
+                    is Position.MOUSE_OFFSET -> continue
                 },
                 when (position) {
                     Position.LEFT -> vCenter - (notchSize - i) - 0.5
                     Position.RIGHT -> vCenter - (notchSize - i) - 0.5
                     Position.ABOVE -> bottom + i
                     Position.BELOW -> top - 2 - i
-                    is Position.MOUSE -> continue
+                    Position.MOUSE -> continue
+                    is Position.MOUSE_OFFSET -> continue
                 },
                 when (position) {
                     Position.LEFT -> right + 2 + i
                     Position.RIGHT -> left - 1 - i
                     Position.ABOVE -> hCenter + (notchSize - i) + 0.5
                     Position.BELOW -> hCenter + (notchSize - i) + 0.5
-                    is Position.MOUSE -> continue
+                    Position.MOUSE -> continue
+                    is Position.MOUSE_OFFSET -> continue
                 },
                 when (position) {
                     Position.LEFT -> vCenter + (notchSize - i) + 0.5
                     Position.RIGHT -> vCenter + (notchSize - i) + 0.5
                     Position.ABOVE -> bottom + i + 2
                     Position.BELOW -> top - i - 1
-                    is Position.MOUSE -> continue
+                    Position.MOUSE -> continue
+                    is Position.MOUSE_OFFSET -> continue
                 },
             )
             UIBlock.drawBlock(
@@ -295,28 +299,32 @@ class EssentialTooltip(
                     Position.RIGHT -> left - 1 - i
                     Position.ABOVE -> hCenter - (notchSize - i) - 0.5
                     Position.BELOW -> hCenter - (notchSize - i) - 0.5
-                    is Position.MOUSE -> continue
+                    Position.MOUSE -> continue
+                    is Position.MOUSE_OFFSET -> continue
                 },
                 when (position) {
                     Position.LEFT -> vCenter - (notchSize - i) - 0.5
                     Position.RIGHT -> vCenter - (notchSize - i) - 0.5
                     Position.ABOVE -> bottom + i
                     Position.BELOW -> top - 1 - i
-                    is Position.MOUSE -> continue
+                    Position.MOUSE -> continue
+                    is Position.MOUSE_OFFSET -> continue
                 },
                 when (position) {
                     Position.LEFT -> right + 1 + i
                     Position.RIGHT -> left - i
                     Position.ABOVE -> hCenter + (notchSize - i) + 0.5
                     Position.BELOW -> hCenter + (notchSize - i) + 0.5
-                    is Position.MOUSE -> continue
+                    Position.MOUSE -> continue
+                    is Position.MOUSE_OFFSET -> continue
                 },
                 when (position) {
                     Position.LEFT -> vCenter + (notchSize - i) + 0.5
                     Position.RIGHT -> vCenter + (notchSize - i) + 0.5
                     Position.ABOVE -> bottom + i + 1
                     Position.BELOW -> top - i
-                    is Position.MOUSE -> continue
+                    Position.MOUSE -> continue
+                    is Position.MOUSE_OFFSET -> continue
                 },
             )
         }
@@ -329,7 +337,8 @@ class EssentialTooltip(
         data object RIGHT : Position
         data object ABOVE : Position
         data object BELOW : Position
-        data class MOUSE(val xOffset: Float = 0f, val yOffset: Float = 0f) : Position
+        data object MOUSE : Position
+        data class MOUSE_OFFSET(val xOffset: Float = 0f, val yOffset: Float = 0f) : Position
     }
 }
 

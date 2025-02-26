@@ -9,11 +9,14 @@
  * commercialize, or otherwise exploit, or create derivative works based
  * upon, this file or any other in this repository, all of which is reserved by Essential.
  */
-package gg.essential.mod.cosmetics.featured
+package gg.essential.mixins.impl.client.gui;
 
-import kotlinx.serialization.Serializable
+import gg.essential.gui.elementa.state.v2.MutableState;
 
-@Serializable
-data class FeaturedPage(
-    val rows: List<List<FeaturedItem>>,
-)
+import static gg.essential.gui.elementa.state.v2.StateKt.mutableStateOf;
+
+public interface GuiInventoryExt {
+
+    MutableState<Boolean> isInventoryEntityRendering = mutableStateOf(false);
+
+}

@@ -272,7 +272,8 @@ class Wardrobe(
                 //#if MC>=11602
                 //$$ keyCode == UKeyboard.KEY_ESCAPE -> restorePreviousScreen()
                 //#endif
-                Essential.getInstance().keybindingRegistry.toggleCosmetics.isKeyCode(keyCode) -> {
+                Essential.getInstance().keybindingRegistry.toggleCosmetics.isKeyCode(keyCode)
+                        && !EssentialConfig.disableCosmetics -> {
                     Essential.getInstance().connectionManager.cosmeticsManager.toggleOwnCosmeticVisibility(true)
                 }
                 else -> {
@@ -375,12 +376,6 @@ class Wardrobe(
             }
 
             modal.onPrimaryAction {
-                val emotes = state.emoteWheel.get().toMutableList() // Copy list to avoid concurrent modification
-                emotes.forEachIndexed { index, s ->
-                    if (s != null && s !in state.cosmeticsManager.unlockedCosmetics.get()) {
-                        state.emoteWheelManager.setEmote(index, null)
-                    }
-                }
                 restorePreviousScreen()
             }
 

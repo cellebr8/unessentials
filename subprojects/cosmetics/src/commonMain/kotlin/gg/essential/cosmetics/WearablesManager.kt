@@ -79,11 +79,42 @@ class WearablesManager(
         updateState(state.copyWithout(slot))
     }
 
-    /** @see ModelInstance.update */
+    private var lastUpdateTime = Float.NEGATIVE_INFINITY
+
+    /**
+     * Updates the state of the models for the current frame prior to rendering.
+     *
+     * Note that new animation events are emitted into [ModelAnimationState.pendingEvents] and the caller needs to
+     * collect them from there and forward them to the actual particle/sound/etc system at the appropriate time.
+     *
+     * Also note that this does **not** yet update the locators bound to these model instances. For that one must call
+     * [updateLocators] after rendering.
+     * This is because the position and rotation of locators depends on the final rendered player pose, which is only
+     * available after rendering.
+     * Because particle events may depend on the position of locators, they should however ideally be updated before
+     * particles are updated, rendered, and/or spawned.
+     */
     fun update() {
-        for ((_, model) in models) {
-            model.update()
+        if (models.isEmpty()) return
+
+        val now = entity.lifeTime
+        if (lastUpdateTime == now) return // was already updated this frame
+        lastUpdateTime = now
+
+        val modelInstances = models.values
+
+        // update animations
+        modelInstances.forEach {
+            it.essentialAnimationSystem.maybeFireTextureAnimationStartEvent()
+            it.essentialAnimationSystem.updateAnimationState()
         }
+
+        // trigger any animations that are supposed to be triggered in other models
+        // run after all models have already updated without this interference
+        modelInstances.forEach { it.essentialAnimationSystem.triggerPendingAnimationsForOtherModels(modelInstances) }
+
+        // update effects after all animations have been updated
+        modelInstances.forEach { it.animationState.updateEffects() }
     }
 
     /** @see ModelInstance.updateLocators */

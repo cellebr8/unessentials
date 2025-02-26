@@ -11,9 +11,8 @@
  */
 package gg.essential.mixins.transformers.client.gui.inventory;
 
-import gg.essential.config.EssentialConfig;
-import gg.essential.cosmetics.EssentialModelRenderer;
 import gg.essential.gui.common.UI3DPlayer;
+import gg.essential.mixins.impl.client.gui.GuiInventoryExt;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GuiInventory.class)
-public class Mixin_DisableCosmeticsInInventory {
+public class Mixin_TrackInventoryPlayerRendering {
 
     private static final String DRAW_ENTITY =
         //#if MC>=12005
@@ -39,11 +38,11 @@ public class Mixin_DisableCosmeticsInInventory {
     @Inject(method = DRAW_ENTITY, at = @At("HEAD"))
     private static void essential$disableCosmeticsInInventoryStart(CallbackInfo info) {
         // If UI3DPlayer.current is null then the method was not called while rendering a player display
-        EssentialModelRenderer.suppressCosmeticRendering = UI3DPlayer.current == null && EssentialConfig.INSTANCE.getDisableCosmeticsInInventory();
+        GuiInventoryExt.isInventoryEntityRendering.set(UI3DPlayer.current == null);
     }
 
     @Inject(method = DRAW_ENTITY, at = @At("RETURN"))
     private static void essential$disableCosmeticsInInventoryCleanup(CallbackInfo info) {
-        EssentialModelRenderer.suppressCosmeticRendering = false;
+        GuiInventoryExt.isInventoryEntityRendering.set(false);
     }
 }

@@ -60,31 +60,6 @@ class ModelInstance(
         return model.computePose(basePose, animationState, entity)
     }
 
-    private var lastUpdateTime = Float.NEGATIVE_INFINITY
-
-    /**
-     * Updates the state of this model for the current frame prior to rendering.
-     *
-     * Note that new animation events are emitted into [ModelAnimationState.pendingEvents] and the caller needs to
-     * collect them from there and forward them to the actual particle/sound/etc system at the appropriate time.
-     *
-     * Also note that this does **not** yet update the locators bound to this model instance. For that one must call
-     * [updateLocators] after rendering.
-     * This is because the position and rotation of locators depends on the final rendered player pose, which is only
-     * available after rendering.
-     * Because particle events may depend on the position of locators, they should however ideally be updated before
-     * particles are updated, rendered, and/or spawned.
-     */
-    fun update() {
-        val now = entity.lifeTime
-        if (lastUpdateTime == now) return // was already updated this frame
-        lastUpdateTime = now
-
-        essentialAnimationSystem.maybeFireTextureAnimationStartEvent()
-        essentialAnimationSystem.updateAnimationState()
-        animationState.updateEffects()
-    }
-
     /**
      * Updates all locators bound to this model instance.
      *

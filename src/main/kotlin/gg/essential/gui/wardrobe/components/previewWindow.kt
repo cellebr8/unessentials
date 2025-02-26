@@ -63,6 +63,8 @@ import gg.essential.gui.notification.Notifications
 import gg.essential.gui.util.hoverScope
 import gg.essential.gui.util.layoutSafePollingState
 import gg.essential.gui.util.makeHoverScope
+import gg.essential.gui.util.onAnimationFrame
+import gg.essential.gui.util.selfAndParents
 import gg.essential.gui.wardrobe.EmoteWheelPage
 import gg.essential.gui.wardrobe.Item
 import gg.essential.gui.wardrobe.WardrobeCategory
@@ -87,12 +89,19 @@ import gg.essential.network.connectionmanager.cosmetics.AssetLoader
 import gg.essential.network.connectionmanager.features.Feature
 import gg.essential.network.cosmetics.Cosmetic
 import gg.essential.universal.UKeyboard
+import gg.essential.universal.UMouse
 import gg.essential.universal.USound
+import gg.essential.util.Client
 import gg.essential.util.GuiUtil
 import gg.essential.util.findChildOfTypeOrNull
 import gg.essential.util.onLeftClick
 import gg.essential.util.scrollGradient
 import gg.essential.util.toState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.UUID
 import kotlin.math.abs
 import kotlin.math.round
@@ -133,6 +142,11 @@ fun LayoutScope.previewWindowTitleBar(state: WardrobeState, modifier: Modifier) 
 
         model.soundData != null
     }
+    var leftButton: UIComponent? = null
+    var rightButton: UIComponent? = null
+    val leftFlash = mutableStateOf(false)
+    val rightFlash = mutableStateOf(false)
+    val flashModifier = Modifier.outline(EssentialPalette.TEXT, 1f, true)
 
     fun LayoutScope.titleBarButton(modifier: Modifier, block: LayoutScope.() -> Unit = {}): UIComponent {
         return box(modifier.width(17f).heightAspect(1f).shadow(EssentialPalette.BLACK), block)
@@ -145,7 +159,7 @@ fun LayoutScope.previewWindowTitleBar(state: WardrobeState, modifier: Modifier) 
         }
     }
 
-    box(modifier) {
+    val container = box(modifier) {
         val titleBarBox = box(Modifier.fillParent())
         val selectorModifier = BasicXModifier { (CenterConstraint() boundTo titleBarBox).coerceIn(0.pixels, 0.pixels(true)) }.then(BasicWidthModifier { 100.percent.coerceAtMost(115.pixels) })
         row(Modifier.fillWidth(padding = 10f), Arrangement.spacedBy(3f, FloatPosition.START)) {
@@ -169,7 +183,8 @@ fun LayoutScope.previewWindowTitleBar(state: WardrobeState, modifier: Modifier) 
                 row(selectorModifier, Arrangement.spacedBy(3f, FloatPosition.CENTER)) {
                     if_(regularContent) {
                         if_(state.inEmoteWheel or (!emoteSelected and !bundleSelected)) {
-                            titleBarButton(Modifier.color(EssentialPalette.GRAY_BUTTON).hoverColor(EssentialPalette.GRAY_BUTTON_HOVER).hoverScope()) {
+                            leftButton = titleBarButton(Modifier.color(EssentialPalette.GRAY_BUTTON)
+                                .hoverColor(EssentialPalette.GRAY_BUTTON_HOVER).whenTrue(leftFlash, flashModifier).hoverScope()) {
                                 icon(EssentialPalette.ARROW_LEFT_4X7, Modifier.color(EssentialPalette.TEXT).hoverColor(EssentialPalette.TEXT_HIGHLIGHT))
                             }.onLeftClick { handleClick(it) { changeEmoteWheelOrOutfit(state, -1) } }
                         }
@@ -199,7 +214,8 @@ fun LayoutScope.previewWindowTitleBar(state: WardrobeState, modifier: Modifier) 
                             }
                         }
                         if_(state.inEmoteWheel or (!emoteSelected and !bundleSelected)) {
-                            titleBarButton(Modifier.color(EssentialPalette.GRAY_BUTTON).hoverColor(EssentialPalette.GRAY_BUTTON_HOVER).hoverScope()) {
+                            rightButton = titleBarButton(Modifier.color(EssentialPalette.GRAY_BUTTON)
+                                .hoverColor(EssentialPalette.GRAY_BUTTON_HOVER).whenTrue(rightFlash, flashModifier).hoverScope()) {
                                 icon(EssentialPalette.ARROW_RIGHT_4X7, Modifier.color(EssentialPalette.TEXT).hoverColor(EssentialPalette.TEXT_HIGHLIGHT))
                             }.onLeftClick { handleClick(it) { changeEmoteWheelOrOutfit(state, 1) } }
                         }
@@ -228,6 +244,50 @@ fun LayoutScope.previewWindowTitleBar(state: WardrobeState, modifier: Modifier) 
                     icon({ if (EssentialConfig.playEmoteSoundsInWardrobe()) EssentialPalette.UNMUTE_10X7 else EssentialPalette.MUTE_10X7 },
                         Modifier.color(EssentialPalette.TEXT).hoverColor(EssentialPalette.TEXT_HIGHLIGHT))
                 }.onLeftClick { click -> handleClick(click) { EssentialConfig.playEmoteSoundsInWardrobe.set { !it } } }
+            }
+        }
+    }
+
+    // Animation and behavior for dragging an emote over an emote wheel switch button
+    var targetButton: UIComponent? = null
+    var animationScope: CoroutineScope? = null
+
+    fun resetDragAnimation() {
+        leftFlash.set(false)
+        rightFlash.set(false)
+        animationScope?.cancel()
+        animationScope = null
+    }
+
+    container.onAnimationFrame {
+        if (leftButton == null || rightButton == null || state.draggingEmote.getUntracked() == null) {
+            if (animationScope != null) {
+                resetDragAnimation()
+            }
+            return@onAnimationFrame
+        }
+
+        // Get which button, if any, the emote is being dragged on top of
+        val (mouseX, mouseY) = UMouse.Scaled.x.toFloat() to UMouse.Scaled.y.toFloat()
+        val target = Window.of(container).hitTest(mouseX, mouseY).selfAndParents().firstOrNull { it == leftButton || it == rightButton }
+        if (target != targetButton) {
+            // Target changed, reset animation
+            targetButton = target
+            resetDragAnimation()
+        }
+
+        if (targetButton != null && animationScope == null) {
+            val isLeftButton = target == leftButton
+
+            animationScope = CoroutineScope(Dispatchers.Client)
+            animationScope?.launch {
+                delay(750)
+                repeat(3) { _ ->
+                    (if (isLeftButton) leftFlash else rightFlash).set { !it }
+                    delay(125)
+                }
+                changeEmoteWheelOrOutfit(state, if (isLeftButton) -1 else 1)
+                resetDragAnimation()
             }
         }
     }

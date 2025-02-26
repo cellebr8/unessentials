@@ -41,6 +41,7 @@ import gg.essential.gui.modals.select.selectModal
 import gg.essential.gui.modals.select.users
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.notification.warning
+import gg.essential.gui.sps.InviteFriendsModal
 import gg.essential.gui.util.onItemAdded
 import gg.essential.gui.util.toStateV2List
 import gg.essential.universal.UMinecraft
@@ -215,7 +216,7 @@ class SocialMenu @JvmOverloads constructor(
         val options = extraOptions.toMutableList()
 
         val joinPlayerOption = ContextOptionMenu.Option(
-            "Join",
+            "Join Game",
             // New default is text, so remove entirely when removing feature flag
             textColor = EssentialPalette.TEXT,
             hoveredColor = EssentialPalette.MESSAGE_SENT,
@@ -226,15 +227,15 @@ class SocialMenu @JvmOverloads constructor(
             handleJoinSession(user)
         }
         val invitePlayerOption = ContextOptionMenu.Option(
-            "Invite",
+            "Invite to Game",
             // New default is text, so remove entirely when removing feature flag
             textColor = EssentialPalette.TEXT,
             hoveredColor = EssentialPalette.MESSAGE_SENT,
             // New default is black, so remove entirely when removing feature flag
             shadowColor = EssentialPalette.BLACK,
-            image = EssentialPalette.INVITE_10X6,
+            image = EssentialPalette.ENVELOPE_9X7,
         ) {
-            handleInvitePlayers(setOf(user))
+            handleInvitePlayers(setOf(user), UuidNameLookup.nameState(user).getUntracked())
         }
 
         val topmostOptions: MutableList<ContextOptionMenu.Item> = mutableListOf()
@@ -340,7 +341,8 @@ class SocialMenu @JvmOverloads constructor(
 
         addMarkMessagesReadOption(channel.id, options)
 
-        if (ServerType.current()?.supportsInvites == true) {
+        // Left commented if we re-add in the future
+        /* if (ServerType.current()?.supportsInvites == true) {
             options.add(
                 ContextOptionMenu.Option(
                     "Invite Group",
@@ -351,12 +353,12 @@ class SocialMenu @JvmOverloads constructor(
                     shadowColor = EssentialPalette.BLACK,
                     image = EssentialPalette.INVITE_10X6,
                 ) {
-                    handleInvitePlayers(channel.members)
+                    handleInvitePlayers(channel.members, channel.name)
                 }
             )
 
             options.add(ContextOptionMenu.Divider)
-        }
+        } */
 
         val mutedState = socialStateManager.messengerStates.getMuted(channel.id)
         if (channel.type == ChannelType.GROUP_DIRECT_MESSAGE && channel.createdInfo.by == UUIDUtil.getClientUUID()) {
@@ -463,10 +465,11 @@ class SocialMenu @JvmOverloads constructor(
         }
     }
 
-    fun handleInvitePlayers(users: Set<UUID>) {
+    fun handleInvitePlayers(users: Set<UUID>, name: String) {
         val currentServerData = UMinecraft.getMinecraft().currentServerData
         if (hasLocalSession()) {
             spsManager.reinviteUsers(users)
+            InviteFriendsModal.sendInviteNotification(name)
         } else if (currentServerData != null) {
             connectionManager.socialManager.reinviteFriendsOnServer(currentServerData.serverIP, users)
         }

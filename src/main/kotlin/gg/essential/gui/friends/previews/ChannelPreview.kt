@@ -44,6 +44,7 @@ import gg.essential.gui.elementa.state.v2.toV2
 import gg.essential.gui.friends.SocialMenu
 import gg.essential.gui.friends.Tab
 import gg.essential.gui.friends.message.MessageUtils
+import gg.essential.gui.friends.state.PlayerActivity
 import gg.essential.gui.image.ImageFactory
 import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.studio.Tag
@@ -74,6 +75,7 @@ class ChannelPreview(
 
     private val activity = gui.socialStateManager.statusStates.getActivityState(uuid)
     private val joinable = activity.map { it.isJoinable() }
+    private val isOnline = memo { activity() !is PlayerActivity.Offline }
 
     val titleState = if (otherUser != null) {
         UUIDUtil.nameState(otherUser)
@@ -127,9 +129,12 @@ class ChannelPreview(
         }
 
         layoutAsBox(Modifier.fillWidth().height(40f).then(BasicYModifier(::SiblingConstraint)).then(color)) {
-            row(Modifier.fillWidth(padding = 10f).fillHeight()) {
-                image(Modifier.width(24f).heightAspect(1f))
-                spacer(width = 7.5f)
+            row(Modifier.fillParent()) {
+                spacer(width = 6f)
+                box(Modifier.width(32f).heightAspect(1f)) {
+                    image(Modifier.width(24f).heightAspect(1f))
+                }
+                spacer(width = 3.5f)
                 column(Modifier.fillRemainingWidth().fillHeight(), Arrangement.spacedBy(0f, FloatPosition.START), Alignment.Start) {
                     spacer(height = 10f)
                     row(Modifier.fillWidth()) {
@@ -167,6 +172,7 @@ class ChannelPreview(
                     spacer(width = 4f)
                     unreadQuantity(Modifier.childBasedWidth(padding = 2f).childBasedHeight(padding = 2f))
                 }
+                spacer(width = 10f)
             }
         }
 

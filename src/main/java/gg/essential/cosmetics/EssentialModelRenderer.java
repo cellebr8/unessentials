@@ -11,6 +11,8 @@
  */
 package gg.essential.cosmetics;
 
+import gg.essential.config.EssentialConfig;
+import gg.essential.mixins.impl.client.gui.GuiInventoryExt;
 import gg.essential.model.EnumPart;
 import gg.essential.model.ModelInstance;
 import gg.essential.model.backend.PlayerPose;
@@ -55,10 +57,6 @@ import static gg.essential.model.backend.minecraft.LegacyCameraPositioningKt.get
 public class EssentialModelRenderer implements LayerRenderer<AbstractClientPlayer> {
 //#endif
 
-    /**
-     * Flag to skip cosmetic rendering
-     */
-    public static boolean suppressCosmeticRendering = false;
     private final RenderPlayer playerRenderer;
 
     public EssentialModelRenderer(RenderPlayer playerRenderer) {
@@ -69,7 +67,8 @@ public class EssentialModelRenderer implements LayerRenderer<AbstractClientPlaye
     }
 
     public static boolean shouldRender(AbstractClientPlayer player) {
-        if (suppressCosmeticRendering) {
+        if (GuiInventoryExt.isInventoryEntityRendering.getUntracked()
+                && EssentialConfig.INSTANCE.getDisableCosmeticsInInventory()) {
             return false;
         }
 

@@ -136,7 +136,10 @@ public class EssentialKeybindingRegistry {
 
         int cosmeticToggleKey = UKeyboard.KEY_NONE;
         cosmetics_visibility_toggle = new EssentialKeybinding("COSMETICS_VISIBILITY_TOGGLE", CATEGORY, cosmeticToggleKey, false).withInitialPress(() -> {
-            if (OverlayManagerImpl.INSTANCE.getFocusedLayer() == null && !(OverlayManagerImpl.INSTANCE.getHoveredLayer() instanceof EphemeralLayer)) {
+            if (OverlayManagerImpl.INSTANCE.getFocusedLayer() == null
+                    && !(OverlayManagerImpl.INSTANCE.getHoveredLayer() instanceof EphemeralLayer)
+                    && !EssentialConfig.INSTANCE.getDisableCosmetics()
+            ) {
                 Essential.getInstance().getConnectionManager().getCosmeticsManager().toggleOwnCosmeticVisibility(true);
             }
         });

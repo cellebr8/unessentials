@@ -22,6 +22,8 @@ data class AnimationEvent(
     val name: String,
     @SerialName("on_complete")
     val onComplete: AnimationEvent? = null,
+    @SerialName("trigger_in_other_cosmetic")
+    val triggerInOtherCosmetic: Set<String> = setOf(), // strings only as they are references to another already setup animation event in a different cosmetic
     val probability: Float = 1f,
     val skips: Int = 0,
     val loops: Int = 0,

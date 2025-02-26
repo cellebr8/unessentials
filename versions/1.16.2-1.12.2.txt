@@ -2,6 +2,7 @@ com.mojang.blaze3d.systems.RenderSystem enableAlphaTest() net.minecraft.client.r
 com.mojang.blaze3d.systems.RenderSystem disableAlphaTest() net.minecraft.client.renderer.GlStateManager disableAlpha()
 com.mojang.blaze3d.systems.RenderSystem net.minecraft.client.renderer.GlStateManager
 com.mojang.datafixers.DataFixer net.minecraft.util.datafix.DataFixer
+net.minecraft.client.Minecraft getResourcePackList() getResourcePackRepository()
 net.minecraft.client.entity.player.RemoteClientPlayerEntity net.minecraft.client.entity.EntityOtherPlayerMP
 net.minecraft.client.gui.NewChatGui net.minecraft.client.gui.GuiNewChat
 net.minecraft.client.gui.NewChatGui func_238493_a_() setChatLine()
@@ -63,6 +64,9 @@ net.minecraft.resources.IResourcePack net.minecraft.client.resources.IResourcePa
 net.minecraft.resources.IResourcePack getName() getPackName()
 net.minecraft.resources.ResourcePack net.minecraft.client.resources.AbstractResourcePack
 net.minecraft.resources.ResourcePack file resourcePackFile
+net.minecraft.resources.ResourcePackList net.minecraft.client.resources.ResourcePackRepository
+net.minecraft.resources.ResourcePackList reloadPacksFromFinders() updateRepositoryEntriesAll()
+net.minecraft.resources.ResourcePackList getAllPacks() getRepositoryEntriesAll()
 net.minecraft.resources.SimpleReloadableResourceManager net.minecraft.client.resources.SimpleReloadableResourceManager
 net.minecraft.util.concurrent.ThreadTaskExecutor net.minecraft.util.IThreadListener
 net.minecraft.world.GameRules get() net.minecraft.world.GameRules getString()

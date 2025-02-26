@@ -91,24 +91,20 @@ class PurchaseConfirmationModal(
 
                     box(Modifier.fillWidth().height(1f).color(EssentialPalette.BUTTON))
 
-                    totalAndDiscount()
+                    if_({ discountAmount() != 0 }) {
+                        listEntry(
+                            "Discount",
+                            discountAmount,
+                            nameModifier = Modifier.color(EssentialPalette.GREEN),
+                            costModifier = Modifier.color(EssentialPalette.TEXT_HIGHLIGHT),
+                            negative = true
+                        )
+                        box(Modifier.fillWidth().height(1f).color(EssentialPalette.BUTTON))
+                    }
+
+                    listEntry("Total", totalAmount, Modifier.color(EssentialPalette.TEXT_HIGHLIGHT))
                 }
             }
-        }
-    }
-
-    private fun LayoutScope.totalAndDiscount() {
-        column(Modifier.fillWidth(), Arrangement.spacedBy(5f)) {
-            if_({ discountAmount() != 0 }) {
-                listEntry(
-                    "Discount",
-                    discountAmount,
-                    nameModifier = Modifier.color(EssentialPalette.GREEN),
-                    costModifier = Modifier.color(EssentialPalette.TEXT_HIGHLIGHT),
-                )
-            }
-
-            listEntry("Total", totalAmount, Modifier.color(EssentialPalette.TEXT_HIGHLIGHT))
         }
     }
 
@@ -126,6 +122,7 @@ class PurchaseConfirmationModal(
         cost: State<Int>,
         nameModifier: Modifier = Modifier,
         costModifier: Modifier = nameModifier,
+        negative: Boolean = false,
     ) {
         val defaultTextModifier = Modifier.color(EssentialPalette.TEXT_MID_GRAY).shadow(Color.BLACK)
 
@@ -140,7 +137,7 @@ class PurchaseConfirmationModal(
 
             bind(cost) { costAmount ->
                 wrappedText(
-                    "${CoinsManager.COIN_FORMAT.format(costAmount)}{coin-icon}",
+                    "${if(negative) "-" else ""}${CoinsManager.COIN_FORMAT.format(costAmount)}{coin-icon}",
                     textModifier = defaultTextModifier.then(costModifier),
                 ) {
                     "coin-icon" {

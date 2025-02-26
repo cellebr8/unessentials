@@ -352,3 +352,10 @@ gamerule.category.chat=Chat
 gamerule.category.miscellaneous=Miscellaneous
 gamerule.category.other=Other
 gamerule.category.pinned=Pinned
+
+## Window titles
+title.singleplayer=Singleplayer
+title.multiplayer.realms=Multiplayer (Realms)
+title.multiplayer.lan=Multiplayer (LAN)
+title.multiplayer.other=Multiplayer (3rd-party Server)
+title.multiplayer.hosted=Multiplayer (Hosted World)

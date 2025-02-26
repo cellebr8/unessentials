@@ -39,6 +39,7 @@ import gg.essential.network.connectionmanager.handler.upnp.ServerUPnPSessionRemo
 import gg.essential.network.connectionmanager.queue.PacketQueue;
 import gg.essential.network.connectionmanager.queue.SequentialPacketQueue;
 import gg.essential.sps.ResourcePackSharingHttpServer;
+import gg.essential.sps.WindowTitleManager;
 import gg.essential.universal.UMinecraft;
 import gg.essential.universal.wrappers.message.UTextComponent;
 import gg.essential.upnp.UPnPPrivacy;
@@ -379,6 +380,8 @@ public class SPSManager extends StateCallbackManager<IStatusManager> implements 
 
         Essential.EVENT_BUS.post(new SPSStartEvent(address));
         EssentialCommandRegistry.INSTANCE.registerSPSHostCommands();
+
+        WindowTitleManager.INSTANCE.updateTitle();
     }
 
     public synchronized void updateLocalSession(@NotNull String ip, int port) {

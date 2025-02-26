@@ -16,6 +16,7 @@ import gg.essential.cosmetics.events.AnimationEventType
 import gg.essential.cosmetics.events.AnimationTarget
 import gg.essential.model.BedrockModel
 import gg.essential.model.ModelAnimationState
+import gg.essential.model.ModelInstance
 import gg.essential.model.molang.MolangQueryEntity
 import kotlin.random.Random
 
@@ -29,6 +30,17 @@ class EssentialAnimationSystem(
 ) {
     private val ongoingAnimations = mutableSetOf<AnimationEvent>()
     private val animationStates = AnimationEffectStates()
+
+    private val pendingAnimationsForOtherModels = mutableSetOf<String>()
+
+    fun triggerPendingAnimationsForOtherModels(models : Collection<ModelInstance>) {
+        if (pendingAnimationsForOtherModels.isEmpty()) return
+
+        pendingAnimationsForOtherModels.forEach { pending ->
+            models.forEach{ it.essentialAnimationSystem.fireTriggerFromAnimation(pending, AnimationEventType.BY_OTHER) }
+        }
+        pendingAnimationsForOtherModels.clear()
+    }
 
     private class AnimationEffectStates {
         var skips = HashMap<AnimationEvent, Int>()
@@ -66,6 +78,9 @@ class EssentialAnimationSystem(
         if (animationState.active.isEmpty() && highestPriority != null) {
             val animation = bedrockModel.getAnimationByName(highestPriority.name)
             if (animation != null) {
+                if (highestPriority.triggerInOtherCosmetic.isNotEmpty()) {
+                    pendingAnimationsForOtherModels.addAll(highestPriority.triggerInOtherCosmetic)
+                }
                 animationState.startAnimation(animation)
             }
         }
@@ -112,13 +127,13 @@ class EssentialAnimationSystem(
         }
     }
 
-    fun fireTriggerFromAnimation(animationName: String) {
+    fun fireTriggerFromAnimation(animationName: String, requiredType : AnimationEventType? = null) {
         if (animationName == "texture_start") {
             textureAnimationSync.syncTextureStart()
             return
         }
         for (animationEvent in bedrockModel.animationEvents) {
-            if (animationEvent.name == animationName) {
+            if (animationEvent.name == animationName && (requiredType == null || animationEvent.type == requiredType)) {
                 ongoingAnimations.add(animationEvent)
                 updateAnimationState()
                 break

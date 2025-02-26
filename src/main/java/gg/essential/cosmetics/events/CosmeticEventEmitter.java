@@ -51,7 +51,7 @@ public class CosmeticEventEmitter {
             player.getWearablesManager().getModels();
         for (ModelInstance value : essentialCosmeticModels.values()) {
             if (slot == value.getCosmetic().getType().getSlot()) {
-                value.getEssentialAnimationSystem().fireTriggerFromAnimation(event);
+                value.getEssentialAnimationSystem().fireTriggerFromAnimation(event, null);
             }
         }
     }

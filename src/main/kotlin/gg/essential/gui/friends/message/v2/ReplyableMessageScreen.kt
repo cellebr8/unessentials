@@ -396,6 +396,9 @@ class ReplyableMessageScreen(
                 is ClientMessage.Part.Text -> ParagraphLineImpl(messageWrapper, part.content)
             })
         }
+        if (messages.isEmpty()) {
+            messages.add(ParagraphLineImpl(messageWrapper, ""))
+        }
         return messages
     }
 

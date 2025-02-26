@@ -26,6 +26,7 @@ import gg.essential.gui.wardrobe.categories.featuredCategory
 import gg.essential.gui.wardrobe.categories.outfitsCategory
 import gg.essential.gui.wardrobe.categories.skinsCategory
 import gg.essential.gui.wardrobe.components.banner
+import gg.essential.gui.wardrobe.components.draggingEmote
 import gg.essential.network.connectionmanager.telemetry.TelemetryManager
 import gg.essential.util.*
 
@@ -42,7 +43,6 @@ class WardrobeContainer(
     init {
         val connectionManager = Essential.getInstance().connectionManager
         val noticesManager = connectionManager.noticesManager
-        val draggingOnto = wardrobeState.draggingOntoEmoteSlot.map { it == -1 }
         val fadeEffect = Modifier.effect { FadeEffect(EssentialPalette.GUI_BACKGROUND, 0.5f) }
         val categoryBanner =
             noticesManager.noticeBannerManager.getNoticeBanners()
@@ -54,7 +54,7 @@ class WardrobeContainer(
                 }
 
         layout {
-            column(Modifier.fillParent().whenTrue(draggingOnto, fadeEffect)) {
+            column(Modifier.fillParent().whenTrue(wardrobeState.draggingEmote.map { it?.from != null && it.to == null }, fadeEffect)) {
                 // Sticky banners above the scroller
                 ifNotNull(categoryBanner) { banner ->
                     if (banner.sticky) {
@@ -86,11 +86,15 @@ class WardrobeContainer(
                 }
             }
 
-            if_(draggingOnto) {
+            if_(wardrobeState.draggingEmote.map { it?.from != null && it.to == null }) {
                 object : UIContainer() {
                     // Prevent children from being hovered while this component acts as a big trash can
                     override fun isPointInside(x: Float, y: Float): Boolean = true
                 }(Modifier.fillParent())
+            }
+
+            ifNotNull({ wardrobeState.draggingEmote()?.copy(to = null) }) { draggingEmote ->
+                draggingEmote(wardrobeState, draggingEmote)
             }
         }
         // TODO ideally we declare this in above `layout` but the `scroller` reference currently makes this impossible
