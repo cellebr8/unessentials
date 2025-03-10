@@ -80,7 +80,7 @@ class MenuButton @JvmOverloads constructor(
 
     val hoveredStyleOverrides = BasicState(false) // For manually activating hovered style
     private val tooltipHover = hoveredState()
-    private val styleHover = hoveredState(layoutSafe = false) or hoveredStyleOverrides
+    private val styleHover = hoveredState() or hoveredStyleOverrides
     private val collapsed = BasicState(false).map { it }
     private val enabledState = BasicState(true).map { it }
     private var collapsedWidth = 0f

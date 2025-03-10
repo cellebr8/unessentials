@@ -47,9 +47,9 @@ class WearablesManager(
                 .map { (cosmetic, bedrockModel) ->
                     val wearable = oldModels[cosmetic]
                     if (wearable == null) {
-                        ModelInstance(bedrockModel, entity, animationTargets) { onAnimation(cosmetic, it) }
+                        ModelInstance(bedrockModel, entity, animationTargets, newState) { onAnimation(cosmetic, it) }
                     } else {
-                        wearable.switchModel(bedrockModel)
+                        wearable.switchModel(bedrockModel, newState)
                         wearable
                     }
                 }
@@ -168,13 +168,12 @@ class WearablesManager(
             pose,
             skin,
             0,
-            1 / 16f,
             state.sides[cosmetic.id],
             state.hiddenBones[cosmetic.id] ?: emptySet(),
             state.getPositionAdjustment(cosmetic),
             parts - state.hiddenParts.getOrDefault(cosmetic.id, emptySet()),
         )
-        model.render(matrixStack, vertexConsumerProvider, state.rootBones.getValue(cosmetic.id), renderMetadata)
+        model.render(matrixStack, vertexConsumerProvider, state.renderGeometries.getValue(cosmetic.id), renderMetadata)
     }
 
     fun collectEvents(consumer: (ModelAnimationState.Event) -> Unit) {

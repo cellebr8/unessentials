@@ -161,6 +161,7 @@ data class Cosmetic(
         property<CosmeticProperty.InterruptsEmote>()?.data
             ?: CosmeticProperty.InterruptsEmote.Data()
 
+
     inline fun <reified T : CosmeticProperty> property(): T? {
         return properties.firstNotNullOfOrNull { it as? T }
     }

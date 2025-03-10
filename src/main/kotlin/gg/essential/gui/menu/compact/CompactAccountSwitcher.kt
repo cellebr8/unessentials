@@ -55,7 +55,7 @@ class CompactAccountSwitcher(
         iconWidth = 8f,
         iconHeight = 8f,
     ).apply {
-        bindEffect(ZIndexEffect(1, parent = sidebarContainer), hoveredState(layoutSafe = false))
+        bindEffect(ZIndexEffect(1, parent = sidebarContainer), hoveredState(), delayed = false)
     } childOf this
 
     private val switcherContainer by UIContainer().constrain {
@@ -74,7 +74,7 @@ class CompactAccountSwitcher(
         width = width.coerceAtMost(basicWidthConstraint { 19f * floor((window.getWidth() - 65f) / 19f) } + 1.pixel)
         height = 35.pixels
     }.apply {
-        bindEffect(ZIndexEffect(1), hoveredState(layoutSafe = false))
+        bindEffect(ZIndexEffect(1), hoveredState(), delayed = false)
     } childOf switcherContainer
 
     private val addAccount by MenuButton(
@@ -85,7 +85,7 @@ class CompactAccountSwitcher(
         width = AspectConstraint()
         height = 20.pixels
     }.apply {
-        bindEffect(ZIndexEffect(1), hoveredState(layoutSafe = false))
+        bindEffect(ZIndexEffect(1), hoveredState(), delayed = false)
     }.setIcon(BasicState(EssentialPalette.PLUS_5X)).setTooltip("Add Account") childOf switcherContainer
 
     private val collapseButton by MenuButton(
@@ -95,7 +95,7 @@ class CompactAccountSwitcher(
         width = 13.pixels
         height = 20.pixels
     }.apply {
-        bindEffect(ZIndexEffect(1), hoveredState(layoutSafe = false))
+        bindEffect(ZIndexEffect(1), hoveredState(), delayed = false)
     }.setIcon(BasicState(EssentialPalette.ARROW_RIGHT_3X5)) childOf switcherContainer
 
     init {
@@ -133,7 +133,7 @@ class CompactAccountSwitcher(
             width = 20.pixels
             height = AspectConstraint()
         }.apply {
-            bindEffect(ZIndexEffect(1), hoveredState(layoutSafe = false))
+            bindEffect(ZIndexEffect(1), hoveredState(), delayed = false)
         }.setIcon(BasicState(ImageFactory { CachedAvatarImage.ofUUID(accountInfo.uuid) }), iconHeight = 8f, iconWidth = 8f)
             .setTooltip(username) childOf this
 
@@ -144,7 +144,7 @@ class CompactAccountSwitcher(
                 height = ChildBasedSizeConstraint()
             }
 
-            bindEffect(ZIndexEffect(1), hoveredState(layoutSafe = false))
+            bindEffect(ZIndexEffect(1), hoveredState(), delayed = false)
 
             // Check if the UUID belongs to the initial session, so we know if the delete button should be displayed
             val isInitialSession = Essential.getInstance().sessionFactories
@@ -165,7 +165,7 @@ class CompactAccountSwitcher(
                 delete.bindParent(this, accountButton.hoveredState() or delete.hoveredState())
 
                 // Highlight accountButton when delete button is hovered
-                delete.hoveredState(layoutSafe = false).onSetValueAndNow { accountButton.hoveredStyleOverrides.set(it) }
+                delete.hoveredState().onSetValueAndNow { accountButton.hoveredStyleOverrides.set(it) }
             }
         }
     }

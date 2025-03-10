@@ -54,7 +54,6 @@ import gg.essential.util.CachedAvatarImage;
 import gg.essential.util.StringsKt;
 import gg.essential.util.UUIDUtil;
 import kotlin.Unit;
-import okhttp3.HttpUrl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -740,20 +739,6 @@ public class ChatManager extends StateCallbackManager<IMessengerManager> impleme
 
         // Request messages until we find the target one
         channelEagerMessageResolverMap.computeIfAbsent(ref.getChannelId(), EagerMessageResolver::new).resolve(ref);
-    }
-
-    public void sendGiftEmbed(UUID receiver, String cosmeticId) {
-        if (receiver.equals(UUIDUtil.getClientUUID())) {
-            return;
-        }
-        Optional<Map.Entry<Long, Channel>> channelEntry = getChannels().entrySet().stream().filter(entry ->
-            entry.getValue().getType() == ChannelType.DIRECT_MESSAGE && entry.getValue().getMembers().contains(receiver)
-        ).findFirst();
-        if (channelEntry.isPresent()) {
-            HttpUrl.Builder urlBuilder = new HttpUrl.Builder();
-            urlBuilder.scheme("https").host("essential.gg").addPathSegment("gift").addPathSegment(cosmeticId);
-            sendMessage(channelEntry.get().getKey(), urlBuilder.build().toString());
-        }
     }
 
     /**

@@ -135,12 +135,6 @@ fun <T> State<T>.mapToString() = this.map { it.toString() }
 
 fun <T> T.state() = BasicState(this)
 
-fun <T> State<T>.layoutSafe(): State<T> {
-    val safeState = BasicState(get())
-    onSetValue { Window.enqueueRenderOperation { safeState.set(it) } }
-    return safeState
-}
-
 
 fun <T : UIComponent, E> T.bindChildren(
     list: ObservableList<E>,

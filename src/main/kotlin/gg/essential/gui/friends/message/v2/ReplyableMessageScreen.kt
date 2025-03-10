@@ -25,7 +25,6 @@ import gg.essential.elementa.components.ScrollComponent
 import gg.essential.elementa.components.UIContainer
 import gg.essential.elementa.constraints.*
 import gg.essential.elementa.dsl.*
-import gg.essential.elementa.state.BasicState
 import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.*
 import gg.essential.gui.common.shadow.EssentialUIText
@@ -207,7 +206,7 @@ class ReplyableMessageScreen(
         // This one fades in the gradient over 100 pixels scrolled.
         // Could be made into a more generic solution, but to do the same trick for the opposite side,
         // one must have the actual max offset of the scroller, which isn't accessible and duplicating the calculation code seems like a bad idea.
-        val percentState = BasicState(0f)
+        val percentState = mutableStateOf(0f)
 
         scroller.addScrollAdjustEvent(false) { _, _ ->
             percentState.set(1 - (scroller.verticalOffset / 100).coerceIn(0f, 1f))

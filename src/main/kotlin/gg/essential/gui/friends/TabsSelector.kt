@@ -76,7 +76,7 @@ class TabsSelector(selectedTab: MutableState<Tab>) : UIContainer() {
             }.bindShadowColor(selectedTab.map { if (it == tab) EssentialPalette.BLUE_SHADOW else EssentialPalette.COMPONENT_BACKGROUND }.toV1(this)) childOf content
 
             if (tab == Tab.FRIENDS) {
-                val count = Essential.getInstance().connectionManager.noticesManager.socialMenuNewFriendRequestNoticeManager.unseenFriendRequestCount()
+                val count = Essential.getInstance().connectionManager.socialMenuNewFriendRequestNoticeManager.unseenFriendRequestCount()
 
                 val unseenFriendRequestIndicator by Tag(
                     stateOf(EssentialPalette.RED),

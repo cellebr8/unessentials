@@ -82,6 +82,8 @@ fun CosmeticsDataWithChanges.setCosmeticSingletonPropertyEnabled(
                 is CosmeticProperty.Variants -> existingProperty.copy(enabled = enabled)
                 is CosmeticProperty.DefaultSide -> existingProperty.copy(enabled = enabled)
                 is CosmeticProperty.MutuallyExclusive -> existingProperty.copy(enabled = enabled)
+                is CosmeticProperty.HidesAllOtherCosmeticsOrItems -> existingProperty.copy(enabled = enabled)
+                is CosmeticProperty.LocksPlayerRotation -> existingProperty.copy(enabled = enabled)
 
                 is CosmeticProperty.CosmeticBoneHiding,
                 is CosmeticProperty.ExternalHiddenBone,
@@ -106,6 +108,17 @@ fun CosmeticsDataWithChanges.setCosmeticSingletonPropertyEnabled(
                     "UNUSED",
                     enabled,
                     CosmeticProperty.InterruptsEmote.Data()
+                )
+                CosmeticPropertyType.ALL_OTHER_COSMETIC_OR_ITEM_HIDING -> CosmeticProperty.HidesAllOtherCosmeticsOrItems(
+                    "UNUSED",
+                    enabled,
+                    CosmeticProperty.HidesAllOtherCosmeticsOrItems.Data()
+                )
+
+                CosmeticPropertyType.LOCKS_PLAYER_ROTATION -> CosmeticProperty.LocksPlayerRotation(
+                    "UNUSED",
+                    enabled,
+                    CosmeticProperty.LocksPlayerRotation.Data()
                 )
 
                 CosmeticPropertyType.LOCALIZATION -> CosmeticProperty.Localization(

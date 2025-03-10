@@ -172,6 +172,54 @@ sealed class CosmeticProperty {
             @SerialName("ARM_SWING") val armSwing: Boolean = true,
         )
     }
+    @SerialName("ALL_OTHER_COSMETIC_OR_ITEM_HIDING")
+    @Serializable
+    data class HidesAllOtherCosmeticsOrItems(
+        override val id: String?,
+        override val enabled: Boolean,
+        val data: Data
+    ) : CosmeticProperty() {
+
+        @Transient
+        override val type: CosmeticPropertyType = CosmeticPropertyType.ALL_OTHER_COSMETIC_OR_ITEM_HIDING
+
+
+        @Serializable
+        data class Data(
+            /** If true, all player cosmetics will be hidden. */
+            @SerialName("ALL_COSMETICS") val hideAllCosmetics: Boolean = false,
+
+            /** If true, player part cosmetics will be hidden. */
+            @SerialName("HEAD_COSMETICS") val hideHeadCosmetics: Boolean = false,
+            @SerialName("BODY_COSMETICS") val hideBodyCosmetics: Boolean = false,
+            @SerialName("LEGS_COSMETICS") val hideLegCosmetics: Boolean = false,
+            @SerialName("ARMS_COSMETICS") val hideArmCosmetics: Boolean = false,
+
+            /** If true, player held items will be hidden. */
+            @SerialName("HELD_ITEMS") val hideItems: Boolean = false,
+        ) {
+            fun hidesAnyCosmetics() : Boolean = hideAllCosmetics || hideHeadCosmetics || hideBodyCosmetics || hideLegCosmetics || hideArmCosmetics
+        }
+    }
+
+
+    @SerialName("LOCKS_PLAYER_ROTATION")
+    @Serializable
+    data class LocksPlayerRotation(
+        override val id: String?,
+        override val enabled: Boolean,
+        val data: Data
+    ) : CosmeticProperty() {
+
+        @Transient
+        override val type: CosmeticPropertyType = CosmeticPropertyType.LOCKS_PLAYER_ROTATION
+
+        @Serializable
+        data class Data(
+            /** If true, a change in player rotation will not affect the emote rotation. */
+            @SerialName("ROTATION_LOCK") val rotationLock: Boolean = false,
+        )
+    }
 
     @SerialName("REQUIRES_UNLOCK_ACTION")
     @Serializable
@@ -343,6 +391,8 @@ sealed class CosmeticProperty {
                 subclass(Variants::class, Variants.serializer())
                 subclass(DefaultSide::class, DefaultSide.serializer())
                 subclass(MutuallyExclusive::class, MutuallyExclusive.serializer())
+                subclass(HidesAllOtherCosmeticsOrItems::class, HidesAllOtherCosmeticsOrItems.serializer())
+                subclass(LocksPlayerRotation::class, LocksPlayerRotation.serializer())
             }
         }
     }

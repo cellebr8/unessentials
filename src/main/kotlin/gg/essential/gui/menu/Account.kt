@@ -47,7 +47,7 @@ class Account(
             height = ChildBasedMaxSizeConstraint()
         }
 
-        bindEffect(ZIndexEffect(1), hoveredState(layoutSafe = false))
+        bindEffect(ZIndexEffect(1), hoveredState(), delayed = false)
     }
 
     private val accountButton by MenuButton(
@@ -61,7 +61,7 @@ class Account(
         width = 80.pixels
         height = 20.pixels
     }.apply {
-        bindEffect(ZIndexEffect(1), hoveredState(layoutSafe = false))
+        bindEffect(ZIndexEffect(1), hoveredState(), delayed = false)
     }.setIcon(
         BasicState(ImageFactory { CachedAvatarImage.ofUUID(accountInfo.uuid) }),
         iconWidth = 8f,
@@ -94,10 +94,10 @@ class Account(
                 width = 14.pixels
                 height = 20.pixels
             }.apply {
-                bindEffect(ZIndexEffect(1), hoveredState(layoutSafe = false))
+                bindEffect(ZIndexEffect(1), hoveredState(), delayed = false)
 
                 // Highlight accountButton when delete button is hovered
-                hoveredState(layoutSafe = false).onSetValueAndNow { accountButton.hoveredStyleOverrides.set(it) }
+                hoveredState().onSetValueAndNow { accountButton.hoveredStyleOverrides.set(it) }
             }.setIcon(BasicState(EssentialPalette.TRASH_9X))
                 .bindHoverEssentialTooltip(BasicState("Remove Account"))
                 .bindParent(this, hovered)

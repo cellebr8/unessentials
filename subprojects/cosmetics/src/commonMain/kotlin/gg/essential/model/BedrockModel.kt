@@ -13,11 +13,9 @@ package gg.essential.model
 
 import dev.folomeev.kotgl.matrix.matrices.mutables.inverse
 import dev.folomeev.kotgl.matrix.matrices.mutables.times
-import dev.folomeev.kotgl.matrix.matrices.mutables.timesSelf
 import dev.folomeev.kotgl.matrix.vectors.vec4
 import gg.essential.cosmetics.events.AnimationEvent
 import gg.essential.cosmetics.skinmask.SkinMask
-import gg.essential.model.EnumPart.Companion.fromBoneName
 import gg.essential.model.backend.PlayerPose
 import gg.essential.model.backend.RenderBackend
 import gg.essential.model.file.AnimationFile
@@ -27,6 +25,7 @@ import gg.essential.model.file.SoundDefinitionsFile
 import gg.essential.model.molang.MolangQueryEntity
 import gg.essential.model.util.Quaternion
 import gg.essential.model.util.UMatrixStack
+import gg.essential.model.util.UVertexConsumer
 import gg.essential.model.util.getRotationEulerZYX
 import gg.essential.model.util.times
 import gg.essential.network.cosmetics.Cosmetic
@@ -49,7 +48,10 @@ class BedrockModel(
 
     @JvmField
     var boundingBoxes: List<Pair<Box3, Side?>>
-    var rootBone: Bone
+    val bones: Bones
+    val rootBone: Bone
+        get() = bones.root
+    val defaultRenderGeometry: RenderGeometry
     var textureFrameCount = 1
     var translucent = false
     var animations: List<Animation>
@@ -67,13 +69,15 @@ class BedrockModel(
         val texture = texture
         if (data != null) {
             val parser = ModelParser(cosmetic, texture?.width ?: 64, texture?.height ?: 64)
-            parser.parse(data)
-            rootBone = parser.rootBone
+            val result = parser.parse(data) ?: Pair(Bones(), listOf(emptyList()))
+            bones = result.first
+            defaultRenderGeometry = result.second
             boundingBoxes = parser.boundingBoxes
             textureFrameCount = parser.textureFrameCount
             translucent = parser.translucent
         } else {
-            rootBone = Bone("_root")
+            bones = Bones()
+            defaultRenderGeometry = listOf(emptyList())
             boundingBoxes = emptyList()
         }
 
@@ -93,7 +97,7 @@ class BedrockModel(
             diagnostics.add(Diagnostic.error(msg))
         }
 
-        sideOptions = getBones(rootBone).mapNotNull { it.side }.toSet()
+        sideOptions = bones.mapNotNull { it.side }.toSet()
 
         val particleEffects = mutableMapOf<String, ParticleEffect>()
         val soundEffects = mutableMapOf<String, SoundEffect>()
@@ -163,7 +167,7 @@ class BedrockModel(
                 generateSequence(trigger) { it.onComplete }.map { it.name }
             }
 
-            animations = animationData.animations.map { Animation(it.key, it.value, getBones(rootBone), particleEffects, soundEffects) }
+            animations = animationData.animations.map { Animation(it.key, it.value, bones, particleEffects, soundEffects) }
                 .filter { animation ->
                     when {
                         animation.name !in referencedAnimations -> false
@@ -197,22 +201,22 @@ class BedrockModel(
         if (animationState.active.none { it.animation.affectsPose }) {
             return basePose
         }
-        animationState.apply(rootBone, true)
-        applyPose(rootBone, basePose, entity)
-        return retrievePose(rootBone, basePose)
+        animationState.apply(rootBone)
+        applyPose(basePose, entity)
+        return retrievePose(basePose)
     }
 
-    fun applyPose(rootBone: Bone, pose: PlayerPose, entity: MolangQueryEntity) {
+    fun applyPose(pose: PlayerPose, entity: MolangQueryEntity) {
         var anyGimbal = false
         var anyWorldGimbal = false
-        for (bone in getBones(rootBone)) {
+        for (bone in bones) {
             if (bone.gimbal) {
                 anyGimbal = true
                 if (bone.worldGimbal) {
                     anyWorldGimbal = true
                 }
             }
-            val part = fromBoneName(bone.boxName) ?: continue
+            val part = bone.part ?: continue
             copy(pose[part], bone, OFFSETS.getValue(part))
             if (pose.child) {
                 if (part == EnumPart.HEAD) {
@@ -232,32 +236,20 @@ class BedrockModel(
         }
     }
 
-    fun retrievePose(rootBone: Bone, basePose: PlayerPose): PlayerPose {
+    fun retrievePose(basePose: PlayerPose): PlayerPose {
         val parts = basePose.toMap(mutableMapOf())
 
         fun Bone.visit(matrixStack: UMatrixStack, parentHasScaling: Boolean) {
-            val part = fromBoneName(boxName)
-
-            if (part == null && childModels.isEmpty()) {
+            if (!affectsPose) {
                 return
             }
 
             val hasScaling = parentHasScaling || animScaleX != 1f || animScaleY != 1f || animScaleZ != 1f
 
             matrixStack.push()
-            matrixStack.translate(pivotX + animOffsetX, pivotY - animOffsetY, pivotZ + animOffsetZ)
-            if (gimbal) {
-                matrixStack.rotate(parentRotation.conjugate())
-            }
-            matrixStack.rotate(rotateAngleZ + animRotZ, 0.0f, 0.0f, 1.0f, false)
-            matrixStack.rotate(rotateAngleY + animRotY, 0.0f, 1.0f, 0.0f, false)
-            matrixStack.rotate(rotateAngleX + animRotX, 1.0f, 0.0f, 0.0f, false)
-            extra?.let {
-                matrixStack.peek().model.timesSelf(it)
-            }
-            matrixStack.scale(animScaleX, animScaleY, animScaleZ)
-            matrixStack.translate(-pivotX - userOffsetX, -pivotY - userOffsetY, -pivotZ - userOffsetZ)
+            applyTransform(matrixStack)
 
+            val part = part
             if (part != null) {
                 val offset = OFFSETS.getValue(part)
                 val matrix = matrixStack.peek().model
@@ -354,7 +346,7 @@ class BedrockModel(
     fun render(
         matrixStack: UMatrixStack,
         vertexConsumerProvider: RenderBackend.VertexConsumerProvider,
-        rootBone: Bone,
+        geometry: RenderGeometry,
         entity: MolangQueryEntity,
         metadata: RenderMetadata,
         lifetime: Float,
@@ -367,33 +359,37 @@ class BedrockModel(
 
         val pose = metadata.pose
         if (pose != null) {
-            applyPose(rootBone, pose, entity)
+            applyPose(pose, entity)
         }
 
         propagateVisibilityToRootBone(metadata.side,
-            rootBone,
             metadata.hiddenBones,
             metadata.parts,
         )
 
+        matrixStack.push()
+        matrixStack.scale(1f / 16f)
+
+        fun render(vertexConsumer: UVertexConsumer) {
+            bones.root.render(matrixStack, vertexConsumer, geometry, metadata.light, offset)
+            bones.byPart.values.forEach { bone ->
+                bone.resetAnimationOffsets(false) // animations will have been baked into the pose already
+                bone.render(matrixStack, vertexConsumer, geometry, metadata.light, offset)
+            }
+        }
+
         vertexConsumerProvider.provide(textureLocation, false) { vertexConsumer ->
-            rootBone.render(matrixStack, vertexConsumer, metadata.light, metadata.scale, offset)
+            render(vertexConsumer)
         }
 
         val emissiveTexture = emissiveTexture
         if (emissiveTexture != null) {
             vertexConsumerProvider.provide(emissiveTexture, true) { vertexConsumer ->
-                rootBone.render(matrixStack, vertexConsumer, metadata.light, metadata.scale, offset)
+                render(vertexConsumer)
             }
         }
-    }
 
-    fun getBones(bone: Bone): List<Bone> {
-        val bones = mutableListOf(bone)
-        for (childModel in bone.childModels) {
-            bones.addAll(getBones(childModel))
-        }
-        return bones
+        matrixStack.pop()
     }
 
     /**
@@ -401,7 +397,6 @@ class BedrockModel(
      */
     fun propagateVisibilityToRootBone(
         side: Side?,
-        rootBone: Bone,
         hiddenBones: Set<String>,
         parts: Set<EnumPart>?,
     ) {
@@ -409,33 +404,29 @@ class BedrockModel(
         // otherwise both sides will show
         val updatedSide = side ?: cosmetic.defaultSide ?: Side.getDefaultSideOrNull(sideOptions)
 
-        for (bone in getBones(rootBone)) {
-            val part = fromBoneName(bone.boxName)
+        for (bone in bones) {
+            val part = bone.part
             if (part == null) {
                 bone.visible = if (bone.boxName in hiddenBones) false else null
                 continue
             }
             bone.visible = (parts == null || part in parts) && bone.boxName !in hiddenBones
         }
-        rootBone.propagateVisibility(true, updatedSide)
+        rootBone.propagateVisibility(parentVisible = parts?.size != 0, updatedSide)
     }
 
     private fun copy(pose: PlayerPose.Part, bone: Bone, offset: Offset) {
-        bone.rotateAngleX = pose.rotateAngleX
-        bone.rotateAngleY = pose.rotateAngleY
-        bone.rotateAngleZ = pose.rotateAngleZ
-        bone.pivotX = offset.pivotX
-        bone.pivotY = offset.pivotY
-        bone.pivotZ = offset.pivotZ
-        bone.animOffsetX += pose.pivotX + offset.offsetX
-        bone.animOffsetY += -pose.pivotY + offset.offsetY
-        bone.animOffsetZ += pose.pivotZ + offset.offsetZ
-        bone.extra = pose.extra
-        bone.isHidden = false
+        bone.poseRotX = pose.rotateAngleX
+        bone.poseRotY = pose.rotateAngleY
+        bone.poseRotZ = pose.rotateAngleZ
+        bone.poseOffsetX = pose.pivotX + offset.offsetX
+        bone.poseOffsetY = -pose.pivotY + offset.offsetY
+        bone.poseOffsetZ = pose.pivotZ + offset.offsetZ
+        bone.poseExtra = pose.extra
         bone.childScale = 1f
     }
 
-    private class Offset(
+    class Offset(
         val pivotX: Float,
         val pivotY: Float,
         val pivotZ: Float,
@@ -451,7 +442,7 @@ class BedrockModel(
         private val LEFT_LEG = Offset(1.9f, -12f, 0f, -1.9f, 12f, 0f)
         private val RIGHT_LEG = Offset(-1.9f, -12f, 0f, 1.9f, 12f, 0f)
         private val CAPE = Offset(0f, -24f, 2f, 0f, 0f, -2f)
-        private val OFFSETS =
+        val OFFSETS =
             mapOf(
                 EnumPart.HEAD to BASE,
                 EnumPart.BODY to BASE,

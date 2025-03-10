@@ -63,6 +63,8 @@ import gg.essential.network.connectionmanager.cosmetics.ICosmeticsManager
 import gg.essential.network.connectionmanager.cosmetics.ModelLoader
 import gg.essential.network.connectionmanager.cosmetics.OutfitManager
 import gg.essential.network.connectionmanager.cosmetics.WardrobeSettings
+import gg.essential.network.connectionmanager.notices.CosmeticNotices
+import gg.essential.network.connectionmanager.notices.NoticeBannerManager
 import gg.essential.universal.UResolution
 import gg.essential.util.Client
 import gg.essential.util.EssentialSounds
@@ -79,7 +81,7 @@ import kotlin.time.Duration.Companion.seconds
 class WardrobeState(
     initialCategory: WardrobeCategory?,
     val screenOpen: State<Boolean>,
-    component: UIComponent,
+    val component: UIComponent,
     val cosmeticsManager: ICosmeticsManager,
     val modelLoader: ModelLoader,
     val settings: WardrobeSettings,
@@ -88,6 +90,8 @@ class WardrobeState(
     val emoteWheelManager: EmoteWheelManager,
     val coinsManager: CoinsManager,
     val saleState: ListState<Sale>,
+    val cosmeticNotices: CosmeticNotices,
+    val bannerManager: NoticeBannerManager,
     private val guiScale: State<Int>,
 ) {
     val diagnosticsEnabled = cosmeticsManager.localCosmeticsData != null

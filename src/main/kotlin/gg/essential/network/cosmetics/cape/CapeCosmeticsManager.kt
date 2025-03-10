@@ -152,8 +152,7 @@ class CapeCosmeticsManager(
                 active = cape
             }
             // Fetch a signature for this cape
-            val property = MojangCapeApi.fetchCurrentTextures()
-            signatures.add(property.value to property.signature!!) // signature should be non-null by construction
+            signatures.add(MojangCapeApi.fetchCurrentTextures())
         }
 
         // If we had to change the active cape on Mojang's end, revert it to what the user expects

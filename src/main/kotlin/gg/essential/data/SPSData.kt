@@ -40,6 +40,10 @@ object SPSData {
             "getSPSSettings must be called with either worldSummary or worldInfo; they cannot both be null."
         )
 
+        val difficultyLocked = worldSummary?.getLevelNbtValue {
+            it.getCompoundTag("Data").getBoolean("DifficultyLocked")
+        } ?: worldInfo?.isDifficultyLocked ?: false
+
         val file = (worldFile / "spsSettings.json")
         if (file.exists()) {
             try {
@@ -47,7 +51,8 @@ object SPSData {
                 val localUuid = USession.activeNow().uuid
                 return deserialized.copy(
                     // Remove invites sent to the current player which were sent while signed into another account
-                    invited = deserialized.invited.filter { it != localUuid }.toSet()
+                    invited = deserialized.invited.filter { it != localUuid }.toSet(),
+                    difficultyLocked = difficultyLocked
                 )
             } catch (exception: Exception) {
                 Essential.logger.error("Failed to read SPS settings file.", exception)
@@ -60,6 +65,7 @@ object SPSData {
             EnumDifficulty.getDifficultyEnum(worldSummary?.getLevelNbtValue {
                 it.getCompoundTag("Data").getInteger("Difficulty")
             } ?: worldInfo?.difficulty?.difficultyId ?: EnumDifficulty.NORMAL.difficultyId),
+            difficultyLocked,
             worldSummary?.cheatsEnabled ?: worldInfo!!.areCommandsAllowed(),
             spsManager.invitedUsers,
             spsManager.isShareResourcePack,
@@ -75,6 +81,7 @@ object SPSData {
     data class SPSSettings(
         val gameType: GameType = GameType.ADVENTURE,
         val difficulty: EnumDifficulty = EnumDifficulty.NORMAL,
+        val difficultyLocked: Boolean = false,
         val cheats: Boolean = false,
         val invited: Set<UUID> = emptySet(),
         val shareResourcePack: Boolean = false,

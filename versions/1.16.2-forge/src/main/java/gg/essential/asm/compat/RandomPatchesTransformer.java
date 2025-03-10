@@ -42,6 +42,7 @@ public class RandomPatchesTransformer implements EssentialTransformer {
     //#endif
 
     private static final String mixinMergedDescriptor = "Lorg/spongepowered/asm/mixin/transformer/meta/MixinMerged;";
+    private static final String randomPatchesMixinName = "com.therandomlabs.randompatches.mixin.client.keybindings.KeyBindingMixin";
 
     @Override
     public Set<String> getTargets() {
@@ -70,8 +71,9 @@ public class RandomPatchesTransformer implements EssentialTransformer {
         if (methodNode.visibleAnnotations == null || !methodNode.name.contains("conflicts")) return false;
         for (AnnotationNode annotation : methodNode.visibleAnnotations) {
             if (!annotation.desc.equals(mixinMergedDescriptor)) continue;
-            if (!Annotations.getValue(annotation, "value").equals("com.therandomlabs.randompatches.mixin.client.keybindings.KeyBindingMixin")) continue;
-            return true;
+            if (randomPatchesMixinName.equals(Annotations.getValue(annotation, "mixin"))) {
+                return true;
+            }
         }
         return false;
     }

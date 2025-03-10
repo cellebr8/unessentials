@@ -79,9 +79,11 @@ class Wardrobe(
         skinsManager,
         emoteWheelManager,
         coinsManager,
-        connectionManager.noticesManager.saleNoticeManager.saleState.map {
+        connectionManager.saleNoticeManager.saleState.map {
             it.filter { it.discountPercent > 0 } // Sales with 0% discount are used to display on the main menu and should be ignored here
         }.toListState(),
+        connectionManager.cosmeticNotices,
+        connectionManager.noticeBannerManager,
         guiScaleState,
     )
     init {

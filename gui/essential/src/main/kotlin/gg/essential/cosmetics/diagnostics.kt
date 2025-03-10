@@ -137,8 +137,6 @@ private class ReferenceChecker(
     private val model: BedrockModel,
     private val diagnostics: MutableList<Diagnostic>,
 ) {
-    private val bones = model.getBones(model.rootBone).associateBy { it.boxName }
-
     private val referencedSounds = mutableSetOf<String>()
     private val referencedParticles = mutableSetOf<String>()
     private val referencedAnimations = mutableSetOf<String>()
@@ -193,7 +191,7 @@ private class ReferenceChecker(
     }
 
     private fun visitBone(name: String, referringFile: String) {
-        if (name !in bones) {
+        if (name !in model.bones) {
             val msg = "Referenced bone `$name` not found."
             diagnostics.add(Diagnostic.error(msg, file = referringFile))
         }

@@ -45,8 +45,8 @@ public class BuildInfo {
         //$$ 12006;
         //#elseif MC==12100
         //$$ 12100;
-        //#elseif MC==12102
-        //$$ 12102;
+        //#elseif MC==12103
+        //$$ 12103;
         //#elseif MC==12104
         //$$ 12104;
         //#else

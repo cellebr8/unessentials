@@ -114,10 +114,8 @@ object EssentialConfig : Vigilant2(), GuiEssentialPlatform.Config {
     val autoRefreshSessionState = property("Quality of Life.General.Auto Refresh Session", true)
     var autoRefreshSession by autoRefreshSessionState
 
-    //#if MC<11400
     val windowedFullscreenState = property("Quality of Life.Fullscreen.Windowed Fullscreen", false)
     var windowedFullscreen by windowedFullscreenState
-    //#endif
 
     val disableCosmeticsState = property("Cosmetics.General.Disable cosmetics", false)
     var disableCosmetics: Boolean by disableCosmeticsState
@@ -537,14 +535,14 @@ object EssentialConfig : Vigilant2(), GuiEssentialPlatform.Config {
                 }
             }
 
-            //#if MC<11400
-            subcategory("Fullscreen") {
-                switch(windowedFullscreenState) {
-                    name = "Windowed fullscreen"
-                    description = "Enables windowed fullscreen, allowing focusing on other windows."
+            if (platform.mcVersion < 11400) {
+                subcategory("Fullscreen") {
+                    switch(windowedFullscreenState) {
+                        name = "Windowed fullscreen"
+                        description = "Enables windowed fullscreen, allowing focusing on other windows."
+                    }
                 }
             }
-            //#endif
 
             subcategory("Accessibility") {
                 switch(enlargeSocialMenuChatMetadataState) {

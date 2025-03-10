@@ -46,7 +46,6 @@ class EssentialUIText @JvmOverloads constructor(
 ) : UIText(text, shadow, shadowColor) {
 
     private val truncatedState = BasicState(false)
-    private var truncated = false
     private val fullText = BasicState(text)
     private val actualTextWidth = BasicState(constraints.getWidth())
 
@@ -71,15 +70,6 @@ class EssentialUIText @JvmOverloads constructor(
         setColor(EssentialPalette.TEXT_HIGHLIGHT)
     }
 
-    override fun animationFrame() {
-        super.animationFrame()
-        if (truncatedState.get() != truncated) {
-            Window.enqueueRenderOperation {
-                truncatedState.set(truncated)
-            }
-        }
-    }
-
     override fun getWidth(): Float {
         return constraints.getWidth()
     }
@@ -88,6 +78,7 @@ class EssentialUIText @JvmOverloads constructor(
         val textScale = getTextScale()
         val constrainedWidth = constraints.getWidth()
 
+        val renderedTruncated: Boolean
         if (truncateIfTooSmall && getTextWidth() * textScale > constrainedWidth) {
             val fontProvider = getFontProvider()
             val oldWidth = constraints.width
@@ -121,12 +112,18 @@ class EssentialUIText @JvmOverloads constructor(
             if (centerTruncatedText) setX(oldX)
             setText(text)
             setWidth(oldWidth)
-            this.truncated = true
+            renderedTruncated = true
             fullText.set(text)
         } else {
             actualTextWidth.set(constraints.getWidth())
             super.draw(matrixStack)
-            this.truncated = false
+            renderedTruncated = false
+        }
+
+        if (truncatedState.get() != renderedTruncated) {
+            Window.enqueueRenderOperation {
+                truncatedState.set(renderedTruncated)
+            }
         }
     }
 

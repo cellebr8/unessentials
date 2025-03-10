@@ -100,6 +100,7 @@ class CosmeticBundleConfiguration(
                         CosmeticSettingType.PLAYER_POSITION_ADJUSTMENT -> PlayerPositionAdjustmentSettingConfiguration(cosmeticsDataWithChanges, state.modelLoader, cosmeticId, settings)
                         CosmeticSettingType.SIDE -> SideSettingConfiguration(cosmeticsDataWithChanges, state.modelLoader, cosmeticId, settings)
                         CosmeticSettingType.VARIANT -> VariantSettingConfiguration(cosmeticsDataWithChanges, state.modelLoader, cosmeticId, settings)
+                        CosmeticSettingType.ANIMATION_VARIANT -> continue
                     }
                     component()
                 }

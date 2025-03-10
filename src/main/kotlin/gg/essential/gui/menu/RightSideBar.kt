@@ -70,7 +70,7 @@ open class RightSideBar(menuType: PauseMenuDisplay.MenuType, menuVisible: State<
     }
 
     private val messageCount = connectionManager.chatManager.unreadMessageCount
-        .zip(connectionManager.noticesManager.socialMenuNewFriendRequestNoticeManager.unseenFriendRequestCount().toV2())
+        .zip(connectionManager.socialMenuNewFriendRequestNoticeManager.unseenFriendRequestCount().toV2())
         .map { (messages, friends) -> messages + friends }
         .map {
             if (it > 98) "99+" else it.toString()

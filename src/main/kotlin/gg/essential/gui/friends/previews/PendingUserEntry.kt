@@ -36,7 +36,7 @@ class PendingUserEntry(
 ) : BasicUserEntry(user, EssentialPalette.CANCEL_5X, EssentialPalette.RED, sortListener) {
 
     private val actions = gui.socialStateManager.relationshipStates
-    private val friendRequestNoticeManager = Essential.getInstance().connectionManager.noticesManager.socialMenuNewFriendRequestNoticeManager
+    private val friendRequestNoticeManager = Essential.getInstance().connectionManager.socialMenuNewFriendRequestNoticeManager
     private val hasUnseenRequest = friendRequestNoticeManager.hasUnseenFriendRequests(user)
 
     // True when this request was unseen and holds as true for the lifetime of this entry

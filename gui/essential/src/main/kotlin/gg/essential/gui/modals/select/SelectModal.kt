@@ -101,8 +101,10 @@ class SelectModal<T>(
                     if_(shouldDisplaySelected) {
                         column(Modifier.fillWidth(), Arrangement.spacedBy(2f)) {
                             sectionTitle("Selected")
-                            sections.forEach {
-                                sectionRows(it, isSelectedSection = true)
+                            column(Modifier.fillWidth(), Arrangement.spacedBy(2f)) {
+                                sections.forEach {
+                                    sectionRows(it, isSelectedSection = true)
+                                }
                             }
                         }
                     }

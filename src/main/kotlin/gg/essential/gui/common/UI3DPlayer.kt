@@ -31,7 +31,6 @@ import gg.essential.cosmetics.events.CosmeticEventDispatcher.dispatchEvents
 import gg.essential.cosmetics.renderForHoverOutline
 import gg.essential.cosmetics.renderCapeForHoverOutline
 import gg.essential.cosmetics.skinmask.MaskedSkinProvider
-import gg.essential.elementa.UIComponent
 import gg.essential.elementa.dsl.pixels
 import gg.essential.elementa.state.BasicState
 import gg.essential.elementa.state.State
@@ -148,7 +147,7 @@ open class UI3DPlayer(
     val sounds: StateV2<Boolean> = stateOf(false),
     soundsVolume: StateV2<Float> = stateOf(1f),
     private val profile: State<WrappedGameProfile?> = BasicState(player?.gameProfile?.wrapped()),
-) : UIComponent() {
+) : UIPlayer() {
 
     private val closed = mutableStateOf(false)
     val soundsVolume: StateV2<Float> = StateV2 { if (closed()) 0f else soundsVolume() }
@@ -167,7 +166,7 @@ open class UI3DPlayer(
             }
         }
 
-    val wearablesManager: WearablesManager?
+    override val wearablesManager: WearablesManager?
         get() = fallbackPlayer.orNull?.wearablesManager
             ?: (player as? AbstractClientPlayerExt)?.wearablesManager
 
@@ -269,7 +268,7 @@ open class UI3DPlayer(
         prevY = mouseY
     }
 
-    open fun close() {
+    override fun close() {
         closed.set(true)
 
         fallbackPlayer.orNull?.close()
@@ -672,12 +671,12 @@ open class UI3DPlayer(
 
         // The current stack has the player (and thereby implicitly also the world) oriented towards the camera
         // but the particle system expects absolute coordinates, so we need to offset the stack accordingly.
-        val realRotation = player.takeUnless { errored }?.let { PlayerMolangQuery(it).rotation } ?: Quaternion.Identity
+        val realRotation = player.takeUnless { errored }?.let { PlayerMolangQuery(it).entityRotation } ?: Quaternion.Identity
         stack.rotate(realRotation.invert())
 
         // The current stack has the player at the origin, but the player isn't really at the world origin,
         // so we need to offset the stack accordingly.
-        val realPosition = player.takeUnless { errored }?.let { PlayerMolangQuery(it).position } ?: vecZero()
+        val realPosition = player.takeUnless { errored }?.let { PlayerMolangQuery(it).entityPosition } ?: vecZero()
         stack.translate(vecZero().minus(realPosition))
 
         val camera = perspectiveCamera ?: rotationAngleCamera
@@ -717,7 +716,7 @@ open class UI3DPlayer(
         private var lastFrameTime = -1L
         private var subject = CosmeticsSubject(entity)
         private var playerModel: ModelInstance =
-            ModelInstance(PlayerModel.steveBedrockModel, entity, subject.animationTargets) {}
+            ModelInstance(PlayerModel.steveBedrockModel, entity, subject.animationTargets, CosmeticsState.EMPTY) {}
         private val poseManager = PlayerPoseManager(entity)
         val particleSystem = ParticleSystem(Random(0), PlaneCollisionProvider.PlaneXZ, LightProvider.FullBright, ::playSound)
 
@@ -765,7 +764,7 @@ open class UI3DPlayer(
                 Model.ALEX -> PlayerModel.alexBedrockModel
                 Model.STEVE -> PlayerModel.steveBedrockModel
             }
-            playerModel = ModelInstance(model, entity, subject.animationTargets) {}
+            playerModel = ModelInstance(model, entity, subject.animationTargets, CosmeticsState.EMPTY) {}
 
             updateCosmeticsState()
         }
@@ -882,14 +881,13 @@ open class UI3DPlayer(
                     pose,
                     skin,
                     0,
-                    1 / 16f,
                     null,
                     emptySet(),
                     Vector3(),
                     null,
                 )
 
-            playerModel.render(stack, vertexConsumerProvider, playerModel.model.rootBone, renderMetadata)
+            playerModel.render(stack, vertexConsumerProvider, playerModel.model.defaultRenderGeometry, renderMetadata)
             if (cape != null) {
                 renderCape(stack, vertexConsumerProvider, renderMetadata, selectedCape, cape, capeEmissive)
             }
@@ -939,10 +937,10 @@ open class UI3DPlayer(
             model.texture = texture
             model.emissiveTexture = emissiveTexture
             model.rootBone.resetAnimationOffsets(true)
-            model.render(stack, vertexConsumerProvider, model.rootBone, entity, renderMetadata, entity.lifeTime)
+            model.render(stack, vertexConsumerProvider, model.defaultRenderGeometry, entity, renderMetadata, entity.lifeTime)
             renderCapeForHoverOutline(vertexConsumerProvider, cape) {
                 model.rootBone.resetAnimationOffsets(true)
-                model.render(stack, vertexConsumerProvider, model.rootBone, entity, renderMetadata, entity.lifeTime)
+                model.render(stack, vertexConsumerProvider, model.defaultRenderGeometry, entity, renderMetadata, entity.lifeTime)
             }
             model.texture = null
             model.emissiveTexture = null

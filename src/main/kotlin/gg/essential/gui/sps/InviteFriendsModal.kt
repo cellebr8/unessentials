@@ -190,7 +190,7 @@ object InviteFriendsModal {
 
             WorldSetting("Game Mode", gamemodeDropdown) childOf settings
 
-            if (info?.isDifficultyLocked != true) {
+            if (!(info?.isDifficultyLocked ?: spsSettings.difficultyLocked)) {
                 //#if MC>=11400
                 //$$ val difficulties = Difficulty.values().associateWith { I18n.format("options.difficulty.${it.name.lowercase()}") }
                 //#else
@@ -241,7 +241,7 @@ object InviteFriendsModal {
 
     private fun updateSpsSettings(spsSettings: SPSData.SPSSettings) {
         val spsManager = Essential.getInstance().connectionManager.spsManager
-        spsManager.updateWorldSettings(spsSettings.cheats, spsSettings.gameType, spsSettings.difficulty)
+        spsManager.updateWorldSettings(spsSettings.cheats, spsSettings.gameType, spsSettings.difficulty, spsSettings.difficultyLocked)
         spsManager.updateOppedPlayers(spsSettings.oppedPlayers)
         spsManager.isShareResourcePack = spsSettings.shareResourcePack
     }

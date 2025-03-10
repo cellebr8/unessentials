@@ -118,7 +118,7 @@ dependencies {
         val fapiVersion = when (platform.mcVersion) {
             12006 -> "0.97.8+1.20.6"
             12100 -> "0.99.2+1.21"
-            12102 -> "0.106.0+1.21.2"
+            12103 -> "0.106.0+1.21.2"
             12104 -> "0.110.0+1.21.4"
             else -> error("No fabric API version configured!")
         }

@@ -46,20 +46,20 @@ import org.lwjgl.opengl.GL30.GL_UNSIGNED_INT_24_8
 import java.awt.Color
 import java.nio.ByteBuffer
 
-class GlFrameBuffer(width: Int, height: Int) {
-    var width: Int = width
+class GlFrameBufferImpl(width: Int, height: Int) : GlFrameBuffer {
+    override var width: Int = width
         private set
-    var height: Int = height
-        private set
-
-    var frameBuffer = -1
-        private set
-    var texture = -1
-        private set
-    var depthStencil = -1
+    override var height: Int = height
         private set
 
-    fun resize(width: Int, height: Int) {
+    override var frameBuffer = -1
+        private set
+    override var texture = -1
+        private set
+    override var depthStencil = -1
+        private set
+
+    override fun resize(width: Int, height: Int) {
         if (this.width == width && this.height == height && this.frameBuffer != -1) {
             return
         }
@@ -124,7 +124,7 @@ class GlFrameBuffer(width: Int, height: Int) {
         }
     }
 
-    fun delete() {
+    override fun delete() {
         if (depthStencil != -1) {
             glDeleteTextures(depthStencil)
             depthStencil = -1
@@ -141,7 +141,7 @@ class GlFrameBuffer(width: Int, height: Int) {
         }
     }
 
-    fun <T> use(block: () -> T): T {
+    override fun <T> use(block: () -> T): T {
         if (frameBuffer == -1) {
             resize(width, height)
         }
@@ -157,7 +157,7 @@ class GlFrameBuffer(width: Int, height: Int) {
         }
     }
 
-    fun useAsRenderTarget(block: (UMatrixStack, Int, Int) -> Unit) {
+    override fun useAsRenderTarget(block: (UMatrixStack, Int, Int) -> Unit) {
         use {
             // Prepare frame buffer
             val scissorState = glGetBoolean(GL_SCISSOR_TEST)
@@ -182,7 +182,7 @@ class GlFrameBuffer(width: Int, height: Int) {
         }
     }
 
-    fun drawTexture(matrixStack: UMatrixStack, x: Double, y: Double, width: Double, height: Double, color: Color) {
+    override fun drawTexture(matrixStack: UMatrixStack, x: Double, y: Double, width: Double, height: Double, color: Color) {
         matrixStack.push()
 
         UGraphics.enableBlend()
@@ -208,7 +208,7 @@ class GlFrameBuffer(width: Int, height: Int) {
         matrixStack.pop()
     }
 
-    fun bind(): () -> Unit {
+    override fun bind(): () -> Unit {
         if (frameBuffer == -1) {
             resize(width, height)
         }
@@ -227,12 +227,7 @@ class GlFrameBuffer(width: Int, height: Int) {
         }
     }
 
-    @JvmOverloads
-    fun clear(
-        clearColor: Color = Color(0, 0, 0, 0),
-        clearDepth: Double = 1.0,
-        clearStencil: Int = 0,
-    ) {
+    override fun clear(clearColor: Color, clearDepth: Double, clearStencil: Int) {
         use {
             with(clearColor) {
                 GlStateManager.clearColor(red / 255f, green / 255f, blue / 255f, alpha / 255f)

@@ -28,7 +28,6 @@ import gg.essential.gui.wardrobe.WardrobeState
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.divider
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledInputRow
 import gg.essential.mod.cosmetics.settings.CosmeticProperty
-import gg.essential.model.Bone
 import gg.essential.network.connectionmanager.cosmetics.*
 import gg.essential.network.cosmetics.Cosmetic
 import gg.essential.util.*
@@ -165,7 +164,7 @@ class ExternalHiddenBoneConfiguration(
 
         init {
 
-            val validBone = inputTextState.map { isValidBone(it, model.rootBone) }
+            val validBone = inputTextState.map { it in model.bones }
             bindConfirmAvailable(validBone.toV1(this))
 
             onPrimaryActionWithValue {
@@ -175,10 +174,6 @@ class ExternalHiddenBoneConfiguration(
             configure {
                 titleText = "Enter the name of the bone you want to hide"
             }
-        }
-
-        private fun isValidBone(boneName: String, bone: Bone): Boolean {
-            return bone.boxName == boneName || bone.childModels.any { isValidBone(boneName, it) }
         }
     }
 

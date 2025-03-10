@@ -170,6 +170,8 @@ class CosmeticConfiguration(
                     CosmeticPropertyType.VARIANTS -> VariantsPropertyConfiguration(cosmeticsDataWithChanges, cosmetic)
                     CosmeticPropertyType.DEFAULT_SIDE -> DefaultSidePropertyConfiguration(cosmeticsDataWithChanges, cosmetic)
                     CosmeticPropertyType.MUTUALLY_EXCLUSIVE -> MutuallyExclusivePropertyConfiguration(cosmeticsDataWithChanges, cosmetic)
+                    CosmeticPropertyType.ALL_OTHER_COSMETIC_OR_ITEM_HIDING -> HidesAllOtherCosmeticsOrItemsConfiguration(cosmeticsDataWithChanges, cosmetic)
+                    CosmeticPropertyType.LOCKS_PLAYER_ROTATION -> LocksPlayerRotationConfiguration(cosmeticsDataWithChanges, cosmetic)
                 }).let {
                     it()
                 }

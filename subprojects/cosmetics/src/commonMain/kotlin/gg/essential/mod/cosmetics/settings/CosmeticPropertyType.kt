@@ -29,4 +29,6 @@ enum class CosmeticPropertyType(
     VARIANTS("Variants", true),
     DEFAULT_SIDE("Default Side", true),
     MUTUALLY_EXCLUSIVE("Mutually Exclusive", true),
+    ALL_OTHER_COSMETIC_OR_ITEM_HIDING("Hides Cosmetics or Items", true),
+    LOCKS_PLAYER_ROTATION("Locks Player Rotation", true),
 }

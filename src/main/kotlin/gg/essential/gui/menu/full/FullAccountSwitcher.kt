@@ -60,7 +60,7 @@ class FullAccountSwitcher(
         }
         it.stopPropagation()
     }.apply {
-        bindEffect(ZIndexEffect(1), hoveredState(layoutSafe = false))
+        bindEffect(ZIndexEffect(1), hoveredState(), delayed = false)
     } childOf this
 
     private val mainButton by MenuButton(
@@ -72,7 +72,7 @@ class FullAccountSwitcher(
         width = 80.pixels
         height = 20.pixels
     }.apply {
-        bindEffect(ZIndexEffect(1), hoveredState(layoutSafe = false))
+        bindEffect(ZIndexEffect(1), hoveredState(), delayed = false)
     }.setIcon(
         USession.active.map { ImageFactory { CachedAvatarImage.ofUUID(it.uuid) } }.toV1(this),
         iconWidth = 8f,
@@ -149,7 +149,7 @@ class FullAccountSwitcher(
         }.bindCollapsed(collapsed, 50f)
         .apply {
             bindEssentialTooltip(hoveredState() and collapsed, BasicState("Add Account"))
-            bindEffect(ZIndexEffect(2), hoveredState(layoutSafe = false))
+            bindEffect(ZIndexEffect(2), hoveredState(), delayed = false)
         } childOf accountsScroller
 
     init {
@@ -159,7 +159,7 @@ class FullAccountSwitcher(
         }
 
         // Highlight mainButton and the collapse button when the container is hovered
-        buttonContainer.hoveredState(layoutSafe = false).onSetValueAndNow {
+        buttonContainer.hoveredState().onSetValueAndNow {
             mainButton.hoveredStyleOverrides.set(it)
             collapseButton.hoveredStyleOverrides.set(it)
         }

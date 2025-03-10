@@ -49,14 +49,14 @@ fun createShareScreenshotModal(
         val future = when (screenshot) {
             is LocalScreenshot -> {
                 if (metadata != null) {
-                    screenshotManager.uploadAndShareLinkToChannels(selectedChannels, screenshot.path, metadata)
+                    screenshotManager.uploadAndShareLinkToChannels(selectedChannels.toList(), screenshot.path, metadata)
                 } else {
-                    screenshotManager.uploadAndShareLinkToChannels(selectedChannels, screenshot.path)
+                    screenshotManager.uploadAndShareLinkToChannels(selectedChannels.toList(), screenshot.path)
                 }
             }
 
             is RemoteScreenshot -> {
-                screenshotManager.shareLinkToChannels(selectedChannels, screenshot.media)
+                screenshotManager.shareLinkToChannels(selectedChannels.toList(), screenshot.media)
                 CompletableFuture.completedFuture(Unit)
             }
         }

@@ -113,6 +113,7 @@ public class SPSManager extends StateCallbackManager<IStatusManager> implements 
     private GameType currentGameMode;
     private boolean allowCheats;
     private EnumDifficulty difficulty;
+    private boolean difficultyLocked;
     @Nullable
     private String serverStatusResponse;
 
@@ -298,6 +299,10 @@ public class SPSManager extends StateCallbackManager<IStatusManager> implements 
         return difficulty;
     }
 
+    public boolean isDifficultyLocked() {
+        return difficultyLocked;
+    }
+
     public Instant getSessionStartTime() {
         return sessionStartTime;
     }
@@ -331,6 +336,7 @@ public class SPSManager extends StateCallbackManager<IStatusManager> implements 
 
         this.allowCheats = worldInfo.areCommandsAllowed();
         this.difficulty = worldInfo.getDifficulty();
+        this.difficultyLocked = worldInfo.isDifficultyLocked();
 
         server.getPlayerList().setWhiteListEnabled(true);
 
@@ -589,7 +595,7 @@ public class SPSManager extends StateCallbackManager<IStatusManager> implements 
         this.remoteSessions.clear();
     }
 
-    public void updateWorldSettings(boolean cheats, @NotNull GameType gameType, @NotNull EnumDifficulty difficulty) {
+    public void updateWorldSettings(boolean cheats, @NotNull GameType gameType, @NotNull EnumDifficulty difficulty, boolean difficultyLocked) {
         final IntegratedServer integratedServer = UMinecraft.getMinecraft().getIntegratedServer();
         if (integratedServer != null) {
             getExecutor(integratedServer).execute(() -> {
@@ -614,6 +620,7 @@ public class SPSManager extends StateCallbackManager<IStatusManager> implements 
         this.allowCheats = cheats;
         this.currentGameMode = gameType;
         this.difficulty = difficulty;
+        this.difficultyLocked = difficultyLocked;
 
         persistSettings();
     }
@@ -624,6 +631,7 @@ public class SPSManager extends StateCallbackManager<IStatusManager> implements 
             SPSData.SPSSettings spsSettings = new SPSData.SPSSettings(
                     this.currentGameMode,
                     this.difficulty,
+                    this.difficultyLocked,
                     this.allowCheats,
                     this.getInvitedUsers(),
                     this.shareResourcePack,

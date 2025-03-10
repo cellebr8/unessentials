@@ -13,6 +13,7 @@ package gg.essential.model;
 
 import dev.folomeev.kotgl.matrix.matrices.Mat4;
 import dev.folomeev.kotgl.matrix.vectors.Vec3;
+import dev.folomeev.kotgl.matrix.vectors.mutables.MutableVec3;
 import gg.essential.Essential;
 import gg.essential.gui.common.EmulatedUI3DPlayer.EmulatedPlayer;
 import gg.essential.mixins.impl.client.renderer.entity.PlayerEntityRendererExt;
@@ -32,7 +33,7 @@ import java.util.UUID;
 
 import static dev.folomeev.kotgl.matrix.vectors.Vectors.vec3;
 import static dev.folomeev.kotgl.matrix.vectors.Vectors.vecUnitY;
-import static dev.folomeev.kotgl.matrix.vectors.Vectors.vecZero;
+import static dev.folomeev.kotgl.matrix.vectors.mutables.MutableVectors.mutableVec3;
 import static dev.folomeev.kotgl.matrix.vectors.mutables.MutableVectors.plus;
 import static gg.essential.model.util.KotglKt.toMat3;
 import static gg.essential.model.util.KotglKt.transformPosition;
@@ -185,7 +186,15 @@ public class PlayerMolangQuery implements MolangQueryEntity, ParticleSystem.Loca
         return getPositionAndRotation().getSecond();
     }
 
-    private Vec3 getBasePosition() {
+    public Vec3 getEntityPosition() {
+        return getEntityPositionMut();
+    }
+
+    public Quaternion getEntityRotation() {
+        return getBaseRotation();
+    }
+
+    private MutableVec3 getEntityPositionMut() {
         float partialTicks = getPartialTicks();
         //#if MC>=11600
         //$$ net.minecraft.util.math.vector.Vector3d nextPos = player.getPositionVec();
@@ -200,6 +209,15 @@ public class PlayerMolangQuery implements MolangQueryEntity, ParticleSystem.Loca
         float prevX = (float) player.lastTickPosX;
         float prevY = (float) player.lastTickPosY;
         float prevZ = (float) player.lastTickPosZ;
+        return mutableVec3(
+            prevX + (nextX - prevX) * partialTicks,
+            prevY + (nextY - prevY) * partialTicks,
+            prevZ + (nextZ - prevZ) * partialTicks
+        );
+    }
+
+    private Vec3 getBasePosition() {
+        MutableVec3 pos = getEntityPositionMut();
         //#if MC>=11400
         //$$ if (player.isCrouching()) {
         //#else
@@ -207,20 +225,14 @@ public class PlayerMolangQuery implements MolangQueryEntity, ParticleSystem.Loca
         //#endif
             //#if MC>=11200
             // 0.125f from RenderPlayer.doRender (1.12.2) / PlayerRenderer.getRenderOffset (1.16+)
-            prevY -= 0.125f;
-            nextY -= 0.125f;
+            pos.setY(pos.getY() - 0.125f);
             //#endif
             //#if MC<11400
             // 0.2f from ModelPlayer.render, 0.9375f from RenderPlayer.preRenderCallback
-            prevY -= 0.2 * 0.9375f;
-            nextY -= 0.2 * 0.9375f;
+            pos.setY(pos.getY() - 0.2f * 0.9375f);
             //#endif
         }
-        return vec3(
-            prevX + (nextX - prevX) * partialTicks,
-            prevY + (nextY - prevY) * partialTicks,
-            prevZ + (nextZ - prevZ) * partialTicks
-        );
+        return pos;
     }
 
     private float getRenderYaw() {
@@ -247,8 +259,12 @@ public class PlayerMolangQuery implements MolangQueryEntity, ParticleSystem.Loca
         }
         PlayerEntityRendererExt rendererExt = (PlayerEntityRendererExt) renderer;
 
+        // Minecraft renders living entities ever so slightly offset (upwards in local space)
+        // 0.001f from the 1.501 in RenderLivingBase.prepareScale, 0.9375f from RenderPlayer.preRenderCallback
+        Vec3 renderPos = vec3(0f, 0.001f * 0.9375f, 0f);
+
         Mat4 mat = rendererExt.essential$getTransform((AbstractClientPlayer) player, getRenderYaw(), getPartialTicks());
-        Vec3 position = plus(transformPosition(mat, vecZero()), getBasePosition());
+        Vec3 position = plus(transformPosition(mat, renderPos), getBasePosition());
         Quaternion rotation = Quaternion.Companion.fromRotationMatrix(toMat3(mat));
 
         return new Pair<>(position, rotation);

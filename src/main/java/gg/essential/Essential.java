@@ -136,7 +136,7 @@ public class Essential implements EssentialAPI {
 
     private PlayerWearableManager playerWearableManager;
     private final GameProfileManager gameProfileManager = new GameProfileManager();
-    private final MojangSkinManager skinManager = new MojangSkinManager(gameProfileManager, () -> Wardrobe.getInstance() != null);
+    private final MojangSkinManager skinManager = new McMojangSkinManager(gameProfileManager, () -> Wardrobe.getInstance() != null);
     private CosmeticEventEmitter cosmeticEventEmitter;
     private Map<Object, Boolean> dynamicListeners = new HashMap<>();
     private EssentialGameRules gameRules;

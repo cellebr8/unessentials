@@ -14,7 +14,8 @@ package gg.essential.gui.emotes
 import gg.essential.Essential
 import gg.essential.config.EssentialConfig
 import gg.essential.connectionmanager.common.packet.cosmetic.ClientCosmeticAnimationTriggerPacket
-import gg.essential.cosmetics.events.AnimationEventType
+import gg.essential.cosmetics.CosmeticId
+import gg.essential.cosmetics.state.EssentialAnimationSystem
 import gg.essential.elementa.ElementaVersion
 import gg.essential.elementa.UIComponent
 import gg.essential.elementa.WindowScreen
@@ -66,9 +67,12 @@ import gg.essential.gui.wardrobe.Wardrobe
 import gg.essential.gui.wardrobe.WardrobeCategory
 import gg.essential.mod.cosmetics.CosmeticSlot
 import gg.essential.mod.cosmetics.settings.CosmeticProperty
+import gg.essential.mod.cosmetics.settings.CosmeticSetting
+import gg.essential.mod.cosmetics.settings.CosmeticSettingType
 import gg.essential.model.BedrockModel
 import gg.essential.model.util.PlayerPoseManager
 import gg.essential.network.connectionmanager.cosmetics.AssetLoader
+import gg.essential.network.connectionmanager.cosmetics.removeSingletonSettingType
 import gg.essential.network.connectionmanager.telemetry.TelemetryManager
 import gg.essential.network.cosmetics.Cosmetic
 import gg.essential.network.cosmetics.toInfra
@@ -334,6 +338,9 @@ class EmoteWheel : WindowScreen(
                 ?: emoteTransitionTimeMs
         }
 
+        // store the last animation variant played by this client, read later to prevent repeats
+        private val lastAnimationVariantPlayed: MutableMap<CosmeticId, String> = mutableMapOf()
+
         fun equipEmote(emote: BedrockModel) {
             val essential = Essential.getInstance()
             val connectionManager = essential.connectionManager
@@ -344,10 +351,10 @@ class EmoteWheel : WindowScreen(
 
             emoteComing = true
 
-            val animLength = emote.animationEvents
-                .filter { it.type == AnimationEventType.EMOTE }
-                .maxOfOrNull { it.getTotalTime(emote) }
-                ?: 0f
+            // Get a random emote animation event, considering the probability and priority of each event, also avoid repeating events if multiple
+            val randomEvent = EssentialAnimationSystem.Companion.getRandomEmoteAnimationEventOrNull(emote, lastAnimationVariantPlayed)
+
+            val animLength = randomEvent?.getTotalTime(emote) ?: 0f
 
             val slot = CosmeticSlot.EMOTE
             // If there's already an emote equipped, then we don't need to change the perspective or register a new listener
@@ -370,14 +377,30 @@ class EmoteWheel : WindowScreen(
                 0f
             }
 
+            fun setEmoteSettings(outfitId: String){
+                // if the emote had multiple animations, one of which being set to skip next time,
+                // then we need to explicitly set the variant to be played via CosmeticSettings
+                if (randomEvent != null && lastAnimationVariantPlayed[emote.cosmetic.id] != null) {
+                    outfitManager.updateOutfitCosmeticSettings(outfitId, emote.cosmetic.id,
+                        // old settings minus this setting type
+                        (outfitManager.getOutfit(outfitId)?.cosmeticSettings?.get(emote.cosmetic.id)
+                            ?.removeSingletonSettingType(CosmeticSettingType.ANIMATION_VARIANT) ?: emptyList()) +
+                                // new setting to add
+                                CosmeticSetting.AnimationVariant(emote.cosmetic.id, true,
+                                    CosmeticSetting.AnimationVariant.Data(randomEvent.name)))
+                }
+            }
+
             Multithreading.scheduleOnMainThread({
                 emoteComing = false
 
                 if (cosmeticManager.equippedCosmetics[slot] == emote.cosmetic.id) {
+                    outfitManager.selectedOutfitId.getUntracked()?.let { setEmoteSettings(it) }
                     essential.cosmeticEventEmitter.triggerEvent(UUIDUtil.getClientUUID(), slot, "reset")
                     connectionManager.send(ClientCosmeticAnimationTriggerPacket(slot.toInfra(), "reset"))
                 } else {
                     val outfitId = outfitManager.selectedOutfitId.getUntracked() ?: return@scheduleOnMainThread
+                    setEmoteSettings(outfitId)
                     outfitManager.updateEquippedCosmetic(outfitId, slot, emote.cosmetic.id)
                 }
 

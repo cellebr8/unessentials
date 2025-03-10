@@ -22,6 +22,7 @@ import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.*
 import gg.essential.gui.common.constraints.CenterPixelConstraint
 import gg.essential.gui.common.shadow.EssentialUIText
+import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.screenshot.DateRange
 import gg.essential.gui.screenshot.ScreenshotId
 import gg.essential.gui.screenshot.createDateOnlyCalendar
@@ -116,8 +117,8 @@ class ListViewComponent(val screenshotBrowser: ScreenshotBrowser) :
             }
             TabComponent(value) childOf navigation
         }
-        val percentState = BasicState(0f)
-        val heightState = BasicState(0f)
+        val percentState = mutableStateOf(0f)
+        val heightState = mutableStateOf(0f)
 
         screenshotScrollComponent.addScrollAdjustEvent(false) { percent, percentageOfParent ->
             percentState.set(percent)

@@ -15,6 +15,7 @@ import com.sparkuniverse.toolbox.chat.enums.ChannelType
 import com.sparkuniverse.toolbox.chat.model.Channel
 import com.sparkuniverse.toolbox.chat.model.Message
 import gg.essential.Essential
+import gg.essential.connectionmanager.common.packet.Packet
 import gg.essential.elementa.utils.ObservableList
 import gg.essential.gui.elementa.state.v2.ListState
 import gg.essential.gui.elementa.state.v2.MutableListState
@@ -221,6 +222,10 @@ class MessengerStateManagerImpl(private val chatManager: ChatManager) : IMesseng
             return true
         }
         return false
+    }
+
+    override fun sendMessage(channelId: Long, message: String, replyTo: Long?, callback: ((Optional<Packet>) -> Unit)?) {
+        chatManager.sendMessage(channelId, message, replyTo, callback)
     }
 
     override fun deleteMessage(message: Message) {

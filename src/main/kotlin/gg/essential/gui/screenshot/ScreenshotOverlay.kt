@@ -11,6 +11,7 @@
  */
 package gg.essential.gui.screenshot
 
+import com.sparkuniverse.toolbox.chat.model.Channel
 import gg.essential.Essential
 import gg.essential.api.gui.Slot
 import gg.essential.config.EssentialConfig
@@ -59,6 +60,7 @@ import gg.essential.gui.common.or
 import gg.essential.gui.common.shadow.ShadowIcon
 import gg.essential.gui.elementa.state.v2.animateTransitions
 import gg.essential.gui.elementa.state.v2.mutableStateOf
+import gg.essential.gui.friends.SocialMenu
 import gg.essential.gui.image.ImageFactory
 import gg.essential.gui.layoutdsl.Modifier
 import gg.essential.gui.layoutdsl.fillHeight
@@ -498,6 +500,10 @@ class ScreenshotUploadToast : UIContainer() {
 
     private val progress by object : UIComponent() {
 
+        init {
+            isFloating = true
+        }
+
         override fun draw(matrixStack: UMatrixStack) {
             beforeDraw(matrixStack)
 
@@ -537,11 +543,18 @@ class ScreenshotUploadToast : UIContainer() {
             width = 100.percent
             height = ChildBasedMaxSizeConstraint() - 2.pixels
         }
-    }
 
-    override fun afterInitialization() {
-        super.afterInitialization()
-        progress.setFloating(true)
+        onLeftClick { click ->
+            val progress = currentProgress
+            if (progress is ToastProgress.Complete && progress.success) {
+                progress.channels.lastOrNull()?.let { channel ->
+                    GuiUtil.openScreen {
+                        SocialMenu(channel.id)
+                    }
+                    click.stopPropagation()
+                }
+            }
+        }
     }
 
     override fun animationFrame() {
@@ -595,7 +608,6 @@ class ScreenshotUploadToast : UIContainer() {
     private fun fireComplete(status: ToastProgress.Complete) {
         val action = {
             timerEnabled.set(true)
-            progress.setFloating(false)
             removeChild(progress)
             stateText.setText(status.message)
             this.insertChildAt(
@@ -617,7 +629,10 @@ class ScreenshotUploadToast : UIContainer() {
 
     sealed class ToastProgress {
 
-        data class Complete(val message: String, val success: Boolean) : ToastProgress()
+        data class Complete(val message: String, val success: Boolean, val channels: List<Channel> = listOf()) : ToastProgress() {
+
+            constructor(message: String, success: Boolean) : this(message, success, listOf<Channel>())
+        }
 
         data class Step(val completionPercent: Int) : ToastProgress()
     }

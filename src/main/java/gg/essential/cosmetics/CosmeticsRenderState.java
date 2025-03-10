@@ -50,6 +50,9 @@ public interface CosmeticsRenderState {
     void setPoseModified(boolean poseModified);
     void setSuppressedArmor(boolean[] slots);
 
+    float cosmeticFrozenYaw();
+    void setCosmeticFrozenYaw(float frozenYaw);
+
     /**
      * Implementation which delegates to the underlying entity.
      * Cheap to construct but not thread safe.
@@ -140,6 +143,16 @@ public interface CosmeticsRenderState {
         public void setSuppressedArmor(boolean[] slots) {
             System.arraycopy(slots, 0, playerExt().wasArmorRenderingSuppressed(), 0, slots.length);
         }
+
+        @Override
+        public float cosmeticFrozenYaw() {
+            return playerExt().essential$getCosmeticFrozenYaw();
+        }
+
+        @Override
+        public void setCosmeticFrozenYaw(final float frozenYaw) {
+            playerExt().essential$setCosmeticFrozenYaw(frozenYaw);
+        }
     }
 
     /**
@@ -155,6 +168,7 @@ public interface CosmeticsRenderState {
         private ResourceLocation emissiveCapeTexture;
         private boolean onlineIndicator;
         private boolean isSneaking;
+        private float cosmeticFrozenYaw;
 
         @Override
         public WearablesManager wearablesManager() {
@@ -187,6 +201,11 @@ public interface CosmeticsRenderState {
         }
 
         @Override
+        public float cosmeticFrozenYaw() {
+            return cosmeticFrozenYaw;
+        }
+
+        @Override
         public boolean isSneaking() {
             return isSneaking;
         }
@@ -201,6 +220,7 @@ public interface CosmeticsRenderState {
             emissiveCapeTexture = live.emissiveCapeTexture();
             onlineIndicator = live.onlineIndicator();
             isSneaking = live.isSneaking();
+            cosmeticFrozenYaw = live.cosmeticFrozenYaw();
         }
 
         @Override
@@ -224,6 +244,14 @@ public interface CosmeticsRenderState {
             Live live = this.live;
             if (live != null) {
                 live.setSuppressedArmor(slots);
+            }
+        }
+
+        @Override
+        public void setCosmeticFrozenYaw(final float frozenYaw) {
+            Live live = this.live;
+            if (live != null) {
+                live.setCosmeticFrozenYaw(frozenYaw);
             }
         }
     }

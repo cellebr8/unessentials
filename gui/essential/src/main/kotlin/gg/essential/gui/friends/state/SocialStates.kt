@@ -13,6 +13,7 @@ package gg.essential.gui.friends.state
 
 import com.sparkuniverse.toolbox.chat.model.Channel
 import com.sparkuniverse.toolbox.chat.model.Message
+import gg.essential.connectionmanager.common.packet.Packet
 import gg.essential.elementa.state.State
 import gg.essential.elementa.utils.ObservableList
 import gg.essential.gui.elementa.state.v2.ListState
@@ -149,6 +150,11 @@ interface IMessengerStates {
      * Requests more messages for this channel from the connection manager
      */
     fun requestMoreMessages(channelId: Long, messageLimit: Int, beforeId: Long? = null): Boolean
+
+    /**
+     * Sends the given [message] to the given [channelId], optionally as a [replyTo] another message
+     */
+    fun sendMessage(channelId: Long, message: String, replyTo: Long? = null, callback: ((Optional<Packet>) -> Unit)? = null)
 
     /**
      * Deletes [message] from the channel it is in

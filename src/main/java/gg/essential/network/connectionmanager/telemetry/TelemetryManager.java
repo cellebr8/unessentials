@@ -157,10 +157,7 @@ public class TelemetryManager implements NetworkedManager {
      * @param context the action context (e.g. the emote activated)
      */
     public void clientActionPerformed(@NotNull Actions action, @Nullable String context) {
-        enqueue(new ClientTelemetryPacket("CLIENT_ACTION", new HashMap<String, Object>() {{
-            put("action", action.name());
-            put("context", context == null ? "" : context); // Null context is sent as empty string due to schema restrictions on the CM
-        }}));
+        enqueue(ClientTelemetryPacket.forAction(action.name(), context));
     }
 
     /**

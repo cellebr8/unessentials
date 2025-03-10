@@ -78,3 +78,4 @@ net.minecraftforge.eventbus.api.IEventBus net.minecraftforge.fml.common.eventhan
 net.minecraftforge.fml.client.gui.screen.ModListScreen net.minecraftforge.fml.client.GuiModList
 net.minecraftforge.versions.forge.ForgeVersion net.minecraftforge.common.ForgeVersion
 net.minecraft.util.concurrent.ThreadTaskExecutor isOnExecutionThread() net.minecraft.util.IThreadListener isCallingFromMinecraftThread()
+net.minecraft.client.renderer.entity.layers.HeldItemLayer net.minecraft.client.renderer.entity.layers.LayerHeldItem

@@ -265,6 +265,8 @@ fun LayoutScope.essentialInput(
     outlineFocusedColor: Color = EssentialPalette.BLUE_BUTTON,
     outlineHoveredColor: Color = EssentialPalette.TEXT_DARK_DISABLED,
     outlineErrorColor: Color = EssentialPalette.TEXT_WARNING,
+    iconAndInputWidthPadding: Float = 5f,
+    iconAndInputPadding: Float = 6f,
 ) {
     val errorTextState = stateDelegatingTo(stateOf<String?>(null))
     val errorState = errorTextState.map { it != null }
@@ -302,7 +304,7 @@ fun LayoutScope.essentialInput(
     box(Modifier.fillParent().color(outlineColorState).hoverScope() then modifier) {
         box(Modifier.fillParent(padding = 1f).color(backgroundColor)) {
             if(icon != null) {
-                row(Modifier.fillWidth(padding = 5f).alignVertical(Alignment.Center(true)), Arrangement.spacedBy(6f, FloatPosition.START)) {
+                row(Modifier.fillWidth(padding = iconAndInputWidthPadding).alignVertical(Alignment.Center(true)), Arrangement.spacedBy(iconAndInputPadding, FloatPosition.START)) {
                     box(Modifier.width(10f).heightAspect(1f)) {
                         image(icon, Modifier.color(iconColor).shadow(iconShadowColor))
                     }

@@ -165,7 +165,7 @@ public class CosmeticsManager implements NetworkedManager, ICosmeticsManager {
         onNewCosmetic(this.cosmeticsData, refHolder, cosmetic -> {
             primeCache(modelLoader, assetLoader, cosmetic);
 
-            connectionManager.getNoticesManager().getCosmeticNotices().cosmeticAdded(cosmetic.getId());
+            connectionManager.getCosmeticNotices().cosmeticAdded(cosmetic.getId());
 
             // If we're side-loading, auto-unlock all cosmetics
             if (localCosmeticsData != null) {

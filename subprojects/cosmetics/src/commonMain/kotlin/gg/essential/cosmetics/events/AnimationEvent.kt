@@ -14,6 +14,7 @@ package gg.essential.cosmetics.events
 import gg.essential.model.BedrockModel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.util.*
 
 @Serializable
 data class AnimationEvent(

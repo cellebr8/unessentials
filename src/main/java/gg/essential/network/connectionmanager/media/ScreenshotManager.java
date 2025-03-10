@@ -260,15 +260,15 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
         return uploadAndAcceptMedia(path, metadata, progressConsumer, media -> copyLinkToClipboard(media, progressConsumer));
     }
 
-    public CompletableFuture<Media> uploadAndShareLinkToChannels(Collection<Channel> channels, Path path) {
+    public CompletableFuture<Media> uploadAndShareLinkToChannels(List<Channel> channels, Path path) {
         return uploadAndShareLinkToChannels(channels, path, screenshotMetadataManager.getOrCreateMetadata(path));
     }
 
-    public CompletableFuture<Media> uploadAndShareLinkToChannels(Collection<Channel> channels, Path path, ClientScreenshotMetadata metadata) {
+    public CompletableFuture<Media> uploadAndShareLinkToChannels(List<Channel> channels, Path path, ClientScreenshotMetadata metadata) {
         return uploadAndShareLinkToChannels(channels, path, metadata, ScreenshotOverlay.INSTANCE.pushUpload());
     }
 
-    public CompletableFuture<Media> uploadAndShareLinkToChannels(Collection<Channel> channels, Path path, ClientScreenshotMetadata metadata, Consumer<ScreenshotUploadToast.ToastProgress> progressConsumer) {
+    public CompletableFuture<Media> uploadAndShareLinkToChannels(List<Channel> channels, Path path, ClientScreenshotMetadata metadata, Consumer<ScreenshotUploadToast.ToastProgress> progressConsumer) {
         return uploadAndAcceptMedia(path, metadata, progressConsumer, media -> shareLinkToChannels(channels, media, progressConsumer));
     }
 
@@ -286,11 +286,11 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
         progressConsumer.accept(new ScreenshotUploadToast.ToastProgress.Complete("Link copied to clipboard", true));
     }
 
-    public void shareLinkToChannels(Collection<Channel> channels, Media media) {
+    public void shareLinkToChannels(List<Channel> channels, Media media) {
         shareLinkToChannels(channels, media, ScreenshotOverlay.INSTANCE.pushUpload());
     }
 
-    public void shareLinkToChannels(Collection<Channel> channels, Media media, Consumer<ScreenshotUploadToast.ToastProgress> progressConsumer) {
+    public void shareLinkToChannels(List<Channel> channels, Media media, Consumer<ScreenshotUploadToast.ToastProgress> progressConsumer) {
         final MediaVariant embed = media.getVariants().get("embed");
         if (embed == null) {
             progressConsumer.accept(new ScreenshotUploadToast.ToastProgress.Complete("Error: Media link not supplied", false));
@@ -326,7 +326,7 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
                     }
 
                     if (anySucceeded) {
-                        progressConsumer.accept(new ScreenshotUploadToast.ToastProgress.Complete("Picture shared", true));
+                        progressConsumer.accept(new ScreenshotUploadToast.ToastProgress.Complete("Picture shared", true, channels));
                     } else {
                         progressConsumer.accept(new ScreenshotUploadToast.ToastProgress.Complete("Error: All the messages failed to send.", false));
                     }

@@ -11,7 +11,12 @@
  */
 package gg.essential.mixins.transformers.client.renderer.entity;
 
+import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.ref.LocalFloatRef;
+import gg.essential.cosmetics.CosmeticsRenderState;
+import gg.essential.cosmetics.WearablesManager;
 import gg.essential.gui.common.UI3DPlayer;
+import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.EntityLivingBase;
@@ -28,6 +33,7 @@ import net.minecraft.client.renderer.entity.RenderLivingBase;
 //#endif
 
 //#if MC>=12102
+//$$ import gg.essential.mixins.impl.client.model.PlayerEntityRenderStateExt;
 //$$ import net.minecraft.client.render.entity.state.LivingEntityRenderState;
 //#endif
 
@@ -76,4 +82,42 @@ public abstract class MixinRendererLivingEntity<T extends EntityLivingBase> exte
         }
     }
     //#endif
+
+    @Inject(method = "applyRotations", at = @At(value = "HEAD"))
+    private void freezeYawIfEquippedCosmeticRequires(CallbackInfo ci,
+                      //#if MC>=12102
+                      //$$ @Local(ordinal = 0, argsOnly = true) S state,
+                      //$$ @Local(ordinal = 0, argsOnly = true) LocalFloatRef yaw) { // Beware: Yarn parameter names are wrong in 1.21.2, this is the correct target for yaw
+                      //#else
+                      @Local(argsOnly = true) T entity,
+                      @Local(ordinal = 1, argsOnly = true) LocalFloatRef yaw) {
+                      //#endif
+
+        //#if MC>=12102
+        //$$ if (!(state instanceof PlayerEntityRenderStateExt)) return;
+        //$$ CosmeticsRenderState cState = ((PlayerEntityRenderStateExt) state).essential$getCosmetics();
+        //#else
+        if (!(entity instanceof AbstractClientPlayer)) return;
+        CosmeticsRenderState cState = new CosmeticsRenderState.Live((AbstractClientPlayer) entity);
+        //#endif
+
+        WearablesManager wearablesManager = cState.wearablesManager();
+        if (wearablesManager == null) return;
+
+        if (wearablesManager.getState().getLocksPlayerRotation()) {
+            float frozenYaw = cState.cosmeticFrozenYaw();
+            // this may result in yaw de-sync between clients if one client only looks at the locked player partway through the lock
+            // but that isn't resolvable without actually modifying the real player rotation sent to the server
+            if (Float.isNaN(frozenYaw)) {
+                // set the value to use for next (frozen) frame, yaw is unchanged this frame
+                cState.setCosmeticFrozenYaw(yaw.get());
+            } else {
+                yaw.set(frozenYaw);
+            }
+            return;
+        }
+
+        // Reset yaw stored in the player
+        cState.setCosmeticFrozenYaw(Float.NaN);
+    }
 }

@@ -66,7 +66,7 @@ class ScreenshotPreview(
     private val img by ScreenshotImage()
 
     private val hovered =
-        container.hoveredState(layoutSafe = true) or viewComponent.screenshotBrowser.menuDialogOwner.map { it == properties }
+        container.hoveredState() or viewComponent.screenshotBrowser.menuDialogOwner.map { it == properties }
 
     private val favoriteContainer by UIContainer().constrain {
         y = 5.pixels

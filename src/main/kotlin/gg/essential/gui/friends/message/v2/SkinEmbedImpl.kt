@@ -11,24 +11,22 @@
  */
 package gg.essential.gui.friends.message.v2
 
-import com.mojang.authlib.GameProfile
 import gg.essential.Essential
-import gg.essential.api.profile.wrapped
 import gg.essential.elementa.constraints.*
 import gg.essential.elementa.dsl.*
-import gg.essential.elementa.state.BasicState
 import gg.essential.gui.EssentialPalette
-import gg.essential.gui.common.EmulatedUI3DPlayer
+import gg.essential.gui.elementa.state.v2.stateOf
 import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.util.hoveredState
 import gg.essential.gui.wardrobe.modals.SkinModal
-import gg.essential.handlers.GameProfileManager
 import gg.essential.mod.Skin
+import gg.essential.mod.cosmetics.CosmeticSlot
+import gg.essential.mod.cosmetics.preview.PerspectiveCamera
 import gg.essential.universal.USound
 import gg.essential.util.*
+import gg.essential.util.GuiEssentialPlatform.Companion.platform
 import gg.essential.vigilance.utils.onLeftClick
-import java.util.*
 
 class SkinEmbedImpl(
     skin: Skin,
@@ -43,9 +41,11 @@ class SkinEmbedImpl(
             height = ChildBasedMaxSizeConstraint()
         }
 
-        val tempUUID = UUID.randomUUID()
-        val profile = GameProfileManager.Overwrites(skin.hash, skin.model.type, null).apply(GameProfile(tempUUID, "EssentialBot")).wrapped()
-        val ui3DPlayer = EmulatedUI3DPlayer(draggable = BasicState(false), profile = BasicState(profile))
+        val ui3DPlayer = platform.newUIPlayer(
+            camera = stateOf(PerspectiveCamera.forCosmeticSlot(CosmeticSlot.FULL_BODY)),
+            profile = stateOf(Pair(skin, null)),
+            cosmetics = stateOf(emptyMap()),
+        )
 
         bubble.layoutAsBox(Modifier.width(103f).height(106f).hoverScope()) {
             ui3DPlayer(Modifier.height(73f))

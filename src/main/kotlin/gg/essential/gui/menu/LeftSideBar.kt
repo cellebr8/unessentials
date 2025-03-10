@@ -26,6 +26,7 @@ import gg.essential.gui.elementa.state.v2.combinators.map
 import gg.essential.gui.elementa.state.v2.combinators.not
 import gg.essential.gui.elementa.state.v2.combinators.or
 import gg.essential.gui.elementa.state.v2.combinators.zip
+import gg.essential.gui.elementa.state.v2.flatten
 import gg.essential.gui.elementa.state.v2.stateOf
 import gg.essential.gui.elementa.state.v2.toV1
 import gg.essential.gui.wardrobe.Wardrobe
@@ -36,6 +37,8 @@ import gg.essential.util.GuiUtil
 import gg.essential.util.bindEssentialTooltip
 import gg.essential.gui.util.hoveredState
 import gg.essential.gui.util.pollingStateV2
+import gg.essential.util.GuiEssentialPlatform.Companion.platform
+import gg.essential.util.USession
 import gg.essential.util.toShortString
 import gg.essential.vigilance.utils.onLeftClick
 import java.time.Duration
@@ -57,7 +60,7 @@ class LeftSideBar(
     private val connectionManager = Essential.getInstance().connectionManager
 
     // As a field so that there is a strong reference to it. Otherwise, it will be GC'd
-    private val allSales = connectionManager.noticesManager.saleNoticeManager.saleState
+    private val allSales = connectionManager.saleNoticeManager.saleState
 
     private val currentSale = pollingStateV2 {
         // When the menu is collapsed, the display banner only shows for real sales
@@ -94,7 +97,13 @@ class LeftSideBar(
         }
     } childOf this
 
-    private val player by EmulatedUI3DPlayer().constrain {
+    private val player by platform.newUIPlayer(
+        camera = stateOf(null),
+        profile = stateOf(null),
+        cosmetics = USession.active
+            .map { connectionManager.cosmeticsManager.equippedCosmeticsManager.getVisibleCosmeticsState(it.uuid) }
+            .flatten(),
+    ).constrain {
         // x set in init
         width = AspectConstraint()
     }.bindConstraints(collapsed) { isCollapsed ->
@@ -225,7 +234,7 @@ class LeftSideBar(
                 bindEssentialTooltip(hoveredState() and currentSale.map { it?.tooltip != null }.toV1(this), currentSale.map { it?.tooltip ?: ""}.toV1(this), EssentialTooltip.Position.ABOVE)
             }
 
-        val hasAnyNewCosmetics = connectionManager.noticesManager.cosmeticNotices.hasAnyNewCosmetics
+        val hasAnyNewCosmetics = connectionManager.cosmeticNotices.hasAnyNewCosmetics
 
         // New cosmetics flag
         TextFlag(

@@ -11,12 +11,13 @@
  */
 package gg.essential.model
 
-import dev.folomeev.kotgl.matrix.matrices.mutables.timesSelf
 import dev.folomeev.kotgl.matrix.vectors.Vec3
 import dev.folomeev.kotgl.matrix.vectors.mutables.minus
 import dev.folomeev.kotgl.matrix.vectors.mutables.timesSelf
 import dev.folomeev.kotgl.matrix.vectors.vec3
 import dev.folomeev.kotgl.matrix.vectors.vec4
+import dev.folomeev.kotgl.matrix.vectors.vecUnitY
+import dev.folomeev.kotgl.matrix.vectors.vecUnitZ
 import dev.folomeev.kotgl.matrix.vectors.vecZero
 import gg.essential.model.file.AnimationFile
 import gg.essential.model.file.KeyframeSerializer
@@ -66,7 +67,7 @@ class ModelAnimationState(
         }
     }
 
-    fun apply(model: Bone, affectPose: Boolean) {
+    fun apply(model: Bone) {
         val bones = mutableMapOf<String, Bone>()
         findAndResetBones(model, bones)
 
@@ -74,7 +75,6 @@ class ModelAnimationState(
         for (state in active) {
             for ((boneName, channels) in state.animation.bones) {
                 val bone = bones[boneName] ?: continue
-                if (bone.affectsPose != affectPose) continue
                 channels.relativeTo.rotation?.let { relativeTo ->
                     bone.gimbal = true
                     bone.worldGimbal = relativeTo == "world"
@@ -102,8 +102,8 @@ class ModelAnimationState(
     fun locatorsNeedUpdating() =
         locators.isNotEmpty() && lastLocatorUpdateTime < entity.lifeTime
 
-    /** Updates the position/rotation/velocity of all locators based on the current transform of bones in [rootBone]. */
-    fun updateLocators(rootBone: Bone, scale: Float) {
+    /** Updates the position/rotation/velocity of all locators based on the current transform of bones in [bones]. */
+    fun updateLocators(bones: Bones, scale: Float) {
         if (locators.isEmpty()) {
             return // nothing to do
         }
@@ -116,34 +116,28 @@ class ModelAnimationState(
         lastLocatorUpdateTime = now
 
         // TODO maybe optimize traversal, don't need to compute subtree with only dead ends (same for retrievePose)
-        fun Bone.visit(matrixStack: UMatrixStack, parentHasScaling: Boolean) {
+        fun Bone.visit(matrixStack: UMatrixStack) {
             val locator = locators[boxName]
 
             if (locator == null && childModels.isEmpty()) {
                 return
             }
 
-            val hasScaling = parentHasScaling || animScaleX != 1f || animScaleY != 1f || animScaleZ != 1f
-
             matrixStack.push()
-            matrixStack.translate(pivotX + animOffsetX, pivotY - animOffsetY, pivotZ + animOffsetZ)
-            if (gimbal) {
-                matrixStack.rotate(parentRotation.conjugate())
-            }
-            matrixStack.rotate(rotateAngleZ + animRotZ, 0.0f, 0.0f, 1.0f, false)
-            matrixStack.rotate(rotateAngleY + animRotY, 0.0f, 1.0f, 0.0f, false)
-            matrixStack.rotate(rotateAngleX + animRotX, 1.0f, 0.0f, 0.0f, false)
+            applyTransform(matrixStack)
 
             if (locator != null) {
+                val localPosition = vec4(pivotX + userOffsetX, pivotY + userOffsetY, pivotZ + userOffsetZ, 1f)
+
                 val matrix = matrixStack.peek().model
                 val lastPosition = locator.position
-                val nextPosition = with(vec4(0f, 0f, 0f, 1f).times(matrix)) { vec3(x, y, z) }
+                val nextPosition = with(localPosition.times(matrix)) { vec3(x, y, z) }
                 locator.position = nextPosition
 
                 // LookAt is towards -1 because as per OpenGL convention the camera is looking towards negative Z.
-                val lookAt = with(vec4(0f, 0f, -1f, 1f).times(matrix)) { vec3(x, y, z) }.minus(nextPosition)
+                val lookAt = with(localPosition.minus(vecUnitZ()).times(matrix)) { vec3(x, y, z) }.minus(nextPosition)
                 // Up is towards -1 because Mojang renders models upside down, and our cosmetics have been built around that
-                val up = with(vec4(0f, -1f, 0f, 1f).times(matrix)) { vec3(x, y, z) }.minus(nextPosition)
+                val up = with(localPosition.minus(vecUnitY()).times(matrix)) { vec3(x, y, z) }.minus(nextPosition)
                 locator.rotation = Quaternion.fromLookAt(lookAt, up)
 
                 // Only update if we have a valid previous value (we cannot compute velocity from just the first frame)
@@ -155,14 +149,13 @@ class ModelAnimationState(
                 locator.isVisible = isVisible
             }
 
-            extra?.let {
-                matrixStack.peek().model.timesSelf(it)
-            }
-            matrixStack.scale(animScaleX, animScaleY, animScaleZ)
-            matrixStack.translate(-pivotX - userOffsetX, -pivotY - userOffsetY, -pivotZ - userOffsetZ)
-
             for (childModel in childModels) {
-                childModel.visit(matrixStack, hasScaling)
+                if (childModel.part != null) {
+                    // Special parts do not actually inherit the matrix stack, because it was already baked into their
+                    // pose, so we'll visit them separately
+                    continue
+                }
+                childModel.visit(matrixStack)
             }
 
             matrixStack.pop()
@@ -175,7 +168,11 @@ class ModelAnimationState(
         matrixStack.scale(scale)
         matrixStack.scale(-1f, -1f, 1f) // see RenderLivingBase.prepareScale
         matrixStack.scale(0.9375f) // see RenderPlayer.preRenderCallback
-        rootBone.visit(matrixStack, false)
+        bones.root.visit(matrixStack)
+        bones.byPart.values.forEach { bone ->
+            bone.resetAnimationOffsets(false) // animations will have been baked into the pose already
+            bone.visit(matrixStack)
+        }
     }
 
     /** Emits effect keyframes into [pendingEvents]. */
@@ -267,8 +264,12 @@ class ModelAnimationState(
         override var position: Vec3,
         override var rotation: Quaternion,
         override var velocity: Vec3,
-        override var isVisible: Boolean = true,
     ) : ParticleSystem.Locator {
+        private var innerIsVisible = true
+        override var isVisible: Boolean
+            get() = parentLocator.isVisible && innerIsVisible
+            set(value) { innerIsVisible = value }
+
         override val parent: ParticleSystem.Locator?
             get() = parentLocator
         override val isValid: Boolean
@@ -290,7 +291,7 @@ data class Animation(
     constructor(
         name: String,
         file: AnimationFile.Animation,
-        bones: List<Bone>,
+        bones: Bones,
         particleEffects: Map<String, ParticleEffect>,
         soundEffects: Map<String, SoundEffect>,
     ) : this(
@@ -304,7 +305,7 @@ data class Animation(
                 for (config in effects) {
                     eventsAtTime.add(ParticleEvent(
                         particleEffects[config.effect] ?: continue,
-                        config.locator?.let { locatorName -> bones.find { it.boxName == locatorName } },
+                        config.locator?.let { bones[it] },
                         config.preEffectScript,
                     ))
                 }
@@ -314,7 +315,7 @@ data class Animation(
                 for (config in effects) {
                     eventsAtTime.add(SoundEvent(
                         soundEffects[config.effect] ?: continue,
-                        config.locator?.let { locatorName -> bones.find { it.boxName == locatorName } },
+                        config.locator?.let { bones[it] },
                     ))
                 }
             }

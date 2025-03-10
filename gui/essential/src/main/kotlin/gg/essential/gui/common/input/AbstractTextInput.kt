@@ -443,10 +443,9 @@ abstract class AbstractTextInput(
             posY,
             *options.toTypedArray()
         ) childOf Window.of(this)
+        menu.isFloating = true
         menu.init()
-        menu.setFloating(true) // Modals are floating, so this menu must also be floating to not be covered
         menu.onClose {
-            menu.setFloating(false) // FIXME: EM-1108: window.removeChild() does not clear the component from the floating list
             setActive(false)
             grabWindowFocus()
             contextMenuOpen = false

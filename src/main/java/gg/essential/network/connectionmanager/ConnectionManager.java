@@ -41,7 +41,14 @@ import gg.essential.network.connectionmanager.ice.IceManager;
 import gg.essential.network.connectionmanager.ice.IceManagerMcImpl;
 import gg.essential.network.connectionmanager.knownservers.KnownServersManager;
 import gg.essential.network.connectionmanager.media.ScreenshotManager;
+import gg.essential.network.connectionmanager.notices.CosmeticNotices;
+import gg.essential.network.connectionmanager.notices.FriendRequestToastNoticeListener;
+import gg.essential.network.connectionmanager.notices.GiftedCosmeticNoticeListener;
+import gg.essential.network.connectionmanager.notices.NoticeBannerManager;
 import gg.essential.network.connectionmanager.notices.NoticesManager;
+import gg.essential.network.connectionmanager.notices.PersistentToastNoticeListener;
+import gg.essential.network.connectionmanager.notices.SaleNoticeManager;
+import gg.essential.network.connectionmanager.notices.SocialMenuNewFriendRequestNoticeManager;
 import gg.essential.network.connectionmanager.profile.ProfileManager;
 import gg.essential.network.connectionmanager.relationship.RelationshipManager;
 import gg.essential.network.connectionmanager.serverdiscovery.NewServerDiscoveryManager;
@@ -123,6 +130,14 @@ public class ConnectionManager extends ConnectionManagerKt {
     private /* final */ NewServerDiscoveryManager newServerDiscoveryManager;
     // @NotNull
     private /* final */ KnownServersManager knownServersManager;
+    @NotNull
+    private final CosmeticNotices cosmeticNotices;
+    @NotNull
+    private final SaleNoticeManager saleNoticeManager;
+    @NotNull
+    private final SocialMenuNewFriendRequestNoticeManager socialMenuNewFriendRequestNoticeManager;
+    @NotNull
+    private final NoticeBannerManager noticeBannerManager;
 
     private boolean modsSent = false;
 
@@ -168,6 +183,9 @@ public class ConnectionManager extends ConnectionManagerKt {
         // Notices
         this.managers.add((this.noticesManager = new NoticesManager(this)));
 
+        noticesManager.register(noticeBannerManager = new NoticeBannerManager(noticesManager));
+        noticesManager.register(new PersistentToastNoticeListener(noticesManager));
+
         // Disabled Features
         this.managers.add(this.disabledFeaturesManager = new DisabledFeaturesManager(this));
 
@@ -175,6 +193,9 @@ public class ConnectionManager extends ConnectionManagerKt {
         this.cosmeticsManager = new CosmeticsManager(this, baseDir);
         this.managers.add(this.cosmeticsManager);
         this.managers.add(this.cosmeticsManager.getEquippedCosmeticsManager());
+        noticesManager.register(cosmeticNotices = new CosmeticNotices(noticesManager, cosmeticsManager.getCosmeticsData()));
+        noticesManager.register(saleNoticeManager = new SaleNoticeManager());
+        noticesManager.register(new GiftedCosmeticNoticeListener(noticesManager, cosmeticsManager.getCosmeticsData()));
 
         // Relationships
         this.relationshipManager = new RelationshipManager(this);
@@ -198,6 +219,8 @@ public class ConnectionManager extends ConnectionManagerKt {
 
         // Social Manager
         this.managers.add(this.socialManager = new SocialManager(this));
+        noticesManager.register(new FriendRequestToastNoticeListener(this, noticesManager));
+        noticesManager.register(socialMenuNewFriendRequestNoticeManager = new SocialMenuNewFriendRequestNoticeManager(noticesManager));
 
         // Ice
         this.iceManager = new IceManagerMcImpl(
@@ -353,6 +376,22 @@ public class ConnectionManager extends ConnectionManagerKt {
     @NotNull
     public KnownServersManager getKnownServersManager() {
         return this.knownServersManager;
+    }
+
+    public @NotNull CosmeticNotices getCosmeticNotices() {
+        return this.cosmeticNotices;
+    }
+
+    public @NotNull SaleNoticeManager getSaleNoticeManager() {
+        return saleNoticeManager;
+    }
+
+    public @NotNull SocialMenuNewFriendRequestNoticeManager getSocialMenuNewFriendRequestNoticeManager() {
+        return socialMenuNewFriendRequestNoticeManager;
+    }
+
+    public @NotNull NoticeBannerManager getNoticeBannerManager() {
+        return noticeBannerManager;
     }
 
     @Override

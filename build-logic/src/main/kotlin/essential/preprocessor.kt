@@ -21,7 +21,7 @@ fun Project.configurePreprocessTree(versions: File) {
         strictExtraMappings.set(true)
 
         val fabric12104 = createNode("1.21.4-fabric", 12104, "yarn")
-        val fabric12102 = createNode("1.21.2-fabric", 12102, "yarn")
+        val fabric12103 = createNode("1.21.3-fabric", 12103, "yarn")
         val fabric12100 = createNode("1.21-fabric", 12100, "yarn")
         val fabric12006 = createNode("1.20.6-fabric", 12006, "yarn")
         val forge12004 = createNode("1.20.4-forge", 12004, "srg")
@@ -48,8 +48,8 @@ fun Project.configurePreprocessTree(versions: File) {
         val forge11202 = createNode("1.12.2-forge", 11202, "srg")
         val forge10809 = createNode("1.8.9-forge", 10809, "srg")
 
-        fabric12104.link(fabric12102, versions.resolve("1.21.4-1.21.2.txt"))
-        fabric12102.link(fabric12100)
+        fabric12104.link(fabric12103, versions.resolve("1.21.4-1.21.3.txt"))
+        fabric12103.link(fabric12100)
         fabric12100.link(fabric12006)
         fabric12006.link(fabric12004)
         forge12004.link(fabric12004)

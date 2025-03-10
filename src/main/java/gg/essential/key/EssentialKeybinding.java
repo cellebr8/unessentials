@@ -18,11 +18,13 @@ import gg.essential.mixins.transformers.client.options.GameOptionsAccessor;
 import gg.essential.mixins.transformers.client.options.KeyBindingAccessor;
 import gg.essential.universal.UKeyboard;
 import gg.essential.universal.UMinecraft;
+import gg.essential.util.GuiEssentialPlatform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.settings.KeyBinding;
 import org.apache.commons.lang3.ArrayUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -36,7 +38,7 @@ import java.util.*;
 /**
  * Wrapper class so we can add functionality easily
  */
-public class EssentialKeybinding {
+public class EssentialKeybinding implements GuiEssentialPlatform.Keybind {
     public static final List<EssentialKeybinding> ALL_BINDS = new ArrayList<>();
     public static boolean cancelKeybinds = false;
     public final KeyBinding keyBinding;
@@ -166,6 +168,7 @@ public class EssentialKeybinding {
         //#endif
     }
 
+    @Override
     public boolean isBound() {
         //#if MC>=11400
         //$$ return !keyBinding.isInvalid();
@@ -174,6 +177,13 @@ public class EssentialKeybinding {
         //#endif
     }
 
+    @Override
+    public @Nullable String getBoundKeyName() {
+        if (!isBound()) return null;
+        return UKeyboard.getKeyName(keyBinding);
+    }
+
+    @Override
     public boolean isConflicting() {
         if (!this.isBound()) {
             return false;

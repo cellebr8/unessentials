@@ -118,7 +118,9 @@ public class EssentialModelRenderer implements LayerRenderer<AbstractClientPlaye
             parts = new HashSet<>(Arrays.asList(EnumPart.values()));
         }
 
-        matrixStack.translate(0.0F, 1.501f, 0.0F); // undo RenderLivingBase.prepareScale
+        // MC renders with y = 0 at the head, we have it at the feet
+        // (un-does the 1.5 part of the 1.501 in RenderLivingBase.prepareScale)
+        matrixStack.translate(0.0F, 1.5f, 0.0F);
 
         //#if MC<11700
         GlStateManager.enableRescaleNormal();

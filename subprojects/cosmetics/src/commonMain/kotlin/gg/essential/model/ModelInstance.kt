@@ -11,12 +11,14 @@
  */
 package gg.essential.model
 
+import gg.essential.cosmetics.CosmeticId
 import gg.essential.cosmetics.CosmeticsState
 import gg.essential.cosmetics.events.AnimationTarget
 import gg.essential.cosmetics.state.EssentialAnimationSystem
 import gg.essential.cosmetics.state.TextureAnimationSync
 import gg.essential.cosmetics.state.WearableLocator
-import gg.essential.model.EnumPart.Companion.fromBoneName
+import gg.essential.mod.cosmetics.settings.CosmeticSetting
+import gg.essential.mod.cosmetics.settings.setting
 import gg.essential.model.backend.PlayerPose
 import gg.essential.model.backend.RenderBackend
 import gg.essential.model.molang.MolangQueryEntity
@@ -27,16 +29,28 @@ class ModelInstance(
     var model: BedrockModel,
     val entity: MolangQueryEntity,
     val animationTargets: Set<AnimationTarget>,
+    state: CosmeticsState,
     val onAnimation: (String) -> Unit,
 ) {
-    var locator = WearableLocator(entity.locator)
+    var locator = WearableLocator(entity.locator, isVisible = !state.propertyHidesEntireCosmetic(model.cosmetic.id))
     var animationState = ModelAnimationState(entity, locator)
     var textureAnimationSync = TextureAnimationSync(model.textureFrameCount)
-    var essentialAnimationSystem = EssentialAnimationSystem(model, entity, animationState, textureAnimationSync, animationTargets, onAnimation)
+    private var animationVariantSetting: CosmeticSetting.AnimationVariant? = state.getAnimationVariantSettingOf(model.cosmetic.id)
+    var essentialAnimationSystem = EssentialAnimationSystem(model, entity, animationState, textureAnimationSync, animationTargets, animationVariantSetting, onAnimation)
 
-    fun switchModel(newModel: BedrockModel) {
+
+    private fun CosmeticsState.getAnimationVariantSettingOf(cosmeticId: CosmeticId): CosmeticSetting.AnimationVariant? {
+        return cosmetics.values.firstOrNull { it.id == cosmeticId }?.settings?.setting<CosmeticSetting.AnimationVariant>()
+    }
+
+    fun switchModel(newModel: BedrockModel, newState: CosmeticsState) {
+        locator.isVisible = !newState.propertyHidesEntireCosmetic(newModel.cosmetic.id)
+
         val newTextureAnimation = model.textureFrameCount != newModel.textureFrameCount
         val newAnimations = model.animations != newModel.animations || model.animationEvents != newModel.animationEvents
+
+        val newAnimationVariantSetting = newState.getAnimationVariantSettingOf(newModel.cosmetic.id)
+        val newAnimationVariant = animationVariantSetting != newAnimationVariantSetting
 
         model = newModel
 
@@ -48,8 +62,12 @@ class ModelInstance(
             locator = WearableLocator(entity.locator)
             animationState = ModelAnimationState(entity, locator)
         }
-        if (newAnimations || newTextureAnimation) {
-            essentialAnimationSystem = EssentialAnimationSystem(model, entity, animationState, textureAnimationSync, animationTargets, onAnimation)
+        if (newAnimationVariant) {
+            animationVariantSetting = newAnimationVariantSetting
+        }
+
+        if (newAnimations || newTextureAnimation || newAnimationVariant) {
+            essentialAnimationSystem = EssentialAnimationSystem(model, entity, animationState, textureAnimationSync, animationTargets, animationVariantSetting, onAnimation)
         }
     }
 
@@ -82,42 +100,38 @@ class ModelInstance(
                     leftWing = PlayerPose.Part.MISSING,
                     cape = PlayerPose.Part.MISSING,
                 )
-            val rootBone = model.rootBone
-            animationState.apply(rootBone, false)
-            model.applyPose(rootBone, pose, entity)
+            animationState.apply(model.rootBone)
+            model.applyPose(pose, entity)
 
             // process visibility and sided-ness from cosmetic state for Locator.isVisible update
             model.propagateVisibilityToRootBone(
                 state.sides[cosmetic.id],
-                rootBone,
                 state.hiddenBones[cosmetic.id] ?: emptySet(),
                 EnumPart.values().toSet() - state.hiddenParts.getOrDefault(cosmetic.id, emptySet()),
             )
 
-            animationState.updateLocators(rootBone, 1 / 16f)
+            animationState.updateLocators(model.bones, 1 / 16f)
         }
     }
 
     fun render(
         matrixStack: UMatrixStack,
         vertexConsumerProvider: RenderBackend.VertexConsumerProvider,
-        rootBone: Bone,
+        geometry: RenderGeometry,
         renderMetadata: RenderMetadata,
     ) {
-        animationState.apply(rootBone, false)
+        animationState.apply(model.rootBone)
 
-        for (bone in model.getBones(rootBone)) {
-            if (fromBoneName(bone.boxName) != null) {
-                bone.userOffsetX = renderMetadata.positionAdjustment.x
-                bone.userOffsetY = renderMetadata.positionAdjustment.y
-                bone.userOffsetZ = renderMetadata.positionAdjustment.z
-            }
+        for (bone in model.bones.byPart.values) {
+            bone.userOffsetX = renderMetadata.positionAdjustment.x
+            bone.userOffsetY = renderMetadata.positionAdjustment.y
+            bone.userOffsetZ = renderMetadata.positionAdjustment.z
         }
 
         model.render(
             matrixStack,
             vertexConsumerProvider,
-            rootBone,
+            geometry,
             entity,
             renderMetadata,
             textureAnimationSync.getAdjustedLifetime(entity.lifeTime),

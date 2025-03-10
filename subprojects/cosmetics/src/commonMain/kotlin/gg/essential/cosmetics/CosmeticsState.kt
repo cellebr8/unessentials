@@ -20,9 +20,9 @@ import gg.essential.mod.cosmetics.settings.CosmeticProperty
 import gg.essential.mod.cosmetics.settings.CosmeticSetting
 import gg.essential.mod.cosmetics.settings.side
 import gg.essential.model.BedrockModel
-import gg.essential.model.Bone
 import gg.essential.model.Box3
 import gg.essential.model.EnumPart
+import gg.essential.model.RenderGeometry
 import gg.essential.model.Side
 import gg.essential.model.Vector3
 import gg.essential.network.cosmetics.Cosmetic
@@ -97,6 +97,72 @@ class CosmeticsState(
             }
         }
 
+
+    private val hiddenPropertyImmuneCosmetics: MutableList<CosmeticId> = mutableListOf()
+    /**
+     * Fold all instances of CosmeticProperty.HidesCosmeticsOrItems.Data
+     */
+    private val hiddenPropertySettingsCombined: CosmeticProperty.HidesAllOtherCosmeticsOrItems.Data = cosmetics.values
+        .fold(CosmeticProperty.HidesAllOtherCosmeticsOrItems.Data()) { acc, equipped ->
+            val property = equipped.cosmetic.property<CosmeticProperty.HidesAllOtherCosmeticsOrItems>()
+                ?.takeIf { it.enabled }
+                ?.data
+                ?: return@fold acc
+
+            if (property.hidesAnyCosmetics()) hiddenPropertyImmuneCosmetics.add(equipped.cosmetic.id)
+
+            acc.copy(
+                hideAllCosmetics = acc.hideAllCosmetics || property.hideAllCosmetics,
+                hideHeadCosmetics = acc.hideHeadCosmetics || property.hideHeadCosmetics,
+                hideBodyCosmetics = acc.hideBodyCosmetics || property.hideBodyCosmetics,
+                hideArmCosmetics = acc.hideArmCosmetics || property.hideArmCosmetics,
+                hideLegCosmetics = acc.hideLegCosmetics || property.hideLegCosmetics,
+                hideItems = acc.hideItems || property.hideItems,
+        )
+    }
+
+    /**
+     * Check if the property has been set to hide cosmetics (typical use is for emotes e.g. creeper emote).
+     * This creates a map of all cosmetic id's other than the one setting this property to the parts that should be hidden.
+     */
+    private val partsHiddenByHidingProperty: Map<CosmeticId, Set<EnumPart>> = if (hiddenPropertyImmuneCosmetics.isEmpty()) mapOf() else
+        hiddenPropertySettingsCombined.let { property ->
+            val partsToHide: Set<EnumPart>
+            if (property.hideAllCosmetics) {
+                // Needs to be all EnumParts, not just a subset, for use with the propertyHidesEntireCosmetic() function
+                partsToHide = EnumPart.values().toSet()
+            } else {
+                partsToHide = mutableSetOf()
+                if (property.hideHeadCosmetics) partsToHide.add(EnumPart.HEAD)
+                if (property.hideBodyCosmetics) partsToHide.add(EnumPart.BODY)
+                if (property.hideArmCosmetics) { partsToHide.add(EnumPart.LEFT_ARM); partsToHide.add(EnumPart.RIGHT_ARM) }
+                if (property.hideLegCosmetics) { partsToHide.add(EnumPart.LEFT_LEG); partsToHide.add(EnumPart.RIGHT_LEG) }
+            }
+            return@let cosmetics.values
+                .filter { it.cosmetic.id !in hiddenPropertyImmuneCosmetics }
+                .associate { it.cosmetic.id to partsToHide }
+        }
+
+    /**
+     * same as above but only for the hideHeldItems flag
+     */
+    val hidesHeldItems: Boolean = hiddenPropertySettingsCombined.hideItems
+
+    /**
+     * Check if this cosmetic has been set to hide everything
+     * This is used to set visibility of particles and sounds that are not bound to any parts of the model
+     */
+    fun propertyHidesEntireCosmetic(cosmeticId: CosmeticId): Boolean {
+        return partsHiddenByHidingProperty[cosmeticId].let { it != null && it.size == EnumPart.values().size }
+    }
+
+    /**
+     * Whether any of the cosmetics are set to lock the player's rotation.
+     * Typically, this would be an emote.
+     */
+    val locksPlayerRotation : Boolean = cosmetics.values.any {
+        it.cosmetic.property<CosmeticProperty.LocksPlayerRotation>()?.data?.rotationLock ?: false}
+
     /**
      * For each cosmetic, contains a set of body parts on which it should not be rendered because they player has armor
      * equipped in a slot which would conflict with those parts (we generally want the armor to be clearly visible as to
@@ -120,9 +186,10 @@ class CosmeticsState(
      * reasons.
      */
     val hiddenParts: Map<CosmeticId, Set<EnumPart>> =
-        (partsHiddenDueToProperty.asSequence() + partsHiddenDueToArmor.asSequence())
-            .groupBy({ it.key }) { it.value }
-            .mapValues { it.value.flatten().toSet() }
+        (partsHiddenDueToProperty.asSequence() + partsHiddenDueToArmor.asSequence() + partsHiddenByHidingProperty.asSequence())
+                .groupBy({ it.key }) { it.value }
+                .mapValues { it.value.flatten().toSet() }
+
 
     /**
      * For each cosmetic, contains a set of bone ids which should not be rendered because another cosmetic has
@@ -153,9 +220,9 @@ class CosmeticsState(
     }.toMap()
 
     /**
-     * Root bone for each cosmetic with exclusions applied.
+     * [RenderGeometry] for each cosmetic with exclusions applied.
      */
-    val rootBones: Map<CosmeticId, Bone> = bedrockModels.values.associate { model ->
+    val renderGeometries: Map<CosmeticId, RenderGeometry> = bedrockModels.values.associate { model ->
         val cosmetic = model.cosmetic
         val slot = cosmetic.type.slot
         val renderExclusions = bedrockModels.filter { (otherCosmetic, _) ->
@@ -163,7 +230,7 @@ class CosmeticsState(
             exclusionsAffectSlots[otherSlot]?.contains(slot) ?: false
         }.flatMap { getSidedRenderExclusions(it.value) }
         val modelClipper = ModelClipperImpl()
-        model.cosmetic.id to modelClipper.compute(model.rootBone, renderExclusions)
+        model.cosmetic.id to modelClipper.compute(model.defaultRenderGeometry, renderExclusions)
     }
 
     /**
@@ -196,15 +263,16 @@ class CosmeticsState(
      * Set of armor slot ids that currently have cosmetics occupying
      */
     val partsEquipped: Set<Int> = bedrockModels.values.flatMap { model ->
-        val rootBone = rootBones.getValue(model.cosmetic.id)
+        val renderGeometry = renderGeometries.getValue(model.cosmetic.id)
         model.propagateVisibilityToRootBone(
             sides[model.cosmetic.id],
-            rootBone,
             hiddenBones[model.cosmetic.id] ?: emptySet(),
             EnumPart.values().toSet(),
         )
-        model.getBones(rootBone).filter { it.containsVisibleBoxes() }
-            .mapNotNull { EnumPart.fromBoneName(it.boxName) }
+        model.bones.byPart
+            .asSequence()
+            .filter { it.value.containsVisibleBoxes(renderGeometry) }
+            .map { it.key }
     }.flatMap { it.armorSlotIds }.toSet()
 
     fun getPositionAdjustment(cosmetic: Cosmetic) = positionAdjustments[cosmetic.id] ?: Vector3()

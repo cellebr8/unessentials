@@ -22,7 +22,6 @@ import gg.essential.gui.elementa.state.v2.collections.MutableTrackedList
 import gg.essential.gui.elementa.state.v2.collections.TrackedList
 import gg.essential.gui.elementa.state.v2.collections.trackedListOf
 import gg.essential.gui.elementa.state.v2.combinators.not
-import gg.essential.gui.util.hoveredState
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -58,9 +57,6 @@ class LayoutScope(
     }
 
     operator fun LayoutDslComponent.invoke(modifier: Modifier = Modifier) = layout(modifier)
-
-    @Deprecated("Use Modifier.hoverScope() and Modifier.whenHovered(), instead.")
-    fun hoveredState(hitTest: Boolean = true, layoutSafe: Boolean = true) = component.hoveredState(hitTest, layoutSafe)
 
     @Suppress("FunctionName")
     fun if_(state: State<Boolean>, cache: Boolean = true, block: LayoutScope.() -> Unit): IfDsl {

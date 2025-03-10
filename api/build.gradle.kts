@@ -57,7 +57,6 @@ dependencies {
 
     // Core Gui Libraries
     val ucMcVersion = when (platform.mcVersion) {
-        12104 -> "1.21.2"
         11802 -> "1.18.1"
         else -> mcVersionStr
     }

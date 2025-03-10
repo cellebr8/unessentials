@@ -39,6 +39,10 @@ abstract class AbstractTooltip(private val logicalParent: UIComponent) : UIConta
 
     private var removalListeners = mutableListOf<() -> Unit>()
 
+    init {
+        isFloating = true
+    }
+
     fun bindVisibility(visible: StateV2<Boolean>): AbstractTooltip {
         val toggle = { show: Boolean ->
             if (show) {
@@ -67,7 +71,6 @@ abstract class AbstractTooltip(private val logicalParent: UIComponent) : UIConta
         }
 
         window.addChild(this)
-        setFloating(true)
 
         // When our logical parent is removed from the component tree, we also need to remove ourselves (our actual
         // parent is the window, so that is not going to happen by itself).
@@ -101,7 +104,6 @@ abstract class AbstractTooltip(private val logicalParent: UIComponent) : UIConta
 
         val window = Window.ofOrNull(this) ?: return
 
-        setFloating(false)
         window.removeChild(this)
 
         removalListeners.forEach { it() }
@@ -196,7 +198,7 @@ abstract class Tooltip(logicalParent: UIComponent) : AbstractTooltip(logicalPare
             clearLines()
             text.lines().forEach { fullLine ->
                 if (wrapAtWidth != null) {
-                    val lines = getStringSplitToWidth(fullLine, wrapAtWidth, 1f)
+                    val lines = getStringSplitToWidth(fullLine, wrapAtWidth, 1f, processColorCodes = false)
                     for (line in lines) {
                         addLine(line, configure)
                     }

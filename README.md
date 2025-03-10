@@ -15,7 +15,7 @@ Before building Essential, you must have [Java Development Kits (JDKs)](https://
 installed for Java versions 21, 17, 16, and 8 (even if you only want to build for a specific Minecraft version).
 Java 21 (or newer) must be the default Java version on your system.
 
-No additional tools are required. Gradle will be automatically be installed by the
+No additional tools are required. Gradle will be automatically installed by the
 [gradle-wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) program included in the repository and
 available via the `./gradlew` (Linux/Mac) or `gradlew.bat` (Windows) scripts.
 We highly recommend using these instead of a local installation of Gradle to ensure you're using the exact same version

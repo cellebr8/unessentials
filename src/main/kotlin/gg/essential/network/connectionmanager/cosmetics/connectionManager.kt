@@ -15,7 +15,7 @@ import gg.essential.Essential
 import gg.essential.connectionmanager.common.packet.Packet
 import gg.essential.connectionmanager.common.packet.cosmetic.ClientCosmeticCheckoutPacket
 import gg.essential.connectionmanager.common.packet.cosmetic.ServerCosmeticsUserUnlockedPacket
-import gg.essential.gui.common.sendUnlockedToast
+import gg.essential.gui.common.sendCosmeticUnlockedToast
 import gg.essential.mod.Model
 import gg.essential.mod.cosmetics.settings.CosmeticProperty
 import gg.essential.network.connectionmanager.ConnectionManager
@@ -82,18 +82,16 @@ private inline fun <reified T : CosmeticProperty.RequiresUnlockAction.Data> Conn
     val toUnlock = cosmeticsManager.cosmetics.get()
         .filter { it.id !in cosmeticsManager.unlockedCosmetics.get() && it.isAvailable() }
         .filter { cosmetic -> cosmetic.properties<CosmeticProperty.RequiresUnlockAction>().mapNotNull { it.data as? T }.any(filter) }
-        .map { it.id }
-        .toSet()
 
     if (toUnlock.isEmpty()) return
 
-    send(ClientCosmeticCheckoutPacket(toUnlock)) { packetOptional ->
+    send(ClientCosmeticCheckoutPacket(toUnlock.map { it.id }.toSet())) { packetOptional ->
         val packet = packetOptional.orElse(null)
         if (packet !is ServerCosmeticsUserUnlockedPacket) {
             Essential.logger.error("Failed to unlock cosmetics: $packet")
         } else {
             for (unlockedCosmeticId in packet.unlockedCosmetics.keys) {
-                sendUnlockedToast(unlockedCosmeticId)
+                sendCosmeticUnlockedToast(toUnlock.find { it.id == unlockedCosmeticId } ?: continue)
             }
         }
     }

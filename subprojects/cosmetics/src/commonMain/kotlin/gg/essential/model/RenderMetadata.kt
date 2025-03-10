@@ -18,7 +18,6 @@ data class RenderMetadata(
     val pose: PlayerPose?,
     val skin: RenderBackend.Texture,
     val light: Int,
-    val scale: Float,
     val side: Side?,
     val hiddenBones: Set<String>,
     val positionAdjustment: Vector3,

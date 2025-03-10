@@ -311,4 +311,17 @@ public abstract class MixinAbstractClientPlayer implements AbstractClientPlayerE
     public void setRenderedPose(PlayerPose renderedPose) {
         this.renderedPose = renderedPose;
     }
+
+    @Unique
+    private float cosmeticFrozenYaw = Float.NaN;
+
+    @Override
+    public float essential$getCosmeticFrozenYaw(){
+        return cosmeticFrozenYaw;
+    }
+
+    @Override
+    public void essential$setCosmeticFrozenYaw(float frozenYaw){
+        cosmeticFrozenYaw = frozenYaw;
+    }
 }
