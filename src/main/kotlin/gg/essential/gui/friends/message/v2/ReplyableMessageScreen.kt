@@ -52,6 +52,7 @@ import gg.essential.gui.friends.previews.ChannelPreview
 import gg.essential.gui.layoutdsl.layout
 import gg.essential.gui.notification.Notifications
 import gg.essential.network.connectionmanager.EarlyResponseHandler
+import gg.essential.universal.UMatrixStack
 import gg.essential.universal.USound
 import gg.essential.util.*
 import gg.essential.vigilance.utils.onLeftClick
@@ -266,6 +267,11 @@ class ReplyableMessageScreen(
         insertUnreadDivider()
     }
 
+    override fun draw(matrixStack: UMatrixStack) {
+        markAllAsRead()
+        super.draw(matrixStack)
+    }
+
     /**
      * Inserts a new message divider at the transition from read to unread messages
      * if a new line divider is not already present.
@@ -465,6 +471,10 @@ class ReplyableMessageScreen(
         })
     }
 
+    override fun onOpen() {
+        markAllAsRead()
+    }
+
     override fun onClose() {
         standardBar.hide(instantly = true)
         scrollCleanup()
@@ -489,6 +499,12 @@ class ReplyableMessageScreen(
         }
         sendQueue.removeAll { it.id == message.id }
         sendMessage(message.copy(sendState = SendState.SENDING))
+    }
+
+    override fun markAllAsRead() {
+        content.childrenOfType<MessageWrapperImpl>().forEach {
+            it.markRead()
+        }
     }
 
     override fun markedManuallyUnread(messageWrapper: MessageWrapper) {

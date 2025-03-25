@@ -58,7 +58,7 @@ class ScreenshotOptionsDropdown(
             options.add(ContextOptionMenu.Divider)
 
             options.add(ContextOptionMenu.Option("Send to Friends", image = EssentialPalette.SOCIAL_10X) {
-                GuiUtil.pushModal { createShareScreenshotModal(it, id) }
+                GuiUtil.launchModalFlow { shareScreenshotModal(id) }
             })
 
             options.add(ContextOptionMenu.Option("Copy Picture", image = EssentialPalette.COPY_10X7) {

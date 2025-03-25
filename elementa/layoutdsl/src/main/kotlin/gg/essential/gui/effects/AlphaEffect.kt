@@ -16,9 +16,9 @@ import gg.essential.elementa.state.State
 import gg.essential.universal.UGraphics
 import gg.essential.universal.UMatrixStack
 import gg.essential.universal.UResolution
+import gg.essential.universal.render.URenderPipeline
 import gg.essential.universal.shader.BlendState
-import gg.essential.universal.shader.SamplerUniform
-import gg.essential.universal.shader.UShader
+import gg.essential.universal.vertex.UBufferBuilder
 import org.lwjgl.opengl.GL11
 import java.io.Closeable
 import java.lang.ref.PhantomReference
@@ -37,7 +37,6 @@ class AlphaEffect(private val alphaState: State<Float>) : Effect() {
     private var textureHeight = -1
 
     override fun setup() {
-        initShader()
         Resources.drainCleanupQueue()
         resources.textureId = GL11.glGenTextures()
     }
@@ -58,7 +57,7 @@ class AlphaEffect(private val alphaState: State<Float>) : Effect() {
         val width = right - left
         val height = bottom - top
 
-        if (width == 0 || height == 0 || !shader.usable) {
+        if (width == 0 || height == 0) {
             return
         }
 
@@ -87,7 +86,7 @@ class AlphaEffect(private val alphaState: State<Float>) : Effect() {
         val width = right - left
         val height = bottom - top
 
-        if (width == 0.0 || height == 0.0 || !shader.usable) {
+        if (width == 0.0 || height == 0.0) {
             return
         }
 
@@ -96,29 +95,13 @@ class AlphaEffect(private val alphaState: State<Float>) : Effect() {
         val blue = 1f
         val alpha = 1f - alphaState.get()
 
-        var prevAlphaTestFunc = 0
-        var prevAlphaTestRef = 0f
-        if (!UGraphics.isCoreProfile()) {
-            prevAlphaTestFunc = GL11.glGetInteger(GL11.GL_ALPHA_TEST_FUNC)
-            prevAlphaTestRef = GL11.glGetFloat(GL11.GL_ALPHA_TEST_REF)
-            UGraphics.alphaFunc(GL11.GL_ALWAYS, 0f)
-        }
-
-        shader.bind()
-        textureUniform.setValue(resources.textureId)
-
-        val worldRenderer = UGraphics.getFromTessellator()
-        worldRenderer.beginWithActiveShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR)
+        val worldRenderer = UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR)
         worldRenderer.pos(matrixStack, x, y + height, 0.0).tex(0.0, 0.0).color(red, green, blue, alpha).endVertex()
         worldRenderer.pos(matrixStack, x + width, y + height, 0.0).tex(1.0, 0.0).color(red, green, blue, alpha).endVertex()
         worldRenderer.pos(matrixStack, x + width, y, 0.0).tex(1.0, 1.0).color(red, green, blue, alpha).endVertex()
         worldRenderer.pos(matrixStack, x, y, 0.0).tex(0.0, 1.0).color(red, green, blue, alpha).endVertex()
-        worldRenderer.drawDirect()
-
-        shader.unbind()
-
-        if (!UGraphics.isCoreProfile()) {
-            UGraphics.alphaFunc(prevAlphaTestFunc, prevAlphaTestRef)
+        worldRenderer.build()?.drawAndClose(PIPELINE) {
+            texture("u_Texture", resources.textureId)
         }
     }
 
@@ -155,13 +138,9 @@ class AlphaEffect(private val alphaState: State<Float>) : Effect() {
     }
 
     companion object {
-        private lateinit var shader: UShader
-        private lateinit var textureUniform: SamplerUniform
-
-        private fun initShader() {
-            if (::shader.isInitialized) return
-
-            shader = UShader.fromLegacyShader("""
+        private val PIPELINE: URenderPipeline
+        init {
+            val vertexShaderSource = """
                 #version 110
     
                 varying vec2 f_Position;
@@ -174,7 +153,8 @@ class AlphaEffect(private val alphaState: State<Float>) : Effect() {
                     gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
                     gl_FrontColor = gl_Color;
                 }
-            """.trimIndent(), """
+            """.trimIndent()
+            val fragmentShaderSource = """
                 #version 110
     
                 uniform sampler2D u_Texture;
@@ -185,14 +165,16 @@ class AlphaEffect(private val alphaState: State<Float>) : Effect() {
                 void main() {
                     gl_FragColor = gl_Color * vec4(texture2D(u_Texture, f_TexCoord).rgb, 1.0);
                 }
-            """.trimIndent(), BlendState.NORMAL, UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR)
-
-            if (!shader.usable) {
-                println("Failed to load AlphaEffect shader")
-                return
-            }
-
-            textureUniform = shader.getSamplerUniform("u_Texture")
+            """.trimIndent()
+            PIPELINE = URenderPipeline.builderWithLegacyShader(
+                "elementa:alpha_effect",
+                UGraphics.DrawMode.QUADS,
+                UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR,
+                vertexShaderSource,
+                fragmentShaderSource,
+            ).apply {
+                blendState = BlendState.NORMAL
+            }.build()
         }
     }
 }

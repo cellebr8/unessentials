@@ -41,6 +41,7 @@ import gg.essential.gui.modals.select.selectModal
 import gg.essential.gui.modals.select.users
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.notification.warning
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.sps.InviteFriendsModal
 import gg.essential.gui.util.onItemAdded
 import gg.essential.gui.util.toStateV2List
@@ -374,12 +375,7 @@ class SocialMenu @JvmOverloads constructor(
                     }
 
                 GuiUtil.pushModal { manager ->
-                    selectModal<UUID>(manager, "Add Friends to Group") {
-                        requiresButtonPress = false
-                        requiresSelection = true
-
-                        users("Friends", potentialFriends)
-                    }.onPrimaryAction { users ->
+                    createAddFriendsToGroupModal(manager, potentialFriends).onPrimaryAction { users ->
                         socialStateManager.messengerStates.addMembers(channel.id, users)
                     }
                 }
@@ -390,13 +386,7 @@ class SocialMenu @JvmOverloads constructor(
                 image = EssentialPalette.PENCIL_7x7
             ) {
                 GuiUtil.pushModal { manager ->
-                    CancelableInputModal(manager, "", channel.name, maxLength = 24).configure {
-                        titleText = "Rename Group"
-                        contentText = "Enter a new name for your group."
-                        primaryButtonText = "Rename"
-                    }.mapInputToEnabled {
-                        it.isNotBlank() && it != channel.name
-                    }.onPrimaryActionWithValue { it ->
+                    RenameGroupModal(manager, channel.name).onPrimaryActionWithValue { it ->
                         socialStateManager.messengerStates.setTitle(channel.id, it)
                     }
                 }
@@ -422,10 +412,7 @@ class SocialMenu @JvmOverloads constructor(
 
         options.add(ContextOptionMenu.Option("Leave Group", image = EssentialPalette.LEAVE_10X7) {
             GuiUtil.pushModal { manager ->
-                ConfirmDenyModal(manager, false).configure {
-                    titleText = "Are you sure you want to leave this group?"
-                    primaryButtonText = "Confirm"
-                }.onPrimaryAction {
+                ConfirmGroupLeaveModal(manager).onPrimaryAction {
                     socialStateManager.messengerStates.leaveGroup(channel.id)
                 }
             }
@@ -444,19 +431,8 @@ class SocialMenu @JvmOverloads constructor(
 
         UUIDUtil.getName(user).thenAcceptOnMainThread {
             val isSps = spsManager.remoteSessions.any { it.hostUUID == user }
-            val title = buildString {
-                append("Are you sure you want to join $it's ")
-                if (isSps) {
-                    append("world")
-                } else {
-                    append("server")
-                }
-                append("?")
-            }
             GuiUtil.pushModal { manager ->
-                ConfirmDenyModal(manager, false).configure {
-                    titleText = title
-                }.onPrimaryAction {
+                ConfirmJoinModal(manager, it, isSps).onPrimaryAction {
                     if (!socialStateManager.statusStates.joinSession(user)) {
                         Notifications.warning("World invite expired", "")
                     }
@@ -490,9 +466,7 @@ class SocialMenu @JvmOverloads constructor(
                 "Unblock"
             }
             GuiUtil.pushModal { manager ->
-                DangerConfirmationEssentialModal(manager, blockText, false).configure {
-                    titleText = "Are you sure you want to ${blockText.lowercase()} $it?"
-                }.onPrimaryAction {
+                BlockConfirmationModal(manager, it, blockText).onPrimaryAction {
                     if (block) {
                         socialStateManager.relationshipStates.blockPlayer(uuid, true)
                     } else {
@@ -507,9 +481,7 @@ class SocialMenu @JvmOverloads constructor(
         UUIDUtil.getName(uuid).thenAcceptOnMainThread {
             if (isFriend(uuid)) {
                 GuiUtil.pushModal { manager ->
-                    DangerConfirmationEssentialModal(manager, "Remove", false).configure {
-                        titleText = "Are you sure you want to remove $it as your friend?"
-                    }.onPrimaryAction {
+                    FriendRemoveConfirmationModal(manager, it).onPrimaryAction {
                         socialStateManager.relationshipStates.removeFriend(uuid, false)
                     }
                 }
@@ -520,6 +492,44 @@ class SocialMenu @JvmOverloads constructor(
         }
     }
 
+    class ConfirmJoinModal(modalManager: ModalManager, user: String, isSps: Boolean) : ConfirmDenyModal(modalManager, false) {
+        init {
+            val title = buildString {
+                append("Are you sure you want to join $user's ")
+                if (isSps) {
+                    append("world")
+                } else {
+                    append("server")
+                }
+                append("?")
+            }
+            configure {
+                titleText = title
+            }
+        }
+    }
+
+    class ConfirmGroupLeaveModal(modalManager: ModalManager) : ConfirmDenyModal(modalManager, false) {
+        init {
+            configure {
+                titleText = "Are you sure you want to leave this group?"
+                primaryButtonText = "Confirm"
+            }
+        }
+    }
+
+    class RenameGroupModal(manager: ModalManager, name: String) : CancelableInputModal(manager, "", name, maxLength = 24) {
+        init {
+            configure {
+                titleText = "Rename Group"
+                contentText = "Enter a new name for your group."
+                primaryButtonText = "Rename"
+            }
+            mapInputToEnabled {
+                it.isNotBlank() && it != name
+            }
+        }
+    }
 
     companion object {
 
@@ -533,6 +543,30 @@ class SocialMenu @JvmOverloads constructor(
                 0f
             } else {
                 -1f
+            }
+        }
+
+        fun createAddFriendsToGroupModal(manager: ModalManager, potentialFriends: ListState<UUID>) =
+            selectModal<UUID>(manager, "Add Friends to Group") {
+                requiresButtonPress = false
+                requiresSelection = true
+
+                users("Friends", potentialFriends)
+            }
+    }
+
+    class BlockConfirmationModal(manager: ModalManager, name: String, blockText: String) : DangerConfirmationEssentialModal(manager, blockText, false) {
+        init {
+            configure {
+                titleText = "Are you sure you want to ${blockText.lowercase()} $name?"
+            }
+        }
+    }
+
+    class FriendRemoveConfirmationModal(manager: ModalManager, name: String) : DangerConfirmationEssentialModal(manager, "Remove", false) {
+        init {
+            configure {
+                titleText = "Are you sure you want to remove $name as your friend?"
             }
         }
     }

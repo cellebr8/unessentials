@@ -17,7 +17,6 @@ import gg.essential.cosmetics.EquippedCosmetic;
 import gg.essential.gui.common.CosmeticHoverOutlineEffect;
 import gg.essential.mod.cosmetics.CosmeticSlot;
 import gg.essential.network.cosmetics.Cosmetic;
-import kotlin.Unit;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.layers.LayerCape;
 import org.spongepowered.asm.mixin.Mixin;
@@ -109,7 +108,8 @@ public abstract class Mixin_CosmeticHoverOutline_Cape
             //$$ if (buffer instanceof IRenderTypeBuffer.Impl) ((IRenderTypeBuffer.Impl) buffer).finish();
             //#endif
 
-            outlineEffect.allocOutlineBuffer(cosmetic).use(() -> {
+            outlineEffect.beginOutlineRender(cosmetic);
+            {
                 //#if MC>=12102
                 //$$ render(matrixStack, buffer, light, state, netHeadYaw, headPitch);
                 //#elseif MC>=11400
@@ -121,9 +121,8 @@ public abstract class Mixin_CosmeticHoverOutline_Cape
                 //#if MC>=11600
                 //$$ if (buffer instanceof IRenderTypeBuffer.Impl) ((IRenderTypeBuffer.Impl) buffer).finish();
                 //#endif
-
-                return Unit.INSTANCE;
-            });
+            }
+            outlineEffect.endOutlineRender(cosmetic);
 
             outlinePass = false;
         }

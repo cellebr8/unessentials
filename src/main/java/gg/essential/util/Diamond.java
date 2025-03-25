@@ -12,39 +12,9 @@
 package gg.essential.util;
 
 import gg.essential.render.TextRenderTypeVertexConsumer;
-import gg.essential.universal.UGraphics;
 import gg.essential.universal.UMatrixStack;
-import gg.essential.universal.shader.BlendState;
-
-//#if MC>=11600
-//$$ import net.minecraft.client.Minecraft;
-//$$ import net.minecraft.client.renderer.IRenderTypeBuffer;
-//#endif
 
 public class Diamond {
-    public static void drawDiamond(UMatrixStack matrixStack, int faceSize, float xCenter, float yCenter, int color) {
-        BlendState prevBlendState = BlendState.active();
-        BlendState.NORMAL.activate();
-
-        //#if MC>=11600
-        //$$ IRenderTypeBuffer.Impl provider = Minecraft.getInstance().getRenderTypeBuffers().getBufferSource();
-        //$$ TextRenderTypeVertexConsumer vertexConsumer = TextRenderTypeVertexConsumer.create(provider);
-        //#else
-        UGraphics buffer = UGraphics.getFromTessellator();
-        TextRenderTypeVertexConsumer vertexConsumer = TextRenderTypeVertexConsumer.create(buffer);
-        //#endif
-
-        drawDiamond(matrixStack, vertexConsumer, faceSize, xCenter, yCenter, color);
-
-        //#if MC>=11600
-        //$$ provider.finish();
-        //#else
-        buffer.drawDirect();
-        //#endif
-
-        prevBlendState.activate();
-    }
-
     public static void drawDiamond(UMatrixStack matrixStack, TextRenderTypeVertexConsumer vertexConsumer, int faceSize, float xCenter, float yCenter, int color) {
         // light: LightmapTextureManager#MAX_LIGHT_COORDINATE
         drawDiamond(matrixStack, vertexConsumer, faceSize, xCenter, yCenter, color, 0xF000F0);

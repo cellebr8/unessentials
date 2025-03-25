@@ -40,6 +40,7 @@ import gg.essential.network.connectionmanager.notices.INoticesManager
 import gg.essential.network.connectionmanager.skins.SkinsManager
 import gg.essential.universal.UImage
 import gg.essential.universal.utils.ReleasedDynamicTexture
+import gg.essential.util.image.GpuTexture
 import gg.essential.util.image.bitmap.MutableBitmap
 import gg.essential.util.lwjgl3.Lwjgl3Loader
 import io.netty.buffer.ByteBuf
@@ -53,7 +54,6 @@ interface GuiEssentialPlatform {
     val mcVersion: Int
 
     val clientThreadDispatcher: CoroutineDispatcher
-    val renderThreadDispatcher: CoroutineDispatcher
 
     val renderBackend: RenderBackend
     val overlayManager: OverlayManager
@@ -86,6 +86,8 @@ interface GuiEssentialPlatform {
     fun identifierFromTexture(texture: RenderBackend.Texture): UIdentifier
 
     fun bindTexture(textureUnit: Int, identifier: UIdentifier)
+
+    fun getGlId(identifier: UIdentifier): Int
 
     fun playSound(identifier: UIdentifier)
 
@@ -128,7 +130,12 @@ interface GuiEssentialPlatform {
 
     fun trackByteBuf(alloc: LimitedAllocator, buf: ByteBuf): ByteBuf
 
-    fun newGlFrameBuffer(width: Int, height: Int): GlFrameBuffer
+    fun newGlFrameBuffer(width: Int, height: Int, colorFormat: GpuTexture.Format, depthFormat: GpuTexture.Format): GlFrameBuffer
+
+    fun newGpuTexture(width: Int, height: Int, format: GpuTexture.Format): GpuTexture
+
+    val mcFrameBufferColorTexture: GpuTexture
+    val mcFrameBufferDepthTexture: GpuTexture?
 
     fun newUIPlayer(
         camera: State<PerspectiveCamera?>,
@@ -145,6 +152,8 @@ interface GuiEssentialPlatform {
     fun connectToServer(name: String, address: String)
 
     val openEmoteWheelKeybind: Keybind
+
+    fun restoreMcStateAfterNanoVGDrawCall()
 
     interface Keybind {
         val isBound: Boolean

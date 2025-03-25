@@ -37,10 +37,10 @@ fun WearablesManager.renderForHoverOutline(
     vertexConsumerProvider.flush()
 
     for ((cosmetic, model) in models) {
-        outlineEffect.allocOutlineBuffer(cosmetic).use {
-            render(matrixStack, vertexConsumerProvider, model, pose, skin, parts)
-            vertexConsumerProvider.flush()
-        }
+        outlineEffect.beginOutlineRender(cosmetic)
+        render(matrixStack, vertexConsumerProvider, model, pose, skin, parts)
+        vertexConsumerProvider.flush()
+        outlineEffect.endOutlineRender(cosmetic)
     }
 }
 
@@ -53,10 +53,10 @@ fun renderCapeForHoverOutline(vertexConsumerProvider: RenderBackend.VertexConsum
 
     vertexConsumerProvider.flush()
 
-    outlineEffect.allocOutlineBuffer(cosmetic).use {
-        render()
-        vertexConsumerProvider.flush()
-    }
+    outlineEffect.beginOutlineRender(cosmetic)
+    render()
+    vertexConsumerProvider.flush()
+    outlineEffect.endOutlineRender(cosmetic)
 }
 
 fun RenderBackend.VertexConsumerProvider.flush() {

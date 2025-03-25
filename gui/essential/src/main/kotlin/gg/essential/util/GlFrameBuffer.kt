@@ -13,6 +13,7 @@ package gg.essential.util
 
 import gg.essential.universal.UMatrixStack
 import gg.essential.util.GuiEssentialPlatform.Companion.platform
+import gg.essential.util.image.GpuTexture
 import java.awt.Color
 
 interface GlFrameBuffer {
@@ -20,8 +21,8 @@ interface GlFrameBuffer {
     val height: Int
 
     val frameBuffer: Int
-    val texture: Int
-    val depthStencil: Int
+    val texture: GpuTexture
+    val depthStencil: GpuTexture
 
     fun resize(width: Int, height: Int)
     fun delete()
@@ -35,6 +36,11 @@ interface GlFrameBuffer {
     fun clear(clearColor: Color = Color(0, 0, 0, 0), clearDepth: Double = 1.0, clearStencil: Int = 0)
 
     companion object {
-        operator fun invoke(width: Int, height: Int): GlFrameBuffer = platform.newGlFrameBuffer(width, height)
+        operator fun invoke(
+            width: Int,
+            height: Int,
+            colorFormat: GpuTexture.Format = GpuTexture.Format.RGBA8,
+            depthFormat: GpuTexture.Format = GpuTexture.Format.DEPTH24_STENCIL8,
+        ): GlFrameBuffer = platform.newGlFrameBuffer(width, height, colorFormat, depthFormat)
     }
 }

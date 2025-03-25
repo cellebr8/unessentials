@@ -40,7 +40,10 @@ import gg.essential.network.cosmetics.Cosmetic
 import gg.essential.universal.UGraphics
 import gg.essential.universal.UMatrixStack
 import gg.essential.universal.USound
+import gg.essential.universal.render.URenderPipeline
 import gg.essential.universal.shader.BlendState
+import gg.essential.universal.vertex.UBufferBuilder
+import gg.essential.universal.vertex.UVertexConsumer
 import gg.essential.util.*
 import gg.essential.vigilance.utils.onLeftClick
 import org.lwjgl.opengl.GL11
@@ -271,8 +274,7 @@ class VariantsPropertyConfiguration(
             val bottom = component.getBottom().toDouble()
 
             setupDraw()
-            val graphics = UGraphics.getFromTessellator()
-            graphics.beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
+            val graphics = UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
 
             val horizontalSize = (right - left).toInt()
 
@@ -300,7 +302,7 @@ class VariantsPropertyConfiguration(
 
             }
 
-            graphics.drawDirect()
+            graphics.build()?.drawAndClose(COLOR_PICKER_PIPELINE)
             cleanupDraw()
         }
 
@@ -315,9 +317,7 @@ class VariantsPropertyConfiguration(
             val height = component.getHeight().toDouble()
 
             setupDraw()
-            val graphics = UGraphics.getFromTessellator()
-
-            graphics.beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
+            val graphics = UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
 
             var first = true
             for ((i, color) in hueColorList.withIndex()) {
@@ -333,21 +333,19 @@ class VariantsPropertyConfiguration(
                 first = false
             }
 
-            graphics.drawDirect()
+            graphics.build()?.drawAndClose(COLOR_PICKER_PIPELINE)
             cleanupDraw()
         }
 
         private fun setupDraw() {
-            BlendState.NORMAL.activate()
             UGraphics.shadeModel(GL11.GL_SMOOTH)
         }
 
         private fun cleanupDraw() {
-            BlendState.DISABLED.activate()
             UGraphics.shadeModel(GL11.GL_FLAT)
         }
 
-        private fun drawVertex(graphics: UGraphics, matrixStack: UMatrixStack, x: Double, y: Double, color: java.awt.Color) {
+        private fun drawVertex(graphics: UVertexConsumer, matrixStack: UMatrixStack, x: Double, y: Double, color: java.awt.Color) {
             graphics
                 .pos(matrixStack, x, y, 0.0)
                 .color(
@@ -394,5 +392,13 @@ class VariantsPropertyConfiguration(
         }
     }
 
-
+    companion object {
+        private val COLOR_PICKER_PIPELINE = URenderPipeline.builderWithDefaultShader(
+            "essential:variant_color_picker",
+            UGraphics.DrawMode.QUADS,
+            UGraphics.CommonVertexFormats.POSITION_COLOR,
+        ).apply {
+            blendState = BlendState.NORMAL
+        }.build()
+    }
 }

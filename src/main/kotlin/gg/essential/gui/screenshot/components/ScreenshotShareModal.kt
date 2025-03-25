@@ -13,30 +13,39 @@ package gg.essential.gui.screenshot.components
 
 import com.sparkuniverse.toolbox.chat.model.Channel
 import gg.essential.Essential
-import gg.essential.gui.modals.select.SelectModal
 import gg.essential.gui.modals.select.friendsAndGroups
 import gg.essential.gui.modals.select.selectModal
-import gg.essential.gui.overlay.ModalManager
+import gg.essential.gui.overlay.ModalFlow
 import gg.essential.gui.screenshot.LocalScreenshot
 import gg.essential.gui.screenshot.RemoteScreenshot
 import gg.essential.gui.screenshot.ScreenshotId
 import gg.essential.handlers.screenshot.ClientScreenshotMetadata
-import java.util.concurrent.CompletableFuture
+import kotlinx.coroutines.future.await
 
-fun createShareScreenshotModal(
-    modalManager: ModalManager,
+suspend fun ModalFlow.shareScreenshotModal(
     screenshot: ScreenshotId,
     metadata: ClientScreenshotMetadata? = null,
-    onModalCancelled: (Boolean) -> Unit = {},
-    onComplete: (CompletableFuture<*>) -> Unit = {}
-): SelectModal<Channel> {
-    return selectModal<Channel>(modalManager, "Share Picture") {
+) {
+    val selectedChannels = selectScreenshotShareTargetsModal()?.toList() ?: return
+    val screenshotManager = Essential.getInstance().connectionManager.screenshotManager
+    when (screenshot) {
+        is LocalScreenshot -> if (metadata != null) {
+            screenshotManager.uploadAndShareLinkToChannels(selectedChannels, screenshot.path, metadata).await()
+        } else {
+            screenshotManager.uploadAndShareLinkToChannels(selectedChannels, screenshot.path).await()
+        }
+
+        is RemoteScreenshot -> screenshotManager.shareLinkToChannels(selectedChannels, screenshot.media)
+    }
+}
+
+suspend fun ModalFlow.selectScreenshotShareTargetsModal(): Set<Channel>? {
+    return selectModal("Share Picture") {
         friendsAndGroups()
 
         modalSettings {
             primaryButtonText = "Share"
             cancelButtonText = "Cancel"
-            onCancel(onModalCancelled)
         }
 
         selectTooltip = "Add"
@@ -44,23 +53,6 @@ fun createShareScreenshotModal(
 
         requiresSelection = true
         requiresButtonPress = false
-    }.onPrimaryAction { selectedChannels ->
-        val screenshotManager = Essential.getInstance().connectionManager.screenshotManager
-        val future = when (screenshot) {
-            is LocalScreenshot -> {
-                if (metadata != null) {
-                    screenshotManager.uploadAndShareLinkToChannels(selectedChannels.toList(), screenshot.path, metadata)
-                } else {
-                    screenshotManager.uploadAndShareLinkToChannels(selectedChannels.toList(), screenshot.path)
-                }
-            }
-
-            is RemoteScreenshot -> {
-                screenshotManager.shareLinkToChannels(selectedChannels.toList(), screenshot.media)
-                CompletableFuture.completedFuture(Unit)
-            }
-        }
-
-        onComplete(future)
     }
 }
+

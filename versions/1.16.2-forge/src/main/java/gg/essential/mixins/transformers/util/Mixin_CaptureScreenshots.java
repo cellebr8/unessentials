@@ -59,11 +59,17 @@ public class Mixin_CaptureScreenshots {
         "lambda$_grab$2", // late 1.16 and above
     }, at = @At(value = "INVOKE", target = WRITE_METHOD, shift = At.Shift.AFTER))
     private static void essential$captureNewScreenshot(NativeImage nativeImage, File file, File fil1, ScreenshotEvent event, Consumer consumer, CallbackInfo ci) {
+    //#else
+    //$$ // remap disabled because we don't want the mixin AP to qualify the method reference, since optifine changes its arguments
+    //$$ @Inject(method = {
+        //#if MC>=12105
+        //$$ "method_22691"
         //#else
-        //$$ // remap disabled because we don't want the mixin AP to qualify the method reference, since optifine changes its arguments
-        //$$ @Inject(method = "method_1661", at = @At(value = "INVOKE", target = WRITE_METHOD, shift = At.Shift.AFTER, remap = true), remap = false)
-        //$$    private static void essential$captureNewScreenshot(NativeImage nativeImage, File file, Consumer consumer, CallbackInfo ci) {
+        //$$ "method_1661"
         //#endif
+    //$$ }, at = @At(value = "INVOKE", target = WRITE_METHOD, shift = At.Shift.AFTER, remap = true), remap = false)
+    //$$ private static void essential$captureNewScreenshot(NativeImage nativeImage, File file, Consumer consumer, CallbackInfo ci) {
+    //#endif
 
         essential$captureNewScreenshot(file);
     }

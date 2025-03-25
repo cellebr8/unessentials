@@ -28,7 +28,6 @@ import gg.essential.gui.wardrobe.Item
 import gg.essential.mod.cosmetics.CosmeticSlot
 import gg.essential.mod.cosmetics.preview.PerspectiveCamera
 import gg.essential.mod.cosmetics.settings.CosmeticSetting
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.gui.wardrobe.WardrobeState
 import gg.essential.model.util.Quaternion
 import gg.essential.model.util.rotateBy
@@ -88,7 +87,7 @@ fun LayoutScope.fullBodyRenderPreview(
             if (constantRotation) {
                 val fullRotationMillis = 10000.0
                 val angleStep = 360.0 / fullRotationMillis
-                onAnimationFrame {
+                addUpdateFunc { _, _ ->
                     val angle = ((((System.currentTimeMillis() - state.wardrobeOpenTime) * angleStep) % 360.0) * Math.PI / 180.0).toFloat()
                     cameraAngle.set(angle)
                 }
@@ -96,7 +95,7 @@ fun LayoutScope.fullBodyRenderPreview(
         }(Modifier.then(emulatedUI3DPlayerModifierState))
 
         if_(loading) {
-            LoadingIcon(2.0)().onAnimationFrame {
+            LoadingIcon(2.0)().addUpdateFunc { _, _ ->
                 loading.set(emulatedUI3DPlayer.wearablesManager?.state?.cosmetics.isNullOrEmpty() && cosmeticsMap.isNotEmpty())
             }
         }

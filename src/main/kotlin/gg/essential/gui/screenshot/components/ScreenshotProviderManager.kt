@@ -29,6 +29,7 @@ import gg.essential.gui.common.modal.DangerConfirmationEssentialModal
 import gg.essential.gui.common.modal.configure
 import gg.essential.gui.common.shadow.ShadowIcon
 import gg.essential.gui.notification.Notifications
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.screenshot.LocalScreenshot
 import gg.essential.gui.screenshot.RemoteScreenshot
 import gg.essential.gui.screenshot.ScreenshotId
@@ -305,16 +306,8 @@ class ScreenshotProviderManager(
      * Handles a screenshot being deleted
      */
     fun handleDelete(properties: ScreenshotProperties, uploadedOnly: Boolean = false, delete: () -> Unit = {}) {
-        GuiUtil.pushModal { manager -> 
-            DangerConfirmationEssentialModal(manager, "Delete", requiresButtonPress = false).configure {
-                contentText =
-                    if (uploadedOnly) {
-                        "Are you sure you want to remove the upload of ${properties.id.name}?\n" +
-                            "This will invalidate all links to the image."
-                    } else {
-                        "Are you sure you want to delete ${properties.id.name}?"
-                    }
-            }.onPrimaryAction {
+        GuiUtil.pushModal { manager ->
+            DeleteScreenshotConfirmationModal(manager, properties.id.name, uploadedOnly).onPrimaryAction {
                 Window.enqueueRenderOperation {
                     val id = properties.id
                     if (id is LocalScreenshot && !uploadedOnly) {
@@ -422,6 +415,20 @@ class ScreenshotProviderManager(
                 alloc,
                 precomputeOnly
             )
+        }
+    }
+
+    class DeleteScreenshotConfirmationModal(manager: ModalManager, name: String, uploadedOnly: Boolean) : DangerConfirmationEssentialModal(manager, "Delete", requiresButtonPress = false) {
+        init {
+            configure {
+                contentText =
+                    if (uploadedOnly) {
+                        "Are you sure you want to remove the upload of $name?\n" +
+                                "This will invalidate all links to the image."
+                    } else {
+                        "Are you sure you want to delete $name?"
+                    }
+            }
         }
     }
 

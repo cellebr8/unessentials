@@ -27,7 +27,6 @@ import gg.essential.gui.common.UI3DPlayer
 import gg.essential.gui.overlay.EphemeralLayer
 import gg.essential.gui.overlay.LayerPriority
 import gg.essential.gui.overlay.OverlayManagerImpl
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.mod.cosmetics.CosmeticSlot
 import gg.essential.model.util.PlayerPoseManager
 import gg.essential.universal.UScreen
@@ -129,7 +128,7 @@ class EmoteEventListeners {
                 height = 60.pixels
             } childOf previewContainer
 
-            previewContainer.onAnimationFrame {
+            previewContainer.addUpdateFunc { _, _ ->
                 if (!EssentialConfig.emotePreview) {
                     removeEmotePreview()
                 } else if ((false) || UScreen.currentScreen != null && UScreen.currentScreen !is GuiChat) {

@@ -45,6 +45,7 @@ import java.util.Set;
 //$$ import net.minecraft.client.MinecraftClient;
 //$$ import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 //$$ import net.minecraft.util.Identifier;
+//$$ import gg.essential.mixins.impl.client.model.ModelBipedUtil;
 //#endif
 
 //#if MC>=11700
@@ -103,6 +104,11 @@ public abstract class MixinRenderPlayer
     }
 
     @Override
+    public EssentialModelRenderer essential$getEssentialModelRenderer(){
+        return essentialModelRenderer;
+    }
+
+    @Override
     public Iterable<?> essential$getFeatures() {
         return this.layerRenderers;
     }
@@ -150,6 +156,7 @@ public abstract class MixinRenderPlayer
     @Inject(method = "renderLeftArm", at = @At("HEAD"))
     private void isRenderingLeftArm(CallbackInfo ci) {
         EmoteWheel.isPlayerArmRendering = true;
+        resetTransforms();
     }
 
     @Inject(method = "renderLeftArm", at = @At("RETURN"))
@@ -172,13 +179,15 @@ public abstract class MixinRenderPlayer
         getMainModel().isChild = false;
         //#endif
         CosmeticsRenderState cState = new CosmeticsRenderState.Live(player);
-        essentialModelRenderer.render(matrixStack, vertexConsumerProvider, cState, EnumSet.of(EnumPart.LEFT_ARM));
+        // render only cosmetics connected to LEFT_ARM and no other EnumParts
+        essentialModelRenderer.render(matrixStack, vertexConsumerProvider, cState, EnumSet.of(EnumPart.LEFT_ARM), false);
         EmoteWheel.isPlayerArmRendering = false;
     }
 
     @Inject(method = "renderRightArm", at = @At("HEAD"))
     private void isRenderingRightArm(CallbackInfo ci) {
         EmoteWheel.isPlayerArmRendering = true;
+        resetTransforms();
     }
 
     @Inject(method = "renderRightArm", at = @At("RETURN"))
@@ -201,7 +210,8 @@ public abstract class MixinRenderPlayer
         getMainModel().isChild = false;
         //#endif
         CosmeticsRenderState cState = new CosmeticsRenderState.Live(player);
-        essentialModelRenderer.render(matrixStack, vertexConsumerProvider, cState, EnumSet.of(EnumPart.RIGHT_ARM));
+        // render only cosmetics connected to RIGHT_ARM and no other EnumParts
+        essentialModelRenderer.render(matrixStack, vertexConsumerProvider, cState, EnumSet.of(EnumPart.RIGHT_ARM), false);
         EmoteWheel.isPlayerArmRendering = false;
     }
 
@@ -249,6 +259,15 @@ public abstract class MixinRenderPlayer
             this.applyRotations(player, player.ticksExisted + partialTicks, yaw, partialTicks);
             return GLUtil.INSTANCE.glGetMatrix(1f);
         });
+        //#endif
+    }
+
+    @Unique
+    private void resetTransforms(){
+        //#if MC>=12102
+        //$$ // This will reset any transforms that are not reset to defaults by the vanilla code before arm rendering
+        //$$ // Only required for 1.21.2+ as emote scaling starts to affect the first person arms then, all other transforms are reset by the vanilla code
+        //$$ ModelBipedUtil.resetPose(this.getModel());
         //#endif
     }
 

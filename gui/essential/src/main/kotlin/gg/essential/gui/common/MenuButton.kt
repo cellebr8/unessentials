@@ -45,8 +45,9 @@ import gg.essential.util.image.bitmap.bitmapState
 import gg.essential.util.image.bitmap.bitmapStateIf
 import gg.essential.util.image.bitmap.cropped
 import gg.essential.gui.util.pollingState
+import gg.essential.universal.render.URenderPipeline
+import gg.essential.universal.vertex.UBufferBuilder
 import gg.essential.vigilance.utils.onLeftClick
-import org.lwjgl.opengl.GL11
 import java.awt.Color
 
 /**
@@ -423,6 +424,24 @@ class MenuButton @JvmOverloads constructor(
     }
 
     companion object {
+        private val PIPELINE = URenderPipeline.builderWithDefaultShader(
+            "essential:menu_button",
+            UGraphics.DrawMode.QUADS,
+            UGraphics.CommonVertexFormats.POSITION_COLOR,
+        ).apply {
+            blendState = BlendState.NORMAL
+            depthTest = URenderPipeline.DepthTest.Always
+        }.build()
+
+        private val PIPELINE_TEXTURED = URenderPipeline.builderWithDefaultShader(
+            "essential:menu_button_textured",
+            UGraphics.DrawMode.QUADS,
+            UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR,
+        ).apply {
+            blendState = BlendState.NORMAL
+            depthTest = URenderPipeline.DepthTest.Always
+        }.build()
+
         fun drawButton(
             matrixStack: UMatrixStack,
             left: Double,
@@ -438,49 +457,38 @@ class MenuButton @JvmOverloads constructor(
             hasLeft: Boolean,
             hasRight: Boolean,
         ) {
-            val prevBlendState = BlendState.active()
-            BlendState.NORMAL.activate()
-
-            UGraphics.enableDepth()
-            UGraphics.depthFunc(GL11.GL_ALWAYS)
-
-            UGraphics.getFromTessellator().apply {
+            UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR).apply {
                 // Base
-                beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
                 pos(matrixStack, left, top, 0.0).color(baseColor).endVertex()
                 pos(matrixStack, left, bottom, 0.0).color(baseColor).endVertex()
                 pos(matrixStack, right, bottom, 0.0).color(baseColor).endVertex()
                 pos(matrixStack, right, top, 0.0).color(baseColor).endVertex()
-                drawDirect()
 
-                // Highlights
-                beginWithDefaultShader(UGraphics.DrawMode.TRIANGLE_FAN, UGraphics.CommonVertexFormats.POSITION_COLOR)
+                // Highlight left
                 pos(matrixStack, left, top, 0.0).color(highlightColor).endVertex()
                 pos(matrixStack, left, bottom, 0.0).color(highlightColor).endVertex()
                 pos(matrixStack, left + 1.0, bottom, 0.0).color(highlightColor).endVertex()
+                pos(matrixStack, left + 1.0, top, 0.0).color(highlightColor).endVertex()
+                // Highlight top
+                pos(matrixStack, left + 1.0, top, 0.0).color(highlightColor).endVertex()
                 pos(matrixStack, left + 1.0, top + 1.0, 0.0).color(highlightColor).endVertex()
                 pos(matrixStack, right, top + 1.0, 0.0).color(highlightColor).endVertex()
                 pos(matrixStack, right, top, 0.0).color(highlightColor).endVertex()
-                drawDirect()
 
-                // Shadows
-                beginWithDefaultShader(UGraphics.DrawMode.TRIANGLE_FAN, UGraphics.CommonVertexFormats.POSITION_COLOR)
+                // Shadow right
                 pos(matrixStack, right, bottom, 0.0).color(shadowColor).endVertex()
                 pos(matrixStack, right, top, 0.0).color(shadowColor).endVertex()
                 pos(matrixStack, right - 1.0, top, 0.0).color(shadowColor).endVertex()
+                pos(matrixStack, right - 1.0, bottom, 0.0).color(shadowColor).endVertex()
+                // Shadow bottom
+                pos(matrixStack, right - 1.0, bottom, 0.0).color(shadowColor).endVertex()
                 pos(matrixStack, right - 1.0, bottom - 2.0, 0.0).color(shadowColor).endVertex()
                 pos(matrixStack, left, bottom - 2.0, 0.0).color(shadowColor).endVertex()
                 pos(matrixStack, left, bottom, 0.0).color(shadowColor).endVertex()
-                drawDirect()
 
                 // Outline
                 drawOutline(matrixStack, left, top, right, bottom, outlineColor, hasTop, hasBottom, hasLeft, hasRight)
-            }
-
-            UGraphics.disableDepth()
-            UGraphics.depthFunc(GL11.GL_LEQUAL)
-
-            prevBlendState.activate()
+            }.build()?.drawAndClose(PIPELINE)
         }
 
         fun drawTexturedButton(
@@ -494,12 +502,6 @@ class MenuButton @JvmOverloads constructor(
             isEssentialButtonTexture: Boolean,
             image: Bitmap,
         ) {
-            val prevBlendState = BlendState.active()
-            BlendState.NORMAL.activate()
-
-            UGraphics.enableDepth()
-            UGraphics.depthFunc(GL11.GL_ALWAYS)
-
             val alwaysTint = if (isEssentialButtonTexture) false else platform.config.shouldDarkenRetexturedButtons
             val shouldTint = !isDefaultOrHoveredBaseColor || alwaysTint
             val texture = ButtonTextureProvider.provide(image, baseColor.takeIf { shouldTint })
@@ -507,12 +509,10 @@ class MenuButton @JvmOverloads constructor(
             UGraphics.bindTexture(0, texture.dynamicGlId)
             UGraphics.color4f(1f, 1f, 1f, 1f)
 
-            UGraphics.getFromTessellator().apply {
+            UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR).apply {
                 val width = right - left
                 val buttonMidPoint = left + (width / 2)
                 val textureMidpoint = (width / 2) / 200
-
-                beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR)
 
                 fun drawHalf(first: Boolean) {
                     // WARNING: Awesome ascii art ahead
@@ -556,17 +556,10 @@ class MenuButton @JvmOverloads constructor(
                 // We draw the texture in two halves, just like the vanilla button
                 drawHalf(true)
                 drawHalf(false)
-
-                drawDirect()
-            }
-
-            UGraphics.disableDepth()
-            UGraphics.depthFunc(GL11.GL_LEQUAL)
-
-            prevBlendState.activate()
+            }.build()?.drawAndClose(PIPELINE_TEXTURED)
         }
 
-        private fun UGraphics.drawOutline(
+        private fun UBufferBuilder.drawOutline(
             matrixStack: UMatrixStack,
             left: Double,
             top: Double,
@@ -579,36 +572,28 @@ class MenuButton @JvmOverloads constructor(
             hasRight: Boolean,
         ) {
             if (hasTop) {
-                beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
                 pos(matrixStack, left - if (hasLeft) 1.0 else 0.0, top - 1.0, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, left - if (hasLeft) 1.0 else 0.0, top, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, right + if (hasRight) 1.0 else 0.0, top, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, right + if (hasRight) 1.0 else 0.0, top - 1.0, 0.0).color(outlineColor).endVertex()
-                drawDirect()
             }
             if (hasBottom) {
-                beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
                 pos(matrixStack, left - if (hasLeft) 1.0 else 0.0, bottom, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, left - if (hasLeft) 1.0 else 0.0, bottom + 1.0, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, right + if (hasRight) 1.0 else 0.0, bottom + 1.0, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, right + if (hasRight) 1.0 else 0.0, bottom, 0.0).color(outlineColor).endVertex()
-                drawDirect()
             }
             if (hasLeft) {
-                beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
                 pos(matrixStack, left - 1.0, top, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, left - 1.0, bottom, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, left, bottom, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, left, top, 0.0).color(outlineColor).endVertex()
-                drawDirect()
             }
             if (hasRight) {
-                beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
                 pos(matrixStack, right, top, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, right, bottom, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, right + 1.0, bottom, 0.0).color(outlineColor).endVertex()
                 pos(matrixStack, right + 1.0, top, 0.0).color(outlineColor).endVertex()
-                drawDirect()
             }
         }
 

@@ -25,6 +25,10 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
+//#if MC>=12105
+//$$ import kotlin.jvm.optionals.getOrNull
+//#endif
+
 //#if MC>11202
 //$$ import net.minecraft.world.storage.IServerWorldInfo
 //#endif
@@ -41,7 +45,11 @@ object SPSData {
         )
 
         val difficultyLocked = worldSummary?.getLevelNbtValue {
+            //#if MC>=12105
+            //$$ it.getCompound("Data").getOrNull()?.getBoolean("DifficultyLocked")?.getOrNull()
+            //#else
             it.getCompoundTag("Data").getBoolean("DifficultyLocked")
+            //#endif
         } ?: worldInfo?.isDifficultyLocked ?: false
 
         val file = (worldFile / "spsSettings.json")
@@ -63,7 +71,11 @@ object SPSData {
         return SPSSettings(
             worldSummary?.enumGameType ?: worldInfo!!.gameType,
             EnumDifficulty.getDifficultyEnum(worldSummary?.getLevelNbtValue {
+                //#if MC>=12105
+                //$$ it.getCompound("Data").getOrNull()?.getInt("Difficulty")?.getOrNull()
+                //#else
                 it.getCompoundTag("Data").getInteger("Difficulty")
+                //#endif
             } ?: worldInfo?.difficulty?.difficultyId ?: EnumDifficulty.NORMAL.difficultyId),
             difficultyLocked,
             worldSummary?.cheatsEnabled ?: worldInfo!!.areCommandsAllowed(),

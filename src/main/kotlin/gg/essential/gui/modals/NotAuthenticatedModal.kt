@@ -30,7 +30,8 @@ import kotlinx.coroutines.launch
 
 class NotAuthenticatedModal(
     modalManager: ModalManager,
-    successCallback: Modal.() -> Unit = {}
+    private val skipAuthCheck: Boolean = false,
+    private val successCallback: Modal.() -> Unit = {}
 ) : ConfirmDenyModal(modalManager, false) {
 
     private val connectionManager = Essential.getInstance().connectionManager
@@ -49,22 +50,15 @@ class NotAuthenticatedModal(
         bindPrimaryButtonText(buttonText)
         bindConfirmAvailable(!connecting)
 
-        // Immediately move on if a connection is established and authenticated
-        authStatus.onSetValueAndNow {
-            if (it) {
-                successCallback.invoke(this)
-                replaceWith(null)
-            }
-        }
-
         primaryButtonAction = {
             coroutineScope.launch {
                 connectionManager.forceImmediateReconnect()
                 when (connectionManager.connectionStatus.await { it != null }) {
                     ConnectionManager.Status.SUCCESS -> {}
                     ConnectionManager.Status.MOJANG_UNAUTHORIZED -> {
-                        replaceWith(AccountNotValidModal(modalManager, successCallback))
+                        replaceWith(AccountNotValidModal(modalManager, successCallback = successCallback))
                     }
+
                     else -> {
                         Notifications.error("Connection Error", "")
                         triedConnect.set(true)
@@ -73,4 +67,17 @@ class NotAuthenticatedModal(
             }
         }
     }
+
+    override fun onOpen() {
+        super.onOpen()
+        if (skipAuthCheck) return
+        // Immediately move on if a connection is established and authenticated
+        authStatus.onSetValueAndNow {
+            if (it) {
+                successCallback.invoke(this)
+                replaceWith(null)
+            }
+        }
+    }
+
 }

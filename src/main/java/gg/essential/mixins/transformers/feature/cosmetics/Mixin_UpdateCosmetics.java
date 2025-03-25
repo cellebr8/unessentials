@@ -48,6 +48,10 @@ public abstract class Mixin_UpdateCosmetics {
             }
             AbstractClientPlayerExt playerExt = (AbstractClientPlayerExt) player;
 
+            // Set null so Mixin_RenderExtraClientCosmeticGeometryInFirstPerson can detect if the player was rendered already
+            // during this pass by some other mod. E.G. a first person body mod
+            playerExt.setRenderedPose(null);
+
             WearablesManager wearablesManager = playerExt.getWearablesManager();
             wearablesManager.update();
             playerExt.getPoseManager().update(wearablesManager);

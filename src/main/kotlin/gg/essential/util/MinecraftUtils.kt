@@ -15,18 +15,20 @@ import gg.essential.Essential
 import gg.essential.universal.ChatColor
 import gg.essential.universal.UMinecraft
 import gg.essential.universal.wrappers.UPlayer
-import gg.essential.universal.wrappers.message.UTextComponent
 import me.kbrewster.eventbus.Subscribe
 import net.minecraft.client.resources.I18n
 import net.minecraft.util.ResourceLocation
 import gg.essential.api.utils.MinecraftUtils
 import gg.essential.elementa.state.BasicState
+import gg.essential.elementa.state.State
 import gg.essential.event.client.ClientTickEvent
 import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.modal.ConfirmDenyModal
 import gg.essential.gui.common.modal.configure
 import gg.essential.gui.modal.sps.FirewallBlockingModal
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.util.stateBy
+import gg.essential.universal.UChat
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiMainMenu
 import net.minecraft.client.gui.GuiMultiplayer
@@ -59,7 +61,7 @@ import net.minecraft.launchwrapper.Launch
 
 object MinecraftUtils : MinecraftUtils {
     private const val MESSAGE_PREFIX: String = "[Essential] "
-    private val messages: Queue<UTextComponent> = ConcurrentLinkedQueue()
+    private val messages: Queue<Any> = ConcurrentLinkedQueue()
     private val mc = UMinecraft.getMinecraft()
 
     @JvmStatic
@@ -69,9 +71,12 @@ object MinecraftUtils : MinecraftUtils {
     val currentProtocolVersion: Int = ServerData("", "", false).version
     //#endif
 
-    override fun sendMessage(message: UTextComponent) {
+    //#if MC<12105
+    @Deprecated("Use `UChat.chat` instead.")
+    override fun sendMessage(message: gg.essential.universal.wrappers.message.UTextComponent) {
         messages.add(message)
     }
+    //#endif
 
     override fun sendChatMessageAndFormat(message: String) {
         sendMessage(I18n.format(message))
@@ -86,7 +91,7 @@ object MinecraftUtils : MinecraftUtils {
     }
 
     override fun sendMessage(prefix: String, message: String) {
-        sendMessage(UTextComponent(prefix + ChatColor.RESET + I18n.format(message)))
+        messages.add(prefix + ChatColor.RESET + I18n.format(message))
     }
 
     override fun isHypixel(): Boolean {
@@ -141,9 +146,9 @@ object MinecraftUtils : MinecraftUtils {
     @Subscribe
     fun tick(event: ClientTickEvent?) {
         if (!UPlayer.hasPlayer()) return
-        var message: UTextComponent?
+        var message: Any?
         while (messages.poll().also { message = it } != null) {
-            UPlayer.sendClientSideMessage(message ?: continue)
+            UChat.chat(message ?: continue)
         }
     }
 
@@ -222,22 +227,14 @@ object MinecraftUtils : MinecraftUtils {
                 } else {
                     BasicState(serverData.serverIP)
                 }
-            val message = stateBy {
-                "Connecting to ${ChatColor.WHITE}${serverName()}${ChatColor.RESET} will disconnect you from your current world or server."
-            }
-            GuiUtil.pushModal { manager -> 
-                ConfirmDenyModal(manager, false).configure {
-                    titleText = "Hang on..."
-                    contentTextColor = EssentialPalette.TEXT
-                    primaryButtonAction = { connectToServer(serverData, previousScreen, false) }
-                    setTextContent(message)
-                }
+            GuiUtil.pushModal { manager ->
+                HangOnModal(manager, serverName) { connectToServer(serverData, previousScreen, false) }
             }
             return
         }
 
         if (spsManager.isSpsAddress(serverData.serverIP) && FirewallUtil.isFirewallBlocking()) {
-            GuiUtil.pushModal { manager -> 
+            GuiUtil.pushModal { manager ->
                 FirewallBlockingModal(manager, spsManager.getHostFromSpsAddress(serverData.serverIP)) {
                     connectToServer(serverData, previousScreen)
                 }
@@ -271,4 +268,17 @@ object MinecraftUtils : MinecraftUtils {
         //$$ UMinecraft.getMinecraft().stop()
         //#endif
 
+    class HangOnModal(manager: ModalManager, serverName: State<String>, action: () -> Unit) : ConfirmDenyModal(manager, false) {
+        init {
+            val message = stateBy {
+                "Connecting to ${ChatColor.WHITE}${serverName()}${ChatColor.RESET} will disconnect you from your current world or server."
+            }
+            configure {
+                titleText = "Hang on..."
+                contentTextColor = EssentialPalette.TEXT
+                primaryButtonAction = action
+                setTextContent(message)
+            }
+        }
+    }
 }

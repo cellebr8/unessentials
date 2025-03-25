@@ -154,6 +154,6 @@ class ModelParser(
             )
         ).withIndex()
 
-        const val ROOT_BONE_NAME = "_root"
+        const val ROOT_BONE_NAME = "__internal_root__"
     }
 }

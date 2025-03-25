@@ -104,14 +104,13 @@ class PendingUserEntry(
                     gui.handleBlockOrUnblock(user)
                 })
         }
-    }
 
-    override fun animationFrame() {
-        super.animationFrame()
-        // Clear the friend request seen notice if it exists
-        // Cannot be done in init because the component is created on menu init
-        if (hasUnseenRequest.get()) {
-            friendRequestNoticeManager.clearUnseenFriendRequests(user)
+        addUpdateFunc { _, _ ->
+            // Clear the friend request seen notice if it exists
+            // Cannot be done in init because the component is created on menu init
+            if (hasUnseenRequest.get()) {
+                friendRequestNoticeManager.clearUnseenFriendRequests(user)
+            }
         }
     }
 }

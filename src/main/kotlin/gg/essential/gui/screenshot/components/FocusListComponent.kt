@@ -136,7 +136,11 @@ class FocusListComponent(
             return null
         }
 
-        override fun animationFrame() {
+        init {
+            addUpdateFunc { _, _ -> update() }
+        }
+
+        private fun update() {
             val map = providerManager.provideFocus(
                 // Preload one extra in each direction so switching feels better, multiple windows ordered by importance
                 listOf(0, 1, -1, 2, -2)
@@ -151,7 +155,6 @@ class FocusListComponent(
             right?.let {
                 readTexture(it, map)
             }
-            super.animationFrame()
         }
 
         /**

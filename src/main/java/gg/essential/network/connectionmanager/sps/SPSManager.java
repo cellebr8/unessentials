@@ -41,7 +41,6 @@ import gg.essential.network.connectionmanager.queue.SequentialPacketQueue;
 import gg.essential.sps.ResourcePackSharingHttpServer;
 import gg.essential.sps.WindowTitleManager;
 import gg.essential.universal.UMinecraft;
-import gg.essential.universal.wrappers.message.UTextComponent;
 import gg.essential.upnp.UPnPPrivacy;
 import gg.essential.upnp.model.UPnPSession;
 import gg.essential.util.*;
@@ -49,7 +48,6 @@ import kotlin.collections.CollectionsKt;
 import kotlin.collections.SetsKt;
 import me.kbrewster.eventbus.Subscribe;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.management.PlayerList;
@@ -80,10 +78,10 @@ import java.util.stream.Collectors;
 //$$ import net.minecraft.world.storage.IServerWorldInfo;
 //#endif
 
-//#if MC<=11202
-import net.minecraft.client.renderer.OpenGlHelper;
+//#if MC>=11200
+import static gg.essential.util.HelpersKt.textTranslatable;
 //#else
-//$$ import com.mojang.blaze3d.platform.PlatformDescriptors;
+//$$ import net.minecraft.client.resources.I18n;
 //#endif
 
 import static gg.essential.sps.ConstantsKt.SPS_TLD;
@@ -446,15 +444,27 @@ public class SPSManager extends StateCallbackManager<IStatusManager> implements 
         this.updateQueue.enqueue(new ClientUPnPSessionClosePacket());
     }
 
+    private static String cpuInfo() {
+        //#if MC>=12105
+        //$$ try {
+        //$$     oshi.hardware.CentralProcessor processor = new oshi.SystemInfo().getHardware().getProcessor();
+        //$$     (processor.getLogicalProcessorCount() + "x " + processor.getProcessorIdentifier().getName()).replaceAll("\\s+", " ");
+        //$$     return "${}x ${processor.processorIdentifier.name}";
+        //$$ } catch (Throwable e) {
+        //$$     return "<unknown>";
+        //$$ }
+        //#elseif MC>=11600
+        //$$ return com.mojang.blaze3d.platform.PlatformDescriptors.getCpuInfo();
+        //#else
+        return net.minecraft.client.renderer.OpenGlHelper.getCpu();
+        //#endif
+    }
+
     private void sendSessionTelemetry(IntegratedServer server, UPnPSession oldSession) {
         File worldDirectory = ExtensionsKt.getWorldDirectory(server).toFile();
 
         HashMap<String, Object> metadata = new HashMap<String, Object>() {{
-            //#if MC<=11202
-            put("userCPU", OpenGlHelper.getCpu());
-            //#else
-            //$$ put("userCPU", PlatformDescriptors.getCpuInfo());
-            //#endif
+            put("userCPU", cpuInfo());
             put("worldNameHash", DigestUtils.sha256Hex(UUIDUtil.getClientUUID() + worldDirectory.getName()));
             put("inviteCount", oldSession.getInvites().size());
             put("shareRP", shareResourcePack);
@@ -548,10 +558,7 @@ public class SPSManager extends StateCallbackManager<IStatusManager> implements 
             for (EntityPlayerMP entity : ((LanConnectionsAccessor) server.getPlayerList()).getPlayerEntityList()) {
                 if (!invited.contains(entity.getUniqueID()) && !UUIDUtil.getClientUUID().equals(entity.getUniqueID())) {
                     //#if MC>11200
-                    entity.connection.disconnect(
-                        new UTextComponent(I18n.format("multiplayer.disconnect.server_shutdown"))
-                            .getComponent() // need the MC one cause it cannot serialize the universal one
-                    );
+                    entity.connection.disconnect(textTranslatable("multiplayer.disconnect.server_shutdown"));
                     //#else
                     //$$ entity.playerNetServerHandler.kickPlayerFromServer(
                     //$$     I18n.format("multiplayer.disconnect.server_shutdown")

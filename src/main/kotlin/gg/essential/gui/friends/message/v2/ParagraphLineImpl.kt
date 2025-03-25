@@ -31,7 +31,6 @@ import gg.essential.gui.elementa.essentialmarkdown.drawables.HeaderDrawable
 import gg.essential.gui.friends.message.MessageUtils
 import gg.essential.util.hiddenChildOf
 import gg.essential.util.isAnnouncement
-import gg.essential.gui.util.onAnimationFrame
 import java.net.URI
 import java.net.URISyntaxException
 
@@ -108,7 +107,7 @@ class ParagraphLineImpl(
             height = ChildBasedMaxSizeConstraint()
         }
 
-        visibleMessageComponent.onAnimationFrame {
+        visibleMessageComponent.addUpdateFunc { _, _ ->
             visibleMessageComponent.drawables.filterIsInstance<HeaderDrawable>().forEach {
                 it.dividerWidth = visibleMessageComponent.maxTextLineWidth.toDouble()
             }

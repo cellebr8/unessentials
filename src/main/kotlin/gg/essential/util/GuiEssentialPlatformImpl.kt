@@ -48,7 +48,6 @@ import gg.essential.gui.overlay.ModalManagerImpl
 import gg.essential.gui.overlay.OverlayManager
 import gg.essential.gui.overlay.OverlayManagerImpl
 import gg.essential.gui.screenshot.bytebuf.LimitedAllocator
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.gui.wardrobe.ItemId
 import gg.essential.gui.wardrobe.Wardrobe
 import gg.essential.gui.wardrobe.WardrobeCategory
@@ -74,6 +73,7 @@ import gg.essential.universal.UGraphics
 import gg.essential.universal.UImage
 import gg.essential.universal.UScreen
 import gg.essential.universal.utils.ReleasedDynamicTexture
+import gg.essential.util.image.GpuTexture
 import gg.essential.util.image.bitmap.Bitmap
 import gg.essential.util.image.bitmap.MutableBitmap
 import gg.essential.util.image.bitmap.forEachPixel
@@ -82,11 +82,19 @@ import io.netty.buffer.ByteBuf
 import kotlinx.coroutines.CoroutineDispatcher
 import me.kbrewster.eventbus.Subscribe
 import net.minecraft.client.Minecraft
+import org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA
+import org.lwjgl.opengl.GL11.GL_SRC_ALPHA
+import org.lwjgl.opengl.GL13.GL_TEXTURE0
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Path
 import java.util.*
 import kotlin.jvm.Throws
+
+//#if MC>=12105
+//$$ import net.minecraft.client.texture.GlTexture
+//$$ import com.mojang.blaze3d.opengl.GlStateManager
+//#endif
 
 @AccessedViaReflection("GuiEssentialPlatform")
 class GuiEssentialPlatformImpl : GuiEssentialPlatform {
@@ -95,9 +103,6 @@ class GuiEssentialPlatformImpl : GuiEssentialPlatform {
 
     override val clientThreadDispatcher: CoroutineDispatcher
         get() = MinecraftCoroutineDispatchers.clientThread
-
-    override val renderThreadDispatcher: CoroutineDispatcher
-        get() = MinecraftCoroutineDispatchers.renderThread
 
     override val renderBackend: RenderBackend
         get() = MinecraftRenderBackend
@@ -161,6 +166,24 @@ class GuiEssentialPlatformImpl : GuiEssentialPlatform {
         UGraphics.bindTexture(textureUnit, identifier.toMC())
     }
 
+    override fun getGlId(identifier: UIdentifier): Int {
+        val textureManager = Minecraft.getMinecraft().textureManager
+        //#if MC<16000
+        @Suppress("USELESS_ELVIS") // method inappropriately marked as non-null by Forge
+        //#endif
+        val texture = textureManager.getTexture(identifier.toMC())
+            //#if MC<11700
+            ?: net.minecraft.client.renderer.texture.SimpleTexture(identifier.toMC()).also {
+                textureManager.loadTexture(identifier.toMC(), it)
+            }
+            //#endif
+        //#if MC>=12105
+        //$$ return (texture.glTexture as GlTexture).glId
+        //#else
+        return texture.glTextureId
+        //#endif
+    }
+
     override fun playSound(identifier: UIdentifier) {
         EssentialSoundManager.playSound(identifier.toMC())
     }
@@ -171,10 +194,10 @@ class GuiEssentialPlatformImpl : GuiEssentialPlatform {
 
     override fun dismissModalOnScreenChange(modal: Modal, dismiss: () -> Unit) {
         var screen = UScreen.currentScreen
-        modal.onAnimationFrame {
+        modal.addUpdateFunc { _, _ ->
             val newScreen = UScreen.currentScreen
             if (newScreen == null || newScreen == screen || newScreen is OverlayManagerImpl.OverlayInteractionScreen)
-                return@onAnimationFrame
+                return@addUpdateFunc
 
             screen = UScreen.currentScreen
             Window.enqueueRenderOperation {
@@ -293,8 +316,36 @@ class GuiEssentialPlatformImpl : GuiEssentialPlatform {
     override fun trackByteBuf(alloc: LimitedAllocator, buf: ByteBuf): ByteBuf =
         gg.essential.gui.screenshot.bytebuf.trackByteBuf(alloc, buf)
 
-    override fun newGlFrameBuffer(width: Int, height: Int): GlFrameBuffer =
-        GlFrameBufferImpl(width, height)
+    override fun newGlFrameBuffer(width: Int, height: Int, colorFormat: GpuTexture.Format, depthFormat: GpuTexture.Format): GlFrameBuffer =
+        GlFrameBufferImpl(width, height, colorFormat, depthFormat)
+
+    override fun newGpuTexture(width: Int, height: Int, format: GpuTexture.Format): GpuTexture =
+        OwnedGlGpuTexture(width, height, format)
+
+    override val mcFrameBufferColorTexture: GpuTexture
+        get() = Minecraft.getMinecraft().framebuffer.let { fb ->
+            UnownedGlGpuTexture(
+                GpuTexture.Format.RGBA8,
+                //#if MC>=12105
+                //$$ (fb.colorAttachment as GlTexture).glId,
+                //#elseif MC>=11600
+                //$$ fb.func_242996_f(),
+                //#else
+                fb.framebufferTexture,
+                //#endif
+                fb.framebufferTextureWidth,
+                fb.framebufferTextureHeight,
+            )
+        }
+
+    override val mcFrameBufferDepthTexture: GpuTexture?
+        //#if MC>=12105
+        //$$ get() = MinecraftClient.getInstance().framebuffer.let { UnownedGlGpuTexture(GpuTexture.Format.DEPTH32, (it.depthAttachment as GlTexture).glId, it.textureWidth, it.textureHeight) }
+        //#elseif MC>=11600
+        //$$ get() = Minecraft.getInstance().framebuffer.let { UnownedGlGpuTexture(GpuTexture.Format.DEPTH32, it.func_242997_g(), it.framebufferTextureWidth, it.framebufferTextureHeight) }
+        //#else
+        get() = null
+        //#endif
 
     override fun newUIPlayer(
         camera: State<PerspectiveCamera?>,
@@ -354,4 +405,26 @@ class GuiEssentialPlatformImpl : GuiEssentialPlatform {
 
     override val openEmoteWheelKeybind: GuiEssentialPlatform.Keybind
         get() = EssentialKeybindingRegistry.getInstance().openEmoteWheel
+
+    override fun restoreMcStateAfterNanoVGDrawCall() {
+        // NanoVG will have modified the GL state directly, so MC's state tracker are out of date and will potentially
+        // skip calls because they incorrectly see them to be redundant. To fix that, we explicitly tell MC what
+        // values may be set by NanoVG (and even if it did not set them, MC's state tracker will be back in sync).
+        //#if MC>=12105
+        //$$ GlStateManager._blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        //$$ GlStateManager._enableBlend()
+        //$$ GlStateManager._disableDepthTest()
+        //#else
+        @Suppress("DEPRECATION")
+        UGraphics.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        @Suppress("DEPRECATION")
+        UGraphics.enableBlend()
+        @Suppress("DEPRECATION")
+        UGraphics.disableDepth()
+        //#endif
+        UGraphics.setActiveTexture(GL_TEXTURE0)
+        //#if MC>=11700 && MC<12105
+        //$$ net.minecraft.client.render.BufferRenderer.unbindAll()
+        //#endif
+    }
 }

@@ -83,10 +83,18 @@ class Bone(
         resetAnimationOffsets(false)
     }
 
+    private fun propagateSideVisibilityOff(){
+        // Propagate visibility for disabled sides so Locator.isVisible is always correct for these Bones
+        isVisible = false
+        fullyInvisible = true
+        for (child in childModels) {
+            child.propagateSideVisibilityOff()
+        }
+    }
+
     fun propagateVisibility(parentVisible: Boolean, side: Side?) {
         if (this.side != null && side != null && this.side !== side) {
-            isVisible = false
-            fullyInvisible = true
+            propagateSideVisibilityOff()
             return
         }
         val isVisible = if (visible == null) parentVisible else visible!!

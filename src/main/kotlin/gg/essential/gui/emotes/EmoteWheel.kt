@@ -62,7 +62,6 @@ import gg.essential.gui.layoutdsl.whenHovered
 import gg.essential.gui.layoutdsl.width
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.notification.error
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.gui.wardrobe.Wardrobe
 import gg.essential.gui.wardrobe.WardrobeCategory
 import gg.essential.mod.cosmetics.CosmeticSlot
@@ -176,7 +175,7 @@ class EmoteWheel : WindowScreen(
 
         var equipping = false
         // Check for keybind release to equip the emote and close the wheel
-        window.onAnimationFrame {
+        window.addUpdateFunc { _, _ ->
             if (!equipping && !keybind.keyBinding.isKeyDown) {
                 window.focusedComponent?.let { focused ->
                     if (focused is EmoteWheelEntry && canEmote(UPlayer.getPlayer()!!)) {

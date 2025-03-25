@@ -168,7 +168,6 @@ class ModelAnimationState(
         matrixStack.scale(scale)
         matrixStack.scale(-1f, -1f, 1f) // see RenderLivingBase.prepareScale
         matrixStack.scale(0.9375f) // see RenderPlayer.preRenderCallback
-        bones.root.visit(matrixStack)
         bones.byPart.values.forEach { bone ->
             bone.resetAnimationOffsets(false) // animations will have been baked into the pose already
             bone.visit(matrixStack)

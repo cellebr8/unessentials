@@ -22,10 +22,12 @@ import gg.essential.gui.common.modal.Modal
 import gg.essential.gui.friends.SocialMenu
 import gg.essential.gui.modals.*
 import gg.essential.gui.notification.sendTosNotification
+import gg.essential.gui.overlay.ModalFlow
 import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.overlay.ModalManagerImpl
 import gg.essential.gui.overlay.OverlayManager
 import gg.essential.gui.overlay.OverlayManagerImpl
+import gg.essential.gui.overlay.launchModalFlow
 import gg.essential.gui.wardrobe.Wardrobe
 import gg.essential.universal.GuiScale
 import gg.essential.universal.UMinecraft
@@ -38,7 +40,7 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 //#if MC>=11600
-//$$ import gg.essential.universal.wrappers.message.UTextComponent
+//$$ import gg.essential.universal.utils.toUnformattedString
 //#endif
 
 object GuiUtil : GuiUtil, OverlayManager by OverlayManagerImpl, ModalManager by ModalManagerImpl(OverlayManagerImpl) {
@@ -63,6 +65,13 @@ object GuiUtil : GuiUtil, OverlayManager by OverlayManagerImpl, ModalManager by 
         manager.queueModal(builder(manager))
 
         return manager
+    }
+
+    /**
+     * Creates a new [ModalManager] and launches the given [ModalFlow] block as a new coroutine on it.
+     */
+    fun launchModalFlow(block: suspend ModalFlow.() -> Unit) {
+        launchModalFlow(ModalManagerImpl(this), block)
     }
 
     inline fun <reified T : GuiScreen> openScreen(noinline screen: () -> T?) {
@@ -148,7 +157,7 @@ object GuiUtil : GuiUtil, OverlayManager by OverlayManagerImpl, ModalManager by 
         (screen as? UScreen)?.unlocalizedName?.let { return I18n.format(it) }
 
         //#if MC>=11600
-        //$$ screen.title?.let { return UTextComponent(it).unformattedText }
+        //$$ screen.title?.let { return it.toUnformattedString() }
         //#endif
 
         return screen.javaClass.simpleName

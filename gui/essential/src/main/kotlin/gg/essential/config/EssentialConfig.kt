@@ -15,6 +15,7 @@ import gg.essential.gui.common.modal.DangerConfirmationEssentialModal
 import gg.essential.gui.common.modal.configure
 import gg.essential.gui.elementa.state.v2.*
 import gg.essential.gui.elementa.state.v2.combinators.*
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.screenshot.toast.ScreenshotPreviewActionSlot
 import gg.essential.mod.vigilance2.Vigilant2
 import gg.essential.util.GuiEssentialPlatform
@@ -143,9 +144,7 @@ object EssentialConfig : Vigilant2(), GuiEssentialPlatform.Config {
     private fun revokeTosButton() {
         val manager = platform.createModalManager()
         manager.queueModal(
-            DangerConfirmationEssentialModal(manager, "Confirm", false).configure {
-                titleText = "Revoking Essential's Terms of Service and Privacy Policy will cause Essential features not to work. Are you sure you want to proceed?"
-            }.onPrimaryAction {
+            RevokeTOSModal(manager).onPrimaryAction {
                 doRevokeTos()
             }
         )
@@ -663,4 +662,13 @@ object EssentialConfig : Vigilant2(), GuiEssentialPlatform.Config {
         set(value)
     }
     private fun MutableState<Int>.reorderScreenshotQuickActions() = reorder(1, 2, 3, 5, 0, 4)
+
+    class RevokeTOSModal(manager: ModalManager) : DangerConfirmationEssentialModal(manager, "Confirm", false) {
+        init {
+            configure {
+                titleText = "Revoking Essential's Terms of Service and Privacy Policy will cause Essential features not to work. Are you sure you want to proceed?"
+            }
+        }
+    }
+
 }

@@ -200,8 +200,8 @@ class TOSModal(
                                 val status = connectionManager.connectionStatus.await { it != null && it != ConnectionManager.Status.NO_TOS }
                                 val modal = when {
                                     connectionManager.outdated -> AutoUpdate.createUpdateModal(modalManager)
-                                    status == ConnectionManager.Status.MOJANG_UNAUTHORIZED -> AccountNotValidModal(modalManager, confirmAction)
-                                    status != ConnectionManager.Status.SUCCESS -> NotAuthenticatedModal(modalManager, confirmAction)
+                                    status == ConnectionManager.Status.MOJANG_UNAUTHORIZED -> AccountNotValidModal(modalManager, successCallback = confirmAction)
+                                    status != ConnectionManager.Status.SUCCESS -> NotAuthenticatedModal(modalManager, successCallback = confirmAction)
                                     else -> null
                                 }
 

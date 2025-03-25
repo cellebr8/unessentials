@@ -22,7 +22,8 @@ import gg.essential.gui.util.pollingState
 
 class AccountNotValidModal(
     modalManager: ModalManager,
-    successCallback: Modal.() -> Unit = {}
+    private val skipAuthCheck: Boolean = false,
+    private val successCallback: Modal.() -> Unit = {}
 ) : ConfirmDenyModal(modalManager, false) {
 
     private val authStatus = pollingState { Essential.getInstance().connectionManager.isAuthenticated }
@@ -33,16 +34,20 @@ class AccountNotValidModal(
             primaryButtonText = "Open Browser"
         }
 
+        onPrimaryAction {
+            WebAccountManager.openInBrowser()
+        }
+    }
+
+    override fun onOpen() {
+        super.onOpen()
+        if (skipAuthCheck) return
         // Immediately move on if a connection is established and authenticated
         authStatus.onSetValueAndNow {
             if (it) {
                 successCallback.invoke(this)
                 replaceWith(null)
             }
-        }
-
-        onPrimaryAction {
-            WebAccountManager.openInBrowser()
         }
     }
 }

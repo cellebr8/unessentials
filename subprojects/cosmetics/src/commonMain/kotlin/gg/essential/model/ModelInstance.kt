@@ -123,6 +123,7 @@ class ModelInstance(
         animationState.apply(model.rootBone)
 
         for (bone in model.bones.byPart.values) {
+            if (bone.part == EnumPart.ROOT) continue
             bone.userOffsetX = renderMetadata.positionAdjustment.x
             bone.userOffsetY = renderMetadata.positionAdjustment.y
             bone.userOffsetZ = renderMetadata.positionAdjustment.z

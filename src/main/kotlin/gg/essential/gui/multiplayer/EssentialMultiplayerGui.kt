@@ -34,6 +34,7 @@ import gg.essential.gui.elementa.VanillaButtonConstraint.Companion.constrainTo
 import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.elementa.state.v2.stateOf
 import gg.essential.gui.modals.TOSModal
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.serverdiscovery.VersionDownloadModal
 import gg.essential.mixins.ext.client.gui.acc
 import gg.essential.mixins.ext.client.gui.close
@@ -163,15 +164,7 @@ class EssentialMultiplayerGui {
 
             if (shouldShowServerPrivacyModal) {
                 GuiUtil.pushModal { manager ->
-                    ConfirmDenyModal(manager, false).configure {
-                        titleText = "Share your activity with friends?"
-                        contentText = "Display the server or world you\n" +
-                        "are playing on to your friends in\n" +
-                        "the social and multiplayer menu."
-                        contentTextColor = EssentialPalette.TEXT_MID_GRAY
-                        primaryButtonText = "Yes"
-                        cancelButtonText = "No"
-                    }.onPrimaryAction {
+                    ShareActivityModal(manager).onPrimaryAction {
                         OnboardingData.setSeenFriendsOption()
                         EssentialConfig.sendServerUpdates = true
                     }.onCancel {
@@ -190,6 +183,20 @@ class EssentialMultiplayerGui {
             // refreshed. A refresh just re-displays a new instance of the screen, so if we initialized because
             // of that, we have to mark it as false again.
             isRefreshing = false
+        }
+    }
+
+    class ShareActivityModal(manager: ModalManager) : ConfirmDenyModal(manager, false) {
+        init {
+            configure {
+                titleText = "Share your activity with friends?"
+                contentText = "Display the server or world you\n" +
+                        "are playing on to your friends in\n" +
+                        "the social and multiplayer menu."
+                contentTextColor = EssentialPalette.TEXT_MID_GRAY
+                primaryButtonText = "Yes"
+                cancelButtonText = "No"
+            }
         }
     }
 

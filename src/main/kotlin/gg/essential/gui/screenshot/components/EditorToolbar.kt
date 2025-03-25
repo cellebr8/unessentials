@@ -39,9 +39,11 @@ import gg.essential.universal.shader.BlendState
 import gg.essential.util.bindHoverEssentialTooltip
 import gg.essential.util.centered
 import gg.essential.gui.util.hoveredState
+import gg.essential.universal.render.URenderPipeline
+import gg.essential.universal.vertex.UBufferBuilder
+import gg.essential.universal.vertex.UVertexConsumer
 import gg.essential.util.HSBColor
 import gg.essential.vigilance.utils.onLeftClick
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats
 import org.lwjgl.opengl.GL11
 import java.awt.Color
 
@@ -420,8 +422,7 @@ class ScreenshotColorPicker(
         val bottom = component.getBottom().toDouble()
 
         setupDraw()
-        val graphics = UGraphics.getFromTessellator()
-        graphics.beginWithDefaultShader(UGraphics.DrawMode.QUADS, DefaultVertexFormats.POSITION_COLOR)
+        val graphics = UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
 
         val horizontalSize = (right - left).toInt()
 
@@ -449,7 +450,7 @@ class ScreenshotColorPicker(
 
         }
 
-        graphics.drawDirect()
+        graphics.build()?.drawAndClose(PIPELINE)
         cleanupDraw()
     }
 
@@ -458,17 +459,15 @@ class ScreenshotColorPicker(
         val top = component.getTop().toDouble()
         val right = component.getRight().toDouble()
         val bottom = component.getBottom().toDouble()
-        val graphics = UGraphics.getFromTessellator()
-
 
         setupDraw()
 
-        graphics.beginWithDefaultShader(UGraphics.DrawMode.QUADS, DefaultVertexFormats.POSITION_COLOR)
+        val graphics = UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
         drawVertex(graphics, matrixStack, left, top, currentColorState.get().toColor().withAlpha(0))
         drawVertex(graphics, matrixStack, left, bottom, currentColorState.get().toColor().withAlpha(0))
         drawVertex(graphics, matrixStack, right, bottom, currentColorState.get().toColor().withAlpha(255))
         drawVertex(graphics, matrixStack, right, top, currentColorState.get().toColor().withAlpha(255))
-        graphics.drawDirect()
+        graphics.build()?.drawAndClose(PIPELINE)
         cleanupDraw()
     }
 
@@ -483,9 +482,7 @@ class ScreenshotColorPicker(
         val height = component.getHeight().toDouble()
 
         setupDraw()
-        val graphics = UGraphics.getFromTessellator()
-
-        graphics.beginWithDefaultShader(UGraphics.DrawMode.QUADS, DefaultVertexFormats.POSITION_COLOR)
+        val graphics = UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
 
         var first = true
         for ((i, color) in hueColorList.withIndex()) {
@@ -501,21 +498,19 @@ class ScreenshotColorPicker(
             first = false
         }
 
-        graphics.drawDirect()
+        graphics.build()?.drawAndClose(PIPELINE)
         cleanupDraw()
     }
 
     private fun setupDraw() {
-        BlendState.NORMAL.activate()
         UGraphics.shadeModel(GL11.GL_SMOOTH)
     }
 
     private fun cleanupDraw() {
-        BlendState.DISABLED.activate()
         UGraphics.shadeModel(GL11.GL_FLAT)
     }
 
-    private fun drawVertex(graphics: UGraphics, matrixStack: UMatrixStack, x: Double, y: Double, color: Color) {
+    private fun drawVertex(graphics: UVertexConsumer, matrixStack: UMatrixStack, x: Double, y: Double, color: Color) {
         graphics
             .pos(matrixStack, x, y, 0.0)
             .color(
@@ -594,5 +589,15 @@ class ScreenshotColorPicker(
                 activeColorIndex.set { index }
             }
         }
+    }
+
+    companion object {
+        private val PIPELINE = URenderPipeline.builderWithDefaultShader(
+            "essential:screenshot_picker",
+            UGraphics.DrawMode.QUADS,
+            UGraphics.CommonVertexFormats.POSITION_COLOR,
+        ).apply {
+            blendState = BlendState.NORMAL
+        }.build()
     }
 }

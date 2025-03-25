@@ -23,7 +23,6 @@ import gg.essential.elementa.UIComponent
 import gg.essential.elementa.state.BasicState
 import gg.essential.elementa.state.State
 import gg.essential.gui.overlay.LayerPriority
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.util.GuiUtil
 import gg.essential.util.executor
 import net.minecraft.client.Minecraft
@@ -49,13 +48,13 @@ object NotificationsImpl : Notifications, NotificationsManager {
     private val blockedNotifications = mutableListOf<() -> Unit>()
 
     init {
-        window.onAnimationFrame {
+        window.addUpdateFunc { _, _ ->
             if (beforeFirstDraw) {
                 beforeFirstDraw = false
             }
 
             if (!blocked && blockedNotifications.isNotEmpty()) {
-                Window.enqueueRenderOperation { flushBlockedNotifications() }
+                flushBlockedNotifications()
             }
         }
     }

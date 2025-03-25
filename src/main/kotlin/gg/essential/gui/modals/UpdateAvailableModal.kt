@@ -91,16 +91,7 @@ class UpdateAvailableModal(modalManager: ModalManager) : ConfirmDenyModal(modalM
         onPrimaryAction {
             AutoUpdate.update(autoUpdate.get())
 
-            replaceWith(ConfirmDenyModal(modalManager, true).configure {
-                contentText = "Essential will update the next time\nyou launch the game."
-                primaryButtonText = "Okay"
-                cancelButtonText = "Quit & Update"
-                cancelButton.bindHoverEssentialTooltip(
-                    stateOf("This will close your game!").toV1(this),
-                    EssentialTooltip.Position.ABOVE,
-                    4f,
-                )
-            }.onCancel {
+            replaceWith(EssentialRebootUpdateModal(modalManager).onCancel {
                 shutdown()
             }.onPrimaryAction {
                 Notifications.push("Update Confirmed", "Essential will update next time you launch the game!")
@@ -108,6 +99,21 @@ class UpdateAvailableModal(modalManager: ModalManager) : ConfirmDenyModal(modalM
         }
 
         onCancel { AutoUpdate.ignoreUpdate() }
+    }
+}
+
+class EssentialRebootUpdateModal(modalManager: ModalManager) : ConfirmDenyModal(modalManager, true) {
+    init {
+        configure {
+            contentText = "Essential will update the next time\nyou launch the game."
+            primaryButtonText = "Okay"
+            cancelButtonText = "Quit & Update"
+            cancelButton.bindHoverEssentialTooltip(
+                stateOf("This will close your game!").toV1(this),
+                EssentialTooltip.Position.ABOVE,
+                4f,
+            )
+        }
     }
 }
 

@@ -21,20 +21,26 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import java.nio.IntBuffer
 
+//#if MC>=12105
+//$$ import com.mojang.blaze3d.opengl.GlStateManager
+//$$ import com.mojang.blaze3d.textures.TextureFormat
+//$$ import net.minecraft.client.texture.GlTexture
+//#endif
+
 //#if MC<=11202
 import net.minecraft.client.renderer.texture.AbstractTexture
 //#else
 //$$ import net.minecraft.client.renderer.texture.Texture
 //#endif
 
-//#if MC>=11600
+//#if MC>=11600 && MC<12105
 //$$ import com.mojang.blaze3d.platform.GlStateManager
 //#endif
 
 /**
  * Uploads the contents of a PixelBuffer to OpenGL
  */
-class PixelBufferTexture(image: PixelBuffer) :
+class PixelBufferTexture(debugLabel: String, image: PixelBuffer) :
 //#if MC<=11202
     AbstractTexture() {
     //#else
@@ -49,19 +55,34 @@ class PixelBufferTexture(image: PixelBuffer) :
     val imageHeight: Int = image.getHeight()
 
     init {
-
         if(image !is ErrorImage) {
+            //#if MC>=12105
+            //$$ glTexture = RenderSystem.getDevice().createTexture(debugLabel, TextureFormat.RGBA8, imageWidth, imageHeight, 1)
+            //#else
             glTextureId = GL11.glGenTextures()
+            //#endif
+        }
+    }
 
-            // We need to support both running on the main thread and running in another async context
+    fun upload(image: PixelBuffer) {
+        if (image !is ErrorImage) {
+            // We need to support both uploading on the main thread and in another async context
             if (UMinecraft.getMinecraft().isCallingFromMinecraftThread) {
+                //#if MC>=12105
+                //$$ GlStateManager._bindTexture((glTexture as GlTexture).glId)
+                //#else
                 GlStateManager.bindTexture(glTextureId)
+                //#endif
                 // Minecraft changes these values in some places, for example NativeImage#upload
                 glPixelStore(GL11.GL_UNPACK_ROW_LENGTH, 0)
                 glPixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0)
                 glPixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0)
             } else {
+                //#if MC>=12105
+                //$$ GL11.glBindTexture(GL11.GL_TEXTURE_2D, (glTexture as GlTexture).glId)
+                //#else
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, glTextureId)
+                //#endif
             }
 
             val buffer = image.prepareDirectBuffer()

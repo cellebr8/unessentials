@@ -875,9 +875,11 @@ abstract class AbstractTextInput(
         }
     }
 
-    override fun animationFrame() {
-        super.animationFrame()
+    init {
+        addUpdateFunc { _, _ -> update() }
+    }
 
+    private fun update() {
         val diff = (targetVerticalScrollingOffset - verticalScrollingOffset) * 0.1f
         if (abs(diff) < .25f)
             verticalScrollingOffset = targetVerticalScrollingOffset

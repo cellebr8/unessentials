@@ -12,14 +12,20 @@
 package gg.essential.gui.friends.title
 
 import gg.essential.elementa.components.UIContainer
+import gg.essential.elementa.components.Window
 import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.EssentialCollapsibleSearchbar
+import gg.essential.gui.common.modal.CancelableInputModal
 import gg.essential.gui.common.modal.UsernameInputModal
 import gg.essential.gui.common.modal.configure
 import gg.essential.gui.friends.SocialMenu
-import gg.essential.gui.friends.modal.MakeGroupModal
+import gg.essential.gui.modals.select.offlinePlayers
+import gg.essential.gui.modals.select.onlinePlayers
+import gg.essential.gui.modals.select.selectModal
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.notification.iconAndMarkdownBody
+import gg.essential.gui.overlay.ModalFlow
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.network.connectionmanager.relationship.FriendRequestState
 import gg.essential.network.connectionmanager.relationship.RelationshipErrorResponse
 import gg.essential.network.connectionmanager.relationship.RelationshipResponse
@@ -27,16 +33,16 @@ import gg.essential.network.connectionmanager.relationship.message
 import gg.essential.util.GuiUtil
 import gg.essential.util.colored
 import gg.essential.util.thenAcceptOnMainThread
+import java.util.*
 import java.util.concurrent.CompletableFuture
 
 abstract class TitleManagementActions(private val gui: SocialMenu) : UIContainer() {
-    private val makeGroupModal = MakeGroupModal(gui)
 
     abstract val search: EssentialCollapsibleSearchbar
 
     protected fun addFriend() {
         GuiUtil.pushModal { manager ->
-            UsernameInputModal(manager, "") { uuid, username, modal ->
+            AddFriendModal(manager) { uuid, username, modal ->
                 val future = gui.socialStateManager.relationshipStates.addFriend(uuid, false)
                 consumeRelationshipFutureFromModal(
                     modal, future
@@ -48,21 +54,19 @@ abstract class TitleManagementActions(private val gui: SocialMenu) : UIContainer
                         )
                     }
                 }
-            }.configure {
-                primaryButtonText = "Add"
-                titleText = "Add Friend"
-                contentText = "Enter a Minecraft username\nto add them as a friend."
             }
         }
     }
 
     protected fun makeGroup() {
-        GuiUtil.pushModal { makeGroupModal.create(it) }
+        GuiUtil.launchModalFlow {
+            makeGroupModal(gui)
+        }
     }
 
     protected fun blockPlayer() {
         GuiUtil.pushModal { manager ->
-            UsernameInputModal(manager, "") { uuid, username, modal ->
+            BlockPlayerModal(manager) { uuid, username, modal ->
                 val future = gui.socialStateManager.relationshipStates.blockPlayer(uuid, false)
                 consumeRelationshipFutureFromModal(
                     modal, future
@@ -74,10 +78,6 @@ abstract class TitleManagementActions(private val gui: SocialMenu) : UIContainer
                         )
                     }
                 }
-            }.configure {
-                primaryButtonText = "Block"
-                titleText = "Block Player"
-                contentText = "Enter a Minecraft username\nto block them."
             }
         }
     }
@@ -109,6 +109,80 @@ abstract class TitleManagementActions(private val gui: SocialMenu) : UIContainer
         }.whenComplete { _, _ ->
             // Always re-enable the button when we complete the future
             modal.primaryButtonEnableStateOverride.set(true)
+        }
+    }
+
+    class AddFriendModal(
+        modalManager: ModalManager,
+        whenValidated: (UUID, String, UsernameInputModal) -> Unit,
+    ) : UsernameInputModal(modalManager, "", whenValidated = whenValidated) {
+        init {
+            configure {
+                primaryButtonText = "Add"
+                titleText = "Add Friend"
+                contentText = "Enter a Minecraft username\nto add them as a friend."
+            }
+        }
+    }
+
+    class BlockPlayerModal(
+        modalManager: ModalManager,
+        whenValidated: (UUID, String, UsernameInputModal) -> Unit,
+    ) : UsernameInputModal(modalManager, "", whenValidated = whenValidated) {
+        init {
+            configure {
+                primaryButtonText = "Block"
+                titleText = "Block Player"
+                contentText = "Enter a Minecraft username\nto block them."
+            }
+        }
+    }
+
+    companion object {
+        suspend fun ModalFlow.makeGroupModal(socialMenu: SocialMenu) {
+            while (true) {
+                val friends = selectFriendsForGroupModal() ?: return
+                val name = enterGroupNameModal() ?: continue
+                socialMenu.socialStateManager.messengerStates.createGroup(friends, name).thenAcceptOnMainThread {
+                    // Intentionally delayed one frame so that the channel preview callback can fire first
+                    Window.enqueueRenderOperation {
+                        socialMenu.openMessageScreen(it)
+                    }
+                }
+                return
+            }
+        }
+
+        suspend fun ModalFlow.enterGroupNameModal(): String? {
+            return awaitModal { continuation ->
+                CancelableInputModal(modalManager, "", "", maxLength = 24).configure {
+                    titleText = "Make Group"
+                    contentText = "Enter a name for your group."
+                    primaryButtonText = "Make Group"
+                    titleTextColor = EssentialPalette.TEXT_HIGHLIGHT
+
+                    cancelButtonText = "Back"
+
+                    mapInputToEnabled { it.isNotBlank() }
+                    onPrimaryActionWithValue { result -> replaceWith(continuation.resumeImmediately(result)) }
+                    onCancel { button -> if (button) replaceWith(continuation.resumeImmediately(null)) }
+                }
+            }
+        }
+
+        suspend fun ModalFlow.selectFriendsForGroupModal(): Set<UUID>? {
+            return selectModal("Select Friends") {
+                requiresSelection = true
+                requiresButtonPress = false
+
+                onlinePlayers()
+                offlinePlayers()
+
+                modalSettings {
+                    primaryButtonText = "Continue"
+                    cancelButtonText = "Cancel"
+                }
+            }
         }
     }
 

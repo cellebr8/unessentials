@@ -16,7 +16,6 @@ import gg.essential.elementa.UIComponent
 import gg.essential.gui.elementa.state.v2.State
 import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.elementa.state.v2.onChange
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.mod.cosmetics.settings.CosmeticProperty
 import gg.essential.mod.cosmetics.settings.CosmeticSetting
 import gg.essential.mod.cosmetics.settings.variant
@@ -36,7 +35,7 @@ class EmoteScheduler(
     private var delays: MutableList<() -> Unit> = mutableListOf()
 
     init {
-        component.onAnimationFrame {
+        component.addUpdateFunc { _, _ ->
             if (!emoteScheduled) {
                 tryScheduleEmote()
             }

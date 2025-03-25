@@ -45,6 +45,7 @@ import gg.essential.gui.friends.message.MessageScreen
 import gg.essential.gui.friends.message.MessageUtils
 import gg.essential.gui.friends.message.MessageUtils.handleMarkdownUrls
 import gg.essential.gui.friends.message.ReportMessageModal
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.sendCheckmarkNotification
 import gg.essential.gui.util.hoveredState
 import gg.essential.universal.UDesktop
@@ -330,14 +331,8 @@ class MessageWrapperImpl(
             if (UKeyboard.isShiftKeyDown()) {
                 doDelete()
             } else {
-                GuiUtil.pushModal { manager -> 
-                    DangerConfirmationEssentialModal(
-                        manager,
-                        "Delete",
-                        requiresButtonPress = false
-                    ).configure {
-                        titleText = "Are you sure you want to delete this message?"
-                    }.onPrimaryAction {
+                GuiUtil.pushModal { manager ->
+                    DeleteMessageConfirmationModal(manager).onPrimaryAction {
                         doDelete()
                     }
                 }
@@ -472,17 +467,25 @@ class MessageWrapperImpl(
                 replyTo.eagerlyLoad()
             }
         }
+    }
 
+    fun markRead() {
         // Check the message should be marked as read
         if (message.sent && !markedUnreadManually.get() && unreadState.get()) {
+            Window.enqueueRenderOperation {
+                messengerStates.setUnreadState(message.getInfraInstance(), false)
+            }
+        }
+    }
 
-            val componentTopVisible = parent.parent.parent.isPointInside((getLeft() + getRight()) / 2, getTop())
-
-            // Check the message is visible before marking it as read
-            if (componentTopVisible) {
-                Window.enqueueRenderOperation {
-                    messengerStates.setUnreadState(message.getInfraInstance(), false)
-                }
+    class DeleteMessageConfirmationModal(manager: ModalManager) : DangerConfirmationEssentialModal(
+        manager,
+        "Delete",
+        requiresButtonPress = false
+    ) {
+        init {
+            configure {
+                titleText = "Are you sure you want to delete this message?"
             }
         }
     }

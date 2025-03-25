@@ -73,12 +73,11 @@ import gg.essential.gui.notification.Notifications
 import gg.essential.gui.overlay.LayerPriority
 import gg.essential.gui.screenshot.ScreenshotOverlay.animating
 import gg.essential.gui.screenshot.components.ScreenshotBrowser
-import gg.essential.gui.screenshot.components.createShareScreenshotModal
+import gg.essential.gui.screenshot.components.shareScreenshotModal
 import gg.essential.gui.screenshot.constraints.AspectPreservingFillConstraint
 import gg.essential.gui.screenshot.toast.ScreenshotPreviewAction
 import gg.essential.gui.screenshot.toast.ScreenshotPreviewActionSlot
 import gg.essential.gui.util.hoveredState
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.universal.UMatrixStack
 import gg.essential.universal.UResolution
 import gg.essential.universal.USound
@@ -199,7 +198,7 @@ open class ScreenshotToast : UIContainer() {
         // This issue becomes apparent if the screenshot above this one finishes
         // animating away while this one is animating away because both screenshots
         // were taken in quick succession.
-        onAnimationFrame {
+        addUpdateFunc { _, _ ->
             if (getLeft() == targetConstraint.getXPosition(this)) {
                 callback()
                 Window.of(this@ScreenshotToast).removeChild(this@ScreenshotToast)
@@ -231,7 +230,7 @@ class ScreenshotPreviewToast(val file: File) : ScreenshotToast() {
 
     private val screenshotId = LocalScreenshot(file.toPath())
     private val aspectRatio = BasicState(UResolution.scaledWidth / UResolution.scaledHeight.toFloat())
-    private var animationFramesRemaining = -1
+    private var timeMsRemaining = -1
     private val hovered = hoveredState()
     private val favoriteState = BasicState(false)
     private val favoriteIcon = favoriteState.map {
@@ -322,7 +321,7 @@ class ScreenshotPreviewToast(val file: File) : ScreenshotToast() {
                     2 -> 7
                     else -> 3
                 }
-            animationFramesRemaining = Window.of(this@ScreenshotPreviewToast).animationFPS * time
+            timeMsRemaining = time * 1000
         })
     }
 
@@ -345,7 +344,7 @@ class ScreenshotPreviewToast(val file: File) : ScreenshotToast() {
                     val upload: () -> Unit = { connectionManager.screenshotManager.uploadAndCopyLinkToClipboard(file.toPath()) }
 
                     if (!OnboardingData.hasAcceptedTos()) {
-                        GuiUtil.pushModal { manager -> 
+                        GuiUtil.pushModal { manager ->
                             TOSModal(
                                 manager,
                                 unprompted = false,
@@ -385,7 +384,7 @@ class ScreenshotPreviewToast(val file: File) : ScreenshotToast() {
 
             ScreenshotPreviewAction.SHARE -> {
                 ManageAction("Send to Friends", EssentialPalette.SOCIAL_10X).onLeftClick {
-                    GuiUtil.pushModal { createShareScreenshotModal(it, screenshotId) }
+                    GuiUtil.launchModalFlow { shareScreenshotModal(screenshotId) }
                 }
             }
 
@@ -469,14 +468,17 @@ class ScreenshotPreviewToast(val file: File) : ScreenshotToast() {
         ScreenshotOverlay.clearScreenshot(this)
     }
 
-    override fun animationFrame() {
-        if (animating && animationFramesRemaining > 0) {
-            animationFramesRemaining--
-            if (animationFramesRemaining == 0) {
+    init {
+        addUpdateFunc { _, dtMs -> update(dtMs) }
+    }
+
+    private fun update(dtMs: Int) {
+        if (animating && timeMsRemaining > 0) {
+            timeMsRemaining -= dtMs
+            if (timeMsRemaining <= 0) {
                 clear()
             }
         }
-        super.animationFrame()
     }
 
 }
@@ -555,11 +557,8 @@ class ScreenshotUploadToast : UIContainer() {
                 }
             }
         }
-    }
 
-    override fun animationFrame() {
-        super.animationFrame()
-        updateProgress()
+        addUpdateFunc { _, _ -> updateProgress() }
     }
 
     private fun updateProgress() {

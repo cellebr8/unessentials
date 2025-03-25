@@ -63,7 +63,6 @@ import gg.essential.gui.util.hoverScope
 import gg.essential.gui.util.hoveredState
 import gg.essential.gui.util.layoutSafePollingState
 import gg.essential.gui.util.makeHoverScope
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.gui.util.selfAndParents
 import gg.essential.gui.wardrobe.EmoteWheelPage
 import gg.essential.gui.wardrobe.Item
@@ -257,12 +256,12 @@ fun LayoutScope.previewWindowTitleBar(state: WardrobeState, modifier: Modifier) 
         animationScope = null
     }
 
-    container.onAnimationFrame {
+    container.addUpdateFunc { _, _ ->
         if (leftButton == null || rightButton == null || state.draggingEmote.getUntracked() == null) {
             if (animationScope != null) {
                 resetDragAnimation()
             }
-            return@onAnimationFrame
+            return@addUpdateFunc
         }
 
         // Get which button, if any, the emote is being dragged on top of

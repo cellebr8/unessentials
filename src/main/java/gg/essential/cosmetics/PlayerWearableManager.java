@@ -218,7 +218,11 @@ public class PlayerWearableManager {
         InventoryPlayer inventory = player.inventory;
         //#endif
 
+        //#if MC>=12105
+        //$$ ItemStack stack = inventory.getStack(inventory.getMainStacks().size() + slot);
+        //#else
         ItemStack stack = inventory.armorItemInSlot(slot);
+        //#endif
         if (isEmpty(stack)) return true;
         if (stack.getItem() instanceof RenderCosmetic) return true;
         //#if MC>=12102

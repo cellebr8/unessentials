@@ -37,6 +37,7 @@ import gg.essential.gui.elementa.state.v2.*
 import gg.essential.gui.elementa.state.v2.combinators.*
 import gg.essential.gui.elementa.state.v2.stateBy
 import gg.essential.gui.layoutdsl.*
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.util.pollingStateV2
 import gg.essential.gui.wardrobe.components.*
 import gg.essential.gui.wardrobe.configuration.*
@@ -366,7 +367,21 @@ class Wardrobe(
 
     private fun displayCartWarningModal() {
         GuiUtil.pushModal { manager ->
-            val modal = ConfirmDenyModal(manager, false).configure {
+            val modal = UnownedItemsEquippedModal(manager)
+
+            modal.onPrimaryAction {
+                restorePreviousScreen()
+            }
+
+            connectionManager.telemetryManager.clientActionPerformed(TelemetryManager.Actions.CART_NOT_EMPTY_WARNING)
+
+            modal
+        }
+    }
+
+    class UnownedItemsEquippedModal(manager: ModalManager) : ConfirmDenyModal(manager, false) {
+        init {
+            configure {
                 titleText = "Unowned items equipped..."
                 titleTextColor = EssentialPalette.MODAL_WARNING
                 contentText = "Unowned items will\nnot be visible in-game."
@@ -376,14 +391,6 @@ class Wardrobe(
                 primaryButtonHoverStyle = MenuButton.GRAY
                 cancelButtonText = "Back"
             }
-
-            modal.onPrimaryAction {
-                restorePreviousScreen()
-            }
-
-            connectionManager.telemetryManager.clientActionPerformed(TelemetryManager.Actions.CART_NOT_EMPTY_WARNING)
-
-            modal
         }
     }
 

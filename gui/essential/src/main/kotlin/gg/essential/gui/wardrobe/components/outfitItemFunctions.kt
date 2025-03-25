@@ -20,6 +20,7 @@ import gg.essential.gui.common.modal.CancelableInputModal
 import gg.essential.gui.common.modal.DangerConfirmationEssentialModal
 import gg.essential.gui.common.modal.configure
 import gg.essential.gui.notification.Notifications
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.wardrobe.Item
 import gg.essential.gui.wardrobe.WardrobeState
 import gg.essential.mod.cosmetics.CosmeticBundle
@@ -34,17 +35,9 @@ fun displayOutfitOptions(item: Item.OutfitItem, wardrobeState: WardrobeState, ev
     options.add(
         ContextOptionMenu.Option("Rename", image = EssentialPalette.PENCIL_7x7) {
             platform.pushModal { manager ->
-                CancelableInputModal(manager, "Outfit Name", maxLength = 22, initialText = item.name)
-                    .configure {
-                        titleText = "Rename Outfit"
-                        contentText = "Enter a new name for your outfit."
-                        primaryButtonText = "Rename"
-                        titleTextColor = EssentialPalette.TEXT_HIGHLIGHT
-
-                        cancelButtonText = "Back"
-                    }.onPrimaryActionWithValue {
-                        wardrobeState.outfitManager.renameOutfit(item.id, it)
-                    }
+                RenameOutfitModal(manager, item.name).onPrimaryActionWithValue {
+                    wardrobeState.outfitManager.renameOutfit(item.id, it)
+                }
             }
         }
     )
@@ -93,9 +86,7 @@ fun displayOutfitOptions(item: Item.OutfitItem, wardrobeState: WardrobeState, ev
                 hoveredColor = EssentialPalette.TEXT_WARNING
             ) {
                 platform.pushModal { manager ->
-                    DangerConfirmationEssentialModal(manager, "Delete", true).configure {
-                        titleText = "Are you sure you want to delete ${item.name}?"
-                    }.onPrimaryAction {
+                    DeleteOutfitConfirmationModal(manager, item.name).onPrimaryAction {
                         wardrobeState.outfitManager.deleteOutfit(item.id)
                     }
                 }
@@ -124,7 +115,7 @@ fun displayOutfitOptions(item: Item.OutfitItem, wardrobeState: WardrobeState, ev
                                 0f,
                                 false,
                                 CosmeticBundle.Skin(item.skin, item.name),
-                                item.cosmetics,
+                                item.cosmetics.filterValues { it != "BASE_ICON" },
                                 item.settings,
                             )
                         }
@@ -151,4 +142,25 @@ fun handleOutfitLeftClick(item: Item.OutfitItem, wardrobeState: WardrobeState, e
     wardrobeState.selectedItem.set(item)
     wardrobeState.outfitManager.setSelectedOutfit(item.id)
 
+}
+
+class RenameOutfitModal(manager: ModalManager, name: String) : CancelableInputModal(manager, "Outfit Name", maxLength = 22, initialText = name) {
+    init {
+        configure {
+            titleText = "Rename Outfit"
+            contentText = "Enter a new name for your outfit."
+            primaryButtonText = "Rename"
+            titleTextColor = EssentialPalette.TEXT_HIGHLIGHT
+
+            cancelButtonText = "Back"
+        }
+    }
+}
+
+class DeleteOutfitConfirmationModal(manager: ModalManager, name: String) : DangerConfirmationEssentialModal(manager, "Delete", true) {
+    init {
+        configure {
+            titleText = "Are you sure you want to delete $name?"
+        }
+    }
 }

@@ -34,7 +34,6 @@ import gg.essential.cosmetics.skinmask.MaskedSkinProvider
 import gg.essential.elementa.dsl.pixels
 import gg.essential.elementa.state.BasicState
 import gg.essential.elementa.state.State
-import gg.essential.event.render.RenderTickEvent
 import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.elementa.state.v2.stateOf
 import gg.essential.handlers.EssentialSoundManager
@@ -85,7 +84,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import me.kbrewster.eventbus.Subscribe
 import net.minecraft.client.Minecraft
 import net.minecraft.client.entity.AbstractClientPlayer
 import net.minecraft.client.renderer.entity.RenderManager
@@ -274,12 +272,6 @@ open class UI3DPlayer(
         fallbackPlayer.orNull?.close()
     }
 
-    override fun animationFrame() {
-        super.animationFrame()
-
-        fallbackPlayer.orNull?.animationFrame()
-    }
-
     override fun draw(matrixStack: UMatrixStack) {
         beforeDraw(matrixStack)
 
@@ -331,7 +323,13 @@ open class UI3DPlayer(
         // Perspective depth values are incredibly close to 1 (while orthographic are about [0.2; 0.5]),
         // so they will naturally always end up behind anything which was already rendered there and therefore won't be
         // visible if we do not clear the depth buffer first.
+        //#if MC>=12105
+        //$$ MinecraftClient.getInstance().framebuffer.depthAttachment?.let { depthTexture ->
+        //$$     RenderSystem.getDevice().createCommandEncoder().clearDepthTexture(depthTexture, 1.0)
+        //$$ }
+        //#else
         GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT)
+        //#endif
 
         val (left, top) = stack.transform(getLeft(), getTop())
         val (right, bottom) = stack.transform(getRight(), getBottom())
@@ -713,7 +711,6 @@ open class UI3DPlayer(
         private var currentCape: ResourceLocation? = null
 
         private val entity = MolangQueryEntityImpl(0f, 0f, 0f, null)
-        private var lastFrameTime = -1L
         private var subject = CosmeticsSubject(entity)
         private var playerModel: ModelInstance =
             ModelInstance(PlayerModel.steveBedrockModel, entity, subject.animationTargets, CosmeticsState.EMPTY) {}
@@ -946,13 +943,11 @@ open class UI3DPlayer(
             model.emissiveTexture = null
         }
 
-        fun animationFrame() {
-            if (lastFrameTime == -1L) lastFrameTime = frameStartTime
-
-            val dt = ((frameStartTime - lastFrameTime) / 1000f).coerceAtMost(1f)
-            lastFrameTime = frameStartTime
-
-            val newLifeTime = entity.lifeTime + dt
+        init {
+            addUpdateFunc { dt, _ -> update(dt) }
+        }
+        fun update(dt: Float) {
+            val newLifeTime = entity.lifeTime + dt.coerceAtMost(1f)
 
             val ticksOld = (entity.lifeTime * 20).toInt()
             val ticksNew = (newLifeTime * 20).toInt()
@@ -1008,14 +1003,5 @@ open class UI3DPlayer(
         var current: UI3DPlayer? = null
         @JvmField
         var isRenderingPerspective = false
-
-        private var frameStartTime: Long = -1L
-
-        @Subscribe
-        fun renderTick(event: RenderTickEvent) {
-            if (!event.isPre) return
-
-            frameStartTime = System.currentTimeMillis()
-        }
     }
 }

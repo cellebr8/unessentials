@@ -16,6 +16,8 @@ import gg.essential.elementa.effects.Effect
 import gg.essential.gui.EssentialPalette
 import gg.essential.universal.UGraphics
 import gg.essential.universal.UMatrixStack
+import gg.essential.universal.render.URenderPipeline
+import gg.essential.universal.vertex.UBufferBuilder
 import java.awt.Color
 
 class CheckerboardBackgroundEffect : Effect() {
@@ -28,9 +30,8 @@ class CheckerboardBackgroundEffect : Effect() {
         val top = component.getTop().toDouble()
         val right = component.getRight().toDouble()
         val bottom = component.getBottom().toDouble()
-        val graphics = UGraphics.getFromTessellator()
+        val graphics = UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
 
-        graphics.beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
         for (x in 0 until (right - left).toInt()) {
             for (y in 0 until (bottom - top).toInt()) {
                 val color = if ((x + y) % 2 == 0) Color.LIGHT_GRAY else EssentialPalette.TEXT_HIGHLIGHT
@@ -40,9 +41,10 @@ class CheckerboardBackgroundEffect : Effect() {
                 drawVertex(graphics, matrixStack, left + x + 1, top + y, color)
             }
         }
-        graphics.drawDirect()
+
+        graphics.build()?.drawAndClose(PIPELINE)
     }
-    private fun drawVertex(graphics: UGraphics, matrixStack: UMatrixStack, x: Double, y: Double, color: Color) {
+    private fun drawVertex(graphics: UBufferBuilder, matrixStack: UMatrixStack, x: Double, y: Double, color: Color) {
         graphics
             .pos(matrixStack, x, y, 0.0)
             .color(
@@ -52,5 +54,13 @@ class CheckerboardBackgroundEffect : Effect() {
                 color.alpha.toFloat() / 255f
             )
             .endVertex()
+    }
+
+    companion object {
+        private val PIPELINE = URenderPipeline.builderWithDefaultShader(
+            "essential:checkerboard_background_effect",
+            UGraphics.DrawMode.QUADS,
+            UGraphics.CommonVertexFormats.POSITION_COLOR,
+        ).build()
     }
 }

@@ -16,7 +16,6 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import gg.essential.cosmetics.CosmeticsRenderState;
 import gg.essential.handlers.OnlineIndicator;
 import gg.essential.universal.UMatrixStack;
-import gg.essential.universal.wrappers.message.UTextComponent;
 import net.minecraft.client.entity.player.AbstractClientPlayerEntity;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -26,6 +25,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import static gg.essential.universal.utils.TextUtilsKt.toFormattedString;
 
 //#if MC>=12102
 //$$ import gg.essential.mixins.impl.client.model.PlayerEntityRenderStateExt;
@@ -77,7 +78,7 @@ public class Mixin_RenderNameplateIcon<T extends Entity> {
         CosmeticsRenderState cState = new CosmeticsRenderState.Live((AbstractClientPlayerEntity) entity);
         //#endif
        if (OnlineIndicator.currentlyDrawingEntityName()) {
-           OnlineIndicator.drawNametagIndicator(new UMatrixStack(vMatrixStack), bufferIn, cState, new UTextComponent(name.deepCopy()).getFormattedText(), packedLightIn);
+           OnlineIndicator.drawNametagIndicator(new UMatrixStack(vMatrixStack), bufferIn, cState, toFormattedString(name), packedLightIn);
        }
     }
 }

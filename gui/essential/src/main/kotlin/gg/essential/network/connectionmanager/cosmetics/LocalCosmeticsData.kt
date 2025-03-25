@@ -28,7 +28,7 @@ import gg.essential.mod.cosmetics.CosmeticType
 import gg.essential.mod.cosmetics.database.GitRepoCosmeticsDatabase
 import gg.essential.mod.cosmetics.featured.FeaturedPageCollection
 import gg.essential.network.cosmetics.Cosmetic
-import gg.essential.util.Render
+import gg.essential.util.Client
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -135,7 +135,7 @@ class LocalCosmeticsData private constructor(
             })
         }
 
-        withContext(Dispatchers.Render) {
+        withContext(Dispatchers.Client) {
             update(changes)
         }
 

@@ -31,10 +31,10 @@ import gg.essential.gui.common.shadow.ShadowIcon
 import gg.essential.gui.elementa.state.v2.*
 import gg.essential.gui.elementa.state.v2.ListState
 import gg.essential.gui.elementa.state.v2.combinators.map
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.util.hoveredState
 import gg.essential.mixins.transformers.server.integrated.LanConnectionsAccessor
 import gg.essential.universal.USound
-import gg.essential.universal.wrappers.message.UTextComponent
 import gg.essential.upnp.UPnPPrivacy
 import gg.essential.util.*
 import gg.essential.vigilance.utils.onLeftClick
@@ -318,7 +318,7 @@ class SpsOption(
                                 it.uniqueID == player.uuid
                             }?.let { player ->
                                 //#if MC>=11200
-                                player.connection?.disconnect(UTextComponent("The host kicked you from the session").component) // need the MC one cause it cannot serialize the universal one
+                                player.connection?.disconnect(textLiteral("The host kicked you from the session"))
                                 //#else
                                 //$$ player.playerNetServerHandler.kickPlayerFromServer(
                                 //$$     "The host kicked you from the session"
@@ -354,15 +354,8 @@ class SpsOption(
                 }.onLeftClick {
                     if (onlineState.get()) {
                         UUIDUtil.getName(player.uuid).thenAcceptOnMainThread { username ->
-                            GuiUtil.pushModal { manager -> 
-                                DangerConfirmationEssentialModal(
-                                    manager,
-                                    "Remove",
-                                    requiresButtonPress = false
-                                ).configure {
-                                    titleText = "Remove"
-                                    contentText = "Are you sure you want to kick ${username}?"
-                                }.onPrimaryAction {
+                            GuiUtil.pushModal { manager ->
+                                SPSRemovePlayerModal(manager, username).onPrimaryAction {
                                     removePlayerFromSession()
                                 }
                             }
@@ -469,3 +462,16 @@ data class PinState(
     /** Denotes whether the setting is pinned.*/
     val pinned: State<Boolean>,
 )
+
+class SPSRemovePlayerModal(manager: ModalManager, username: String) : DangerConfirmationEssentialModal(
+    manager,
+    "Remove",
+    requiresButtonPress = false
+) {
+    init {
+        configure {
+            titleText = "Remove"
+            contentText = "Are you sure you want to kick ${username}?"
+        }
+    }
+}

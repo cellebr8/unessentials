@@ -13,6 +13,7 @@ package gg.essential.gui.common
 
 import gg.essential.cosmetics.EquippedCosmetic
 import gg.essential.elementa.components.UIContainer
+import gg.essential.elementa.components.UpdateFunc
 import gg.essential.elementa.dsl.constrain
 import gg.essential.elementa.dsl.percent
 import gg.essential.elementa.effects.ScissorEffect
@@ -31,7 +32,6 @@ import gg.essential.util.GuiEssentialPlatform.Companion.platform
 
 class CosmeticPreview(val cosmetic: Cosmetic, val settings: State<List<CosmeticSetting>> = mutableListStateOf()) : UIContainer() {
 
-    private var loading = true
     private var loadingIcon = LoadingIcon(2.0)
     private val emulatedUI3DPlayer: UIPlayer
     private val emoteScheduler: EmoteScheduler?
@@ -70,13 +70,15 @@ class CosmeticPreview(val cosmetic: Cosmetic, val settings: State<List<CosmeticS
         // Hide player while loading (we do need to add it as a child so it actually loads)
         emulatedUI3DPlayer.enableEffect(ScissorEffect(0f, 0f, 0f, 0f))
         addChild(loadingIcon)
+
+        addUpdateFunc(UpdateLoadingState())
     }
 
-    override fun animationFrame() {
-        if (loading) {
+    inner class UpdateLoadingState : UpdateFunc {
+        override fun invoke(dt: Float, dtMs: Int) {
             val wearablesManager = emulatedUI3DPlayer.wearablesManager
             if (wearablesManager != null && wearablesManager.state.cosmetics.isNotEmpty()) {
-                loading = false
+                removeUpdateFunc(this)
                 removeChild(loadingIcon)
                 // Replace the zero-size scissor effect we used while loading with a regularly sized one
                 emulatedUI3DPlayer.removeEffect<ScissorEffect>()
@@ -84,7 +86,5 @@ class CosmeticPreview(val cosmetic: Cosmetic, val settings: State<List<CosmeticS
 
             }
         }
-
-        super.animationFrame()
     }
 }

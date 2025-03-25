@@ -120,6 +120,7 @@ dependencies {
             12100 -> "0.99.2+1.21"
             12103 -> "0.106.0+1.21.2"
             12104 -> "0.110.0+1.21.4"
+            12105 -> "0.119.0+1.21.5"
             else -> error("No fabric API version configured!")
         }
         include(modImplementation(fabricApi.module("fabric-api-base", fapiVersion))!!)

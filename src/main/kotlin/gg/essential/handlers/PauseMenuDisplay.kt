@@ -19,34 +19,76 @@ import gg.essential.data.ABTestingData
 import gg.essential.data.OnboardingData
 import gg.essential.data.VersionData
 import gg.essential.data.VersionInfo
-import gg.essential.elementa.components.UIBlock
 import gg.essential.elementa.components.UIContainer
 import gg.essential.elementa.components.Window
-import gg.essential.elementa.constraints.*
-import gg.essential.elementa.dsl.*
+import gg.essential.elementa.constraints.AspectConstraint
+import gg.essential.elementa.constraints.CenterConstraint
+import gg.essential.elementa.constraints.ChildBasedMaxSizeConstraint
+import gg.essential.elementa.constraints.ChildBasedSizeConstraint
+import gg.essential.elementa.constraints.SiblingConstraint
+import gg.essential.elementa.constraints.WidthConstraint
+import gg.essential.elementa.constraints.XConstraint
+import gg.essential.elementa.dsl.basicXConstraint
+import gg.essential.elementa.dsl.boundTo
+import gg.essential.elementa.dsl.childOf
+import gg.essential.elementa.dsl.coerceAtLeast
+import gg.essential.elementa.dsl.coerceAtMost
+import gg.essential.elementa.dsl.coerceIn
+import gg.essential.elementa.dsl.constrain
+import gg.essential.elementa.dsl.div
+import gg.essential.elementa.dsl.minus
+import gg.essential.elementa.dsl.percent
+import gg.essential.elementa.dsl.pixels
+import gg.essential.elementa.dsl.plus
+import gg.essential.elementa.dsl.provideDelegate
 import gg.essential.elementa.state.BasicState
 import gg.essential.event.essential.InitMainMenuEvent
 import gg.essential.event.gui.GuiDrawScreenEvent
 import gg.essential.event.gui.GuiOpenEvent
 import gg.essential.gui.EssentialPalette
-import gg.essential.gui.common.*
+import gg.essential.gui.common.Checkbox
+import gg.essential.gui.common.MenuButton
+import gg.essential.gui.common.TextFlag
+import gg.essential.gui.common.and
+import gg.essential.gui.common.bindConstraints
+import gg.essential.gui.common.bindParent
 import gg.essential.gui.common.modal.ConfirmDenyModal
 import gg.essential.gui.common.modal.Modal
 import gg.essential.gui.common.modal.configure
+import gg.essential.gui.common.not
+import gg.essential.gui.common.or
 import gg.essential.gui.elementa.VanillaButtonConstraint.Companion.constrainTo
 import gg.essential.gui.elementa.VanillaButtonGroupConstraint.Companion.constrainTo
 import gg.essential.gui.elementa.state.v2.combinators.not
 import gg.essential.gui.elementa.state.v2.stateOf
-import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.elementa.state.v2.toV2
+import gg.essential.gui.layoutdsl.Alignment
+import gg.essential.gui.layoutdsl.Arrangement
+import gg.essential.gui.layoutdsl.Modifier
+import gg.essential.gui.layoutdsl.alignBoth
+import gg.essential.gui.layoutdsl.color
+import gg.essential.gui.layoutdsl.column
+import gg.essential.gui.layoutdsl.hoverColor
+import gg.essential.gui.layoutdsl.hoverScope
+import gg.essential.gui.layoutdsl.layout
+import gg.essential.gui.layoutdsl.row
+import gg.essential.gui.layoutdsl.shadow
+import gg.essential.gui.layoutdsl.spacer
+import gg.essential.gui.layoutdsl.text
 import gg.essential.gui.menu.AccountManager
 import gg.essential.gui.menu.LeftSideBar
-import gg.essential.gui.menu.full.FullRightSideBar
 import gg.essential.gui.menu.compact.CompactRightSideBar
+import gg.essential.gui.menu.full.FullRightSideBar
 import gg.essential.gui.modal.sps.FirewallBlockingModal
-import gg.essential.gui.modals.*
+import gg.essential.gui.modals.EssentialAutoInstalledModal
+import gg.essential.gui.modals.FeaturesEnabledModal
+import gg.essential.gui.modals.NotAuthenticatedModal
+import gg.essential.gui.modals.TOSModal
+import gg.essential.gui.modals.UpdateAvailableModal
+import gg.essential.gui.modals.UpdateNotificationModal
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.notification.error
+import gg.essential.gui.notification.toastButton
 import gg.essential.gui.notification.warning
 import gg.essential.gui.overlay.LayerPriority
 import gg.essential.gui.overlay.ModalManager
@@ -56,7 +98,6 @@ import gg.essential.universal.UMinecraft
 import gg.essential.util.AutoUpdate
 import gg.essential.util.GuiUtil
 import gg.essential.util.findButtonByLabel
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.gui.util.pollingState
 import gg.essential.network.connectionmanager.serverdiscovery.NewServerDiscoveryManager
 import gg.essential.network.connectionmanager.sps.SPSSessionSource
@@ -72,6 +113,7 @@ import net.minecraft.client.gui.GuiIngameMenu
 import net.minecraft.client.gui.GuiMultiplayer
 import net.minecraft.client.gui.GuiScreen
 import net.minecraft.world.storage.WorldSummary
+import java.awt.Color
 import java.time.Instant
 import java.util.*
 
@@ -157,7 +199,7 @@ class PauseMenuDisplay {
                 }
             } childOf window
 
-            bottomButton.onAnimationFrame {
+            bottomButton.addUpdateFunc { _, _ ->
                 isCompact.set(
                     getRightSideMenuX(topButton, collapsedRightMenuPixelWidth).getXPosition(rightContainer) +
                         collapsedRightMenuPixelWidth.value + rightMenuMinPadding >= window.getRight()
@@ -223,13 +265,13 @@ class PauseMenuDisplay {
             fun showUpdateToast(message: String? = null) {
                 var updateClicked = false
 
-                val updateButton = UIBlock().apply {
-                    layout(Modifier.childBasedWidth(10f).childBasedHeight(4.5f)
-                            .color(EssentialPalette.GREEN_BUTTON).hoverColor(EssentialPalette.GREEN_BUTTON_HOVER).hoverScope()
-                    ) {
-                        text("Update", Modifier.alignBoth(Alignment.Center(true)).color(EssentialPalette.TEXT_HIGHLIGHT).shadow(EssentialPalette.TEXT_SHADOW))
-                    }
-                }
+                val updateButton = toastButton("Update",
+                    backgroundModifier = Modifier.color(EssentialPalette.GREEN_BUTTON)
+                        .hoverColor(EssentialPalette.GREEN_BUTTON_HOVER)
+                        .shadow(Color.BLACK),
+                    textModifier = Modifier.color(EssentialPalette.TEXT_HIGHLIGHT)
+                        .shadow(EssentialPalette.TEXT_SHADOW)
+                )
 
                 Notifications.pushPersistentToast(AutoUpdate.getNotificationTitle(false), message ?: " ", {
                     GuiUtil.pushModal { manager -> UpdateAvailableModal(manager) }
@@ -471,7 +513,7 @@ class PauseMenuDisplay {
             }
         }
 
-        private fun createIPAddressWarningModal(modalManager: ModalManager, callback: Modal.() -> Unit): Modal {
+        fun createIPAddressWarningModal(modalManager: ModalManager, callback: Modal.() -> Unit): Modal {
             return ConfirmDenyModal(
                 modalManager,
                 false

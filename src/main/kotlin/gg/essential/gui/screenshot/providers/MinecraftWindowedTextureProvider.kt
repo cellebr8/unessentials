@@ -125,10 +125,11 @@ class MinecraftWindowedTextureProvider(
 
     private fun AsyncTextureManager.createResource(path: ScreenshotId, image: PixelBuffer) {
         val nextResourceLocation = nextResourceLocation()
+        val texture = PixelBufferTexture(nextResourceLocation.toString(), image)
         loading[path] = RegisteredTexture(nextResourceLocation, image.getWidth(), image.getHeight(), image is ErrorImage)
         image.retain()
         upload(path) {
-            val texture = PixelBufferTexture(image)
+            texture.upload(image)
             image.release()
             texture to nextResourceLocation
         }

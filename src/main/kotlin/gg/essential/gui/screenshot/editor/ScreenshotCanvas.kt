@@ -160,19 +160,18 @@ class ScreenshotCanvas(val screenshot: State<UIdentifier?>) : UIContainer() {
             redoEnabled.set(veo.redoEnabled.get())
         }
 
-        override fun render(matrixStack: UMatrixStack, width: Float, height: Float) {
-            renderImage(matrixStack, width, height)
-            super.render(matrixStack, width, height)
+        override fun draw(matrixStack: UMatrixStack) {
+            matrixStack.push()
+            matrixStack.translate(getLeft(), getTop(), 0f)
+            screenshotImage.renderImage(matrixStack, Color.WHITE, getWidth().toDouble(), getHeight().toDouble())
+            matrixStack.pop()
+            super.draw(matrixStack)
         }
 
         override fun renderVG(matrixStack: UMatrixStack, vg: NanoVG, width: Float, height: Float) {
             history.filterIsInstance<VectorStroke>().forEach { vs ->
                 vs.render(vg, width, height, scale)
             }
-        }
-
-        open fun renderImage(matrixStack: UMatrixStack, width: Float, height: Float) {
-            screenshotImage.renderImage(matrixStack, Color.WHITE, width.toDouble(), height.toDouble())
         }
 
         /**
@@ -267,10 +266,6 @@ class ScreenshotCanvas(val screenshot: State<UIdentifier?>) : UIContainer() {
                     GL11.GL_FLOAT,
                     buffer
                 )
-            }
-
-            // We don't want to render the original screenshot when exporting.
-            override fun renderImage(matrixStack: UMatrixStack, width: Float, height: Float) {
             }
         }
         veoCopy.scale = fullWidth / drawableWidth.toFloat()

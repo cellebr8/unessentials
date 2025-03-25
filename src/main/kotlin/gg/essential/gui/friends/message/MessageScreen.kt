@@ -31,9 +31,13 @@ abstract class MessageScreen : UIContainer(){
      */
     abstract val preview: ChannelPreview
 
-
     /**
      * Called when this screen is opened.
+     */
+    abstract fun onOpen()
+
+    /**
+     * Called when this screen is closed.
      */
     abstract fun onClose()
 
@@ -52,4 +56,9 @@ abstract class MessageScreen : UIContainer(){
      * Called when [messageWrapper] has marked itself as manually unread
      */
     abstract fun markedManuallyUnread(messageWrapper: MessageWrapper)
+
+    /**
+     * Called when all messages of this screen should be marked as read at once
+     */
+    abstract fun markAllAsRead()
 }

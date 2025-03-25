@@ -129,7 +129,7 @@ class CosmeticsState(
         hiddenPropertySettingsCombined.let { property ->
             val partsToHide: Set<EnumPart>
             if (property.hideAllCosmetics) {
-                // Needs to be all EnumParts, not just a subset, for use with the propertyHidesEntireCosmetic() function
+                // notably EnumPart.ROOT, added here, is essential for use with the propertyHidesEntireCosmetic() function
                 partsToHide = EnumPart.values().toSet()
             } else {
                 partsToHide = mutableSetOf()
@@ -153,7 +153,7 @@ class CosmeticsState(
      * This is used to set visibility of particles and sounds that are not bound to any parts of the model
      */
     fun propertyHidesEntireCosmetic(cosmeticId: CosmeticId): Boolean {
-        return partsHiddenByHidingProperty[cosmeticId].let { it != null && it.size == EnumPart.values().size }
+        return partsHiddenByHidingProperty[cosmeticId].let { it != null && EnumPart.ROOT in it }
     }
 
     /**

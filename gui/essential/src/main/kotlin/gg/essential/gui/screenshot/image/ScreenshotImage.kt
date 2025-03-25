@@ -16,6 +16,9 @@ import gg.essential.elementa.state.BasicState
 import gg.essential.elementa.state.State
 import gg.essential.universal.UGraphics
 import gg.essential.universal.UMatrixStack
+import gg.essential.universal.render.URenderPipeline
+import gg.essential.universal.shader.BlendState
+import gg.essential.universal.vertex.UBufferBuilder
 import gg.essential.util.GuiEssentialPlatform.Companion.platform
 import gg.essential.util.UIdentifier
 import java.awt.Color
@@ -54,24 +57,32 @@ open class ScreenshotImage(val texture: State<UIdentifier?>) : UIComponent() {
         height: Double
     ) {
         val textureInstance = texture.get() ?: return
+        val textureId = platform.getGlId(textureInstance)
 
-        UGraphics.enableBlend()
-        UGraphics.enableAlpha()
-        platform.bindTexture(0, textureInstance)
         val red = color.red.toFloat() / 255f
         val green = color.green.toFloat() / 255f
         val blue = color.blue.toFloat() / 255f
         val alpha = color.alpha.toFloat() / 255f
-        val worldRenderer = UGraphics.getFromTessellator()
 
-        worldRenderer.beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR)
-
+        val worldRenderer = UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR)
         worldRenderer.pos(matrixStack, 0.0, height, 0.0).tex(0.0, 1.0).color(red, green, blue, alpha).endVertex()
         worldRenderer.pos(matrixStack, width, height, 0.0).tex(1.0, 1.0).color(red, green, blue, alpha)
             .endVertex()
         worldRenderer.pos(matrixStack, width, 0.0, 0.0).tex(1.0, 0.0).color(red, green, blue, alpha).endVertex()
         worldRenderer.pos(matrixStack, 0.0, 0.0, 0.0).tex(0.0, 0.0).color(red, green, blue, alpha).endVertex()
-        worldRenderer.drawDirect()
+        worldRenderer.build()?.drawAndClose(PIPELINE) {
+            texture(0, textureId)
+        }
 
+    }
+
+    companion object {
+        private val PIPELINE = URenderPipeline.builderWithDefaultShader(
+            "essential:screenshot_image",
+            UGraphics.DrawMode.QUADS,
+            UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR,
+        ).apply {
+            blendState = BlendState.NORMAL
+        }.build()
     }
 }

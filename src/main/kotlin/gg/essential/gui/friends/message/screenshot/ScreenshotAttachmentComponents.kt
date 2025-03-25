@@ -52,7 +52,6 @@ import gg.essential.gui.layoutdsl.width
 import gg.essential.gui.screenshot.DateRange
 import gg.essential.gui.screenshot.ScreenshotId
 import gg.essential.universal.USound
-import gg.essential.gui.util.onAnimationFrame
 import gg.essential.vigilance.utils.onLeftClick
 import java.awt.Color
 
@@ -75,7 +74,7 @@ fun LayoutScope.screenshotAttachmentUploadBox(
             )
         }
         spacer(width = 10f)
-    }.onAnimationFrame {
+    }.addUpdateFunc { _, _ ->
         screenshotAttachmentManager.updateProgress()
     }
 }

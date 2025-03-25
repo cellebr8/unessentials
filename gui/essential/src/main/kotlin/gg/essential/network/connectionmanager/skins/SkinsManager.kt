@@ -25,6 +25,7 @@ import gg.essential.gui.elementa.state.v2.*
 import gg.essential.gui.elementa.state.v2.combinators.*
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.notification.error
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.mod.Model
 import gg.essential.mod.Skin
 import gg.essential.network.CMConnection
@@ -101,9 +102,7 @@ class SkinsManager(private val connectionManager: CMConnection) : NetworkedManag
         }
         val manager = platform.createModalManager()
         manager.queueModal(
-            DangerConfirmationEssentialModal(manager, "Delete", false)
-                .configure { contentText = "Are you sure you want to delete\n${skin.name}?" }
-                .onPrimaryAction { deleteSkin(skinId) }
+            DeleteSkinModal(manager, skin.name).onPrimaryAction { deleteSkin(skinId) }
         )
     }
 
@@ -156,6 +155,12 @@ class SkinsManager(private val connectionManager: CMConnection) : NetworkedManag
             if (response !is ServerSkinPopulatePacket) {
                 Notifications.push("Error updating skin", "An unexpected error has occurred. Try again.")
             }
+        }
+    }
+
+    class DeleteSkinModal(manager: ModalManager, name: String) : DangerConfirmationEssentialModal(manager, "Delete", false) {
+        init {
+            configure { contentText = "Are you sure you want to delete\n${name}?" }
         }
     }
 

@@ -105,6 +105,7 @@ public class OnlineIndicator {
         //#if MC<11600
         UGraphics.enableAlpha();
         UGraphics.disableLighting();
+        //noinspection deprecation
         UGraphics.depthMask(false);
         //#endif
         float x1 = vanillaX - 11;
@@ -114,12 +115,17 @@ public class OnlineIndicator {
 
         //#if MC<11600
         if (alwaysOnTop) {
+            //noinspection deprecation
             UGraphics.disableDepth();
         }
         //#endif
 
+        //#if MC<12105
+        //noinspection deprecation
         UGraphics.enableBlend();
+        //noinspection deprecation
         UGraphics.tryBlendFuncSeparate(770, 771, 1,0);
+        //#endif
 
         int backgroundOpacity = getTextBackgroundOpacity();
         //#if MC>=12102
@@ -156,9 +162,11 @@ public class OnlineIndicator {
 
         //#if MC<11600
         if (alwaysOnTop) {
+            //noinspection deprecation
             UGraphics.enableDepth();
         }
 
+        //noinspection deprecation
         UGraphics.depthMask(true);
         //#endif
 
@@ -256,8 +264,11 @@ public class OnlineIndicator {
 
         beforeTabDraw();
 
+        //#if MC<12105
         BlendState prevBlendState = BlendState.active();
+        //noinspection deprecation
         BlendState.NORMAL.activate();
+        //#endif
 
         matrixStack.push();
 
@@ -281,7 +292,10 @@ public class OnlineIndicator {
 
         matrixStack.pop();
 
+        //#if MC<12105
+        //noinspection deprecation
         prevBlendState.activate();
+        //#endif
 
         afterTabDraw();
     }

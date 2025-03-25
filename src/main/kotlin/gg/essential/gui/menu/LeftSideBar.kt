@@ -254,14 +254,15 @@ class LeftSideBar(
             hasAnyNewCosmetics and menuVisible,
             delayed = true,
         )
+
+        addUpdateFunc { _, _ -> recordSaleBannerImpression() }
     }
 
     private fun openWardrobe(category: WardrobeCategory? = null) {
         GuiUtil.openScreen { Wardrobe(category) }
     }
 
-    override fun animationFrame() {
-        super.animationFrame()
+    private fun recordSaleBannerImpression() {
         val currentSale = currentSale.get() ?: return
         if (bannerImpressions.add(currentSale.name)) {
             connectionManager.telemetryManager.enqueue(ClientTelemetryPacket("COSMETICS_SALE_BANNER_IMPRESSION", mapOf(

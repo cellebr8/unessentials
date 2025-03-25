@@ -65,7 +65,6 @@ import static gg.essential.mixins.ext.client.multiplayer.ServerDataExtKt.getExt;
 //#if MC>=11602
 //$$ import com.mojang.blaze3d.matrix.MatrixStack;
 //$$ import gg.essential.mixins.transformers.client.gui.AbstractListAccessor;
-//$$ import gg.essential.universal.wrappers.message.UTextComponent;
 //$$ import gg.essential.util.HelpersKt;
 //$$ import net.minecraft.util.text.ITextComponent;
 //$$ import net.minecraft.util.text.ITextProperties;
@@ -222,7 +221,7 @@ public abstract class MixinServerListEntryNormal implements ServerListEntryNorma
 
             if (!region.isEmpty()) {
                 //#if MC>=11600
-                //$$ str = ((ITextComponent) str).deepCopy().append(new UTextComponent(" from " + region));
+                //$$ str = ((ITextComponent) str).deepCopy().append(textLiteral(" from " + region));
                 //#else
                 str += " from " + region;
                 //#endif

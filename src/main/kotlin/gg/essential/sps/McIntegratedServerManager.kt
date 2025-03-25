@@ -30,11 +30,11 @@ import gg.essential.sps.IntegratedServerManager.Difficulty
 import gg.essential.sps.IntegratedServerManager.GameMode
 import gg.essential.sps.IntegratedServerManager.ServerResourcePack
 import gg.essential.universal.wrappers.UPlayer
-import gg.essential.universal.wrappers.message.UTextComponent
 import gg.essential.util.Client
 import gg.essential.util.ModLoaderUtil
 import gg.essential.util.USession
 import gg.essential.util.UuidNameLookup
+import gg.essential.util.textTranslatable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -282,10 +282,7 @@ class McIntegratedServerManager(val server: IntegratedServer) : IntegratedServer
         for (entity in (server.playerList as LanConnectionsAccessor).getPlayerEntityList()) {
             if (entity.uniqueID !in desiredWhitelist) {
                 //#if MC>=11200
-                entity.connection.disconnect(
-                    UTextComponent(I18n.format("multiplayer.disconnect.server_shutdown"))
-                        .component // need the MC one cause it cannot serialize the universal one
-                )
+                entity.connection.disconnect(textTranslatable("multiplayer.disconnect.server_shutdown"))
                 //#else
                 //$$ entity.playerNetServerHandler.kickPlayerFromServer(
                 //$$     I18n.format("multiplayer.disconnect.server_shutdown")

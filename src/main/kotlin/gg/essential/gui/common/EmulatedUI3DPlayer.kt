@@ -271,9 +271,11 @@ class EmulatedUI3DPlayer(
         RenderPlayerBypass.bypass = false;
     }
 
-    override fun animationFrame() {
-        super.animationFrame()
+    init {
+        addUpdateFunc { _, _ -> tick() }
+    }
 
+    private fun tick() {
         val ticks = ClientTickEvent.counter - tickCounter
         repeat(ticks.coerceAtMost(20)) {
             onGameTick()

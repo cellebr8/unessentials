@@ -293,9 +293,8 @@ class MessageInput(
         scrollComponent.setVerticalScrollBarComponent(scrollBar, hideWhenUseless = true)
     }
 
-    override fun animationFrame() {
-        super.animationFrame()
-        adjustScroll()
+    init {
+        addUpdateFunc { _, _ -> adjustScroll() }
     }
 
     private fun adjustScroll() {

@@ -217,6 +217,8 @@ class BedrockModel(
                 }
             }
             val part = bone.part ?: continue
+            if (part == EnumPart.ROOT) continue
+
             copy(pose[part], bone, OFFSETS.getValue(part))
             if (pose.child) {
                 if (part == EnumPart.HEAD) {
@@ -250,7 +252,7 @@ class BedrockModel(
             applyTransform(matrixStack)
 
             val part = part
-            if (part != null) {
+            if (part != null && part != EnumPart.ROOT) { // ROOT is not needed for pose
                 val offset = OFFSETS.getValue(part)
                 val matrix = matrixStack.peek().model
 
@@ -371,7 +373,6 @@ class BedrockModel(
         matrixStack.scale(1f / 16f)
 
         fun render(vertexConsumer: UVertexConsumer) {
-            bones.root.render(matrixStack, vertexConsumer, geometry, metadata.light, offset)
             bones.byPart.values.forEach { bone ->
                 bone.resetAnimationOffsets(false) // animations will have been baked into the pose already
                 bone.render(matrixStack, vertexConsumer, geometry, metadata.light, offset)
@@ -412,7 +413,7 @@ class BedrockModel(
             }
             bone.visible = (parts == null || part in parts) && bone.boxName !in hiddenBones
         }
-        rootBone.propagateVisibility(parentVisible = parts?.size != 0, updatedSide)
+        rootBone.propagateVisibility(true, updatedSide)
     }
 
     private fun copy(pose: PlayerPose.Part, bone: Bone, offset: Offset) {
@@ -442,8 +443,10 @@ class BedrockModel(
         private val LEFT_LEG = Offset(1.9f, -12f, 0f, -1.9f, 12f, 0f)
         private val RIGHT_LEG = Offset(-1.9f, -12f, 0f, 1.9f, 12f, 0f)
         private val CAPE = Offset(0f, -24f, 2f, 0f, 0f, -2f)
+        private val ZERO = Offset(0f, 0f, 0f, 0f, 0f, 0f)
         val OFFSETS =
             mapOf(
+                EnumPart.ROOT to ZERO,
                 EnumPart.HEAD to BASE,
                 EnumPart.BODY to BASE,
                 EnumPart.LEFT_ARM to LEFT_ARM,

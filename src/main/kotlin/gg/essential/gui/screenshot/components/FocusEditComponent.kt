@@ -18,6 +18,7 @@ import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.IconButton
 import gg.essential.gui.common.modal.ConfirmDenyModal
 import gg.essential.gui.common.modal.configure
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.screenshot.constraints.AspectPreservingFillConstraint
 import gg.essential.gui.screenshot.editor.ScreenshotCanvas
 import gg.essential.gui.screenshot.providers.RegisteredTexture
@@ -102,11 +103,11 @@ class FocusEditComponent(
                 ""
             }
         })
+
+        addUpdateFunc { _, _ -> update() }
     }
 
-    override fun animationFrame() {
-        super.animationFrame()
-
+    private fun update() {
         val focused = screenshotBrowser.focusing.get()
         if (active.get() && focused != null) {
 
@@ -156,16 +157,22 @@ class FocusEditComponent(
 
     override fun onBackButtonPressed() {
         if (canvas.getHasChanges().get()) {
-            GuiUtil.pushModal { manager -> 
-                ConfirmDenyModal(manager, false).configure {
-                    primaryButtonText = "Continue"
-                    titleText = "Are you sure you want to quit without saving?"
-                }.onPrimaryAction {
+            GuiUtil.pushModal { manager ->
+                QuitWithoutSavingModal(manager).onPrimaryAction {
                     super.onBackButtonPressed()
                 }
             }
         } else {
             super.onBackButtonPressed()
+        }
+    }
+
+    class QuitWithoutSavingModal(manager: ModalManager) : ConfirmDenyModal(manager, false) {
+        init {
+            configure {
+                primaryButtonText = "Continue"
+                titleText = "Are you sure you want to quit without saving?"
+            }
         }
     }
 }

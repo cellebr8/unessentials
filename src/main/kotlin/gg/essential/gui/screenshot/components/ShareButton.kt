@@ -78,20 +78,18 @@ class ShareButton(val screenshotBrowser: ScreenshotBrowser) : UIContainer() {
                     withUnsavedEdits = { file, metadata ->
                         val future = CompletableFuture<Unit>()
 
-                        GuiUtil.pushModal { manager -> 
-                            createShareScreenshotModal(
-                                manager,
-                                screenshot = LocalScreenshot(file.toPath()),
-                                metadata = metadata,
-                                onModalCancelled = { future.complete(Unit) },
-                                onComplete = { it.whenComplete { _, _ -> future.complete(Unit) } }
-                            )
+                        GuiUtil.launchModalFlow {
+                            try {
+                                shareScreenshotModal(LocalScreenshot(file.toPath()), metadata)
+                            } finally {
+                                future.complete(Unit)
+                            }
                         }
 
                         return@checkForUnsavedEditsAndRun future
                     },
                     withoutUnsavedEdits = { id ->
-                        GuiUtil.pushModal { createShareScreenshotModal(it, id) }
+                        GuiUtil.launchModalFlow { shareScreenshotModal(id) }
                     }
                 )
             })

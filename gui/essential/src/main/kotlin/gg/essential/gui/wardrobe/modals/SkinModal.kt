@@ -146,6 +146,38 @@ class SkinModal private constructor(
         }
     }
 
+    class SelectFileModal(modalManager: ModalManager) : EssentialModal(modalManager, requiresButtonPress = false) {
+        init {
+            configure {
+                titleText = "Select File"
+                titleTextColor = EssentialPalette.TEXT_HIGHLIGHT
+                contentText = "Choose a skin file in the file browser."
+                contentTextColor = EssentialPalette.TEXT_MID_GRAY
+                primaryButtonText = "Cancel"
+            }
+            configureLayout {
+                it.layout {
+                    spacer(height = 10f)
+                }
+            }
+        }
+    }
+
+    class IncorrectFileModal(modalManager: ModalManager, errorText: String) : ConfirmDenyModal(modalManager, requiresButtonPress = false) {
+        init {
+            titleText = "Incorrect File Format"
+            titleTextColor = EssentialPalette.TEXT_WARNING
+            contentText = errorText
+            contentTextColor = EssentialPalette.TEXT
+            primaryButtonText = "Select New File"
+            primaryButtonStyle = MenuButton.DARK_GRAY
+            primaryButtonHoverStyle = MenuButton.GRAY
+
+            contentTextSpacingState.rebind(BasicState(17f))
+            spacer.setHeight(13.pixels)
+        }
+    }
+
     companion object {
         private val LOGGER = LoggerFactory.getLogger(SkinModal::class.java)
 
@@ -263,17 +295,7 @@ class SkinModal private constructor(
         fun upload(modalManager: ModalManager, state: WardrobeState): Modal {
             var selectingSkin = true
 
-            val modal: EssentialModal = EssentialModal(modalManager, requiresButtonPress = false).configure {
-                titleText = "Select File"
-                titleTextColor = EssentialPalette.TEXT_HIGHLIGHT
-                contentText = "Choose a skin file in the file browser."
-                contentTextColor = EssentialPalette.TEXT_MID_GRAY
-                primaryButtonText = "Cancel"
-            }.configureLayout {
-                it.layout {
-                    spacer(height = 10f)
-                }
-            }.onPrimaryOrDismissAction {
+            val modal = SelectFileModal(modalManager).onPrimaryOrDismissAction {
                 // I don't think there's a way to close the file selector remotely. We just have to ignore what they select if they cancel
                 selectingSkin = false
             }
@@ -301,21 +323,8 @@ class SkinModal private constructor(
                 Window.enqueueRenderOperation {
                     modal.replaceWith(
                         if (image == null) {
-                            object : ConfirmDenyModal(modal.modalManager, requiresButtonPress = false) {
-                                init {
-                                    titleText = "Incorrect File Format"
-                                    titleTextColor = EssentialPalette.TEXT_WARNING
-                                    contentText = errorText
-                                    contentTextColor = EssentialPalette.TEXT
-                                    primaryButtonText = "Select New File"
-                                    primaryButtonStyle = MenuButton.DARK_GRAY
-                                    primaryButtonHoverStyle = MenuButton.GRAY
-
-                                    contentTextSpacingState.rebind(BasicState(17f))
-                                    spacer.setHeight(13.pixels)
-
-                                    onPrimaryAction { replaceWith(upload(modal.modalManager, state)) }
-                                }
+                            IncorrectFileModal(modalManager, errorText).also {
+                                it.onPrimaryAction { it.replaceWith(upload(modal.modalManager, state)) }
                             }
                         } else {
                             addFile(modal.modalManager, path, imageToLocation(image), state.skinsManager.getNextIncrementalSkinName(), getDetectedModel(image))

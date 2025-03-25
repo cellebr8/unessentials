@@ -173,5 +173,7 @@ class ChatTab(
             width = 100.percent
             height = 100.percent
         } childOf messageScreenArea)
+
+        currentMessageView.get()?.onOpen()
     }
 }

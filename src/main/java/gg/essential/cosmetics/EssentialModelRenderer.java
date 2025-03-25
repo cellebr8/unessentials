@@ -79,7 +79,8 @@ public class EssentialModelRenderer implements LayerRenderer<AbstractClientPlaye
         UMatrixStack matrixStack,
         RenderBackend.VertexConsumerProvider vertexConsumerProvider,
         @NotNull CosmeticsRenderState cState,
-        @Nullable Set<EnumPart> parts
+        @Nullable Set<EnumPart> parts,
+        boolean setsPose
     ) {
         WearablesManager wearablesManager = cState.wearablesManager();
         if (wearablesManager == null) {
@@ -139,7 +140,7 @@ public class EssentialModelRenderer implements LayerRenderer<AbstractClientPlaye
         UGraphics.GL.popMatrix();
         //#endif
 
-        cState.setRenderedPose(pose);
+        if (setsPose) cState.setRenderedPose(pose);
     }
 
     @Override
@@ -159,7 +160,7 @@ public class EssentialModelRenderer implements LayerRenderer<AbstractClientPlaye
         RenderBackend.VertexConsumerProvider vertexConsumerProvider = new MinecraftRenderBackend.VertexConsumerProvider();
         CosmeticsRenderState cState = new CosmeticsRenderState.Live(player);
         //#endif
-        render(matrixStack, vertexConsumerProvider, cState, null);
+        render(matrixStack, vertexConsumerProvider, cState, null, true);
     }
 
     //#if MC < 11400

@@ -27,6 +27,7 @@ import gg.essential.gui.menu.full.FullAccountSwitcher
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.notification.error
 import gg.essential.gui.notification.iconAndMarkdownBody
+import gg.essential.gui.overlay.ModalManager
 import gg.essential.handlers.account.WebAccountManager
 import gg.essential.universal.UMinecraft
 import gg.essential.util.GuiUtil
@@ -90,10 +91,8 @@ class AccountManager {
 
     /** Display a modal prompting the user to confirm if they want to remove the account which [uuid] belongs to */
     fun promptRemove(uuid: UUID, name: String) {
-        GuiUtil.pushModal { manager -> 
-            DangerConfirmationEssentialModal(manager, "Remove", requiresButtonPress = false).configure {
-                contentText = "Are you sure you want to remove the account $name?"
-            }.onPrimaryAction {
+        GuiUtil.pushModal { manager ->
+            RemoveAccountConfirmationModal(manager, name).onPrimaryAction {
                 removeAccount(uuid)
             }
         }
@@ -161,6 +160,14 @@ class AccountManager {
                         ?: return error("Failed to refresh session: Unknown account")
                 UMinecraft.getMinecraft().setSession(initialSession.sessions[uuid]!!)
                 callback?.invoke(initialSession.sessions[uuid]!!, null)
+            }
+        }
+    }
+
+    class RemoveAccountConfirmationModal(manager: ModalManager, name: String) : DangerConfirmationEssentialModal(manager, "Remove", requiresButtonPress = false) {
+        init {
+            configure {
+                contentText = "Are you sure you want to remove the account $name?"
             }
         }
     }
