@@ -341,8 +341,6 @@ class GuiEssentialPlatformImpl : GuiEssentialPlatform {
     override val mcFrameBufferDepthTexture: GpuTexture?
         //#if MC>=12105
         //$$ get() = MinecraftClient.getInstance().framebuffer.let { UnownedGlGpuTexture(GpuTexture.Format.DEPTH32, (it.depthAttachment as GlTexture).glId, it.textureWidth, it.textureHeight) }
-        //#elseif MC>=11600
-        //$$ get() = Minecraft.getInstance().framebuffer.let { UnownedGlGpuTexture(GpuTexture.Format.DEPTH32, it.func_242997_g(), it.framebufferTextureWidth, it.framebufferTextureHeight) }
         //#else
         get() = null
         //#endif
