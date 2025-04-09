@@ -77,8 +77,8 @@ import gg.essential.gui.layoutdsl.spacer
 import gg.essential.gui.layoutdsl.text
 import gg.essential.gui.menu.AccountManager
 import gg.essential.gui.menu.LeftSideBar
-import gg.essential.gui.menu.compact.CompactRightSideBar
-import gg.essential.gui.menu.full.FullRightSideBar
+import gg.essential.gui.menu.compact.CompactRightSideBarOld
+import gg.essential.gui.menu.full.FullRightSideBarOld
 import gg.essential.gui.modal.sps.FirewallBlockingModal
 import gg.essential.gui.modals.EssentialAutoInstalledModal
 import gg.essential.gui.modals.FeaturesEnabledModal
@@ -189,8 +189,8 @@ class PauseMenuDisplay {
                             .coerceAtLeast((0.pixels(alignOpposite = true) boundTo topButton) + 24.pixels)
                     }.coerceAtMost(rightMenuMinPadding.pixels(alignOpposite = true) boundTo window)
                     y = (((CenterConstraint() boundTo bottomButton) + (CenterConstraint() boundTo topButton)) / 2)
-                            .coerceAtMost(40.pixels(alignOpposite = true) boundTo window)
-                            .coerceAtLeast(0.pixels(alignOpposite = true) boundTo bottomButton)
+                        .coerceAtMost(40.pixels(alignOpposite = true) boundTo window)
+                        .coerceAtLeast(0.pixels(alignOpposite = true) boundTo bottomButton)
                     width = ChildBasedSizeConstraint()
                 } else {
                     width = if (collapse) collapsedRightMenuPixelWidth else fullRightMenuPixelWidth
@@ -213,9 +213,9 @@ class PauseMenuDisplay {
             } childOf window
 
             val accountManager = AccountManager()
-            CompactRightSideBar(menuType, menuVisible, rightContainer, accountManager)
+            CompactRightSideBarOld(menuType, menuVisible, rightContainer, accountManager)
                 .bindParent(rightContainer, menuVisible and isCompact)
-            FullRightSideBar(menuType, topButton, bottomButton, collapsed, menuVisible and !isCompact)
+            FullRightSideBarOld(menuType, topButton, bottomButton, collapsed, menuVisible and !isCompact)
                 .bindParent(rightContainer, menuVisible and !isCompact)
 
             LeftSideBar(topButton, bottomButton, menuVisible.toV2(), collapsed.toV2(), isCompact.toV2(), menuType, rightContainer, leftContainer, accountManager)

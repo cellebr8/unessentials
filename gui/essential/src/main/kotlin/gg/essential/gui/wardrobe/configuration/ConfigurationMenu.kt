@@ -12,6 +12,7 @@
 package gg.essential.gui.wardrobe.configuration
 
 import gg.essential.elementa.dsl.*
+import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.EssentialCollapsibleSearchbar
 import gg.essential.gui.common.MenuButton
 import gg.essential.gui.elementa.state.v2.*
@@ -39,16 +40,20 @@ class ConfigurationMenu(
                 text(currentTabName)
             }
             divider()
-            scrollable(Modifier.fillWidth(padding = 10f).fillRemainingHeight(), vertical = true) {
-                column(Modifier.fillWidth(), Arrangement.spacedBy(3f)) {
-                    bind(currentConfigurationType) {
-                        if (it == null) {
-                            homeView()
-                        } else {
-                            tabView(it)
+            row(Modifier.fillWidth().fillRemainingHeight()) {
+                val scroller = scrollable(Modifier.fillWidth(padding = 10f).fillHeight(), vertical = true) {
+                    column(Modifier.fillWidth(), Arrangement.spacedBy(3f)) {
+                        bind(currentConfigurationType) {
+                            if (it == null) {
+                                homeView()
+                            } else {
+                                tabView(it)
+                            }
                         }
                     }
                 }
+                val scrollbar = box(Modifier.width(2f).fillHeight().color(EssentialPalette.LIGHTEST_BACKGROUND).hoverColor(EssentialPalette.SCROLLBAR).hoverScope())
+                scroller.setVerticalScrollBarComponent(scrollbar, true)
             }
             divider()
             row(Modifier.fillWidth().childBasedMaxHeight(3f), Arrangement.spacedBy(5f, FloatPosition.CENTER)) {

@@ -29,6 +29,7 @@ import gg.essential.model.util.UMatrixStack
 import gg.essential.model.util.times
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.awt.Color
 import kotlin.math.PI
 
 class ModelAnimationState(
@@ -394,10 +395,15 @@ data class Keyframes(
     }
 }
 
-fun Vec3.lerp(other: Vec3, alpha: Float): Vec3 =
-    vec3(x.lerp(other.x, alpha), y.lerp(other.y, alpha), z.lerp(other.z, alpha))
+fun Vec3.lerp(other: Vec3, t: Float): Vec3 =
+    vec3(x.lerp(other.x, t), y.lerp(other.y, t), z.lerp(other.z, t))
 
-fun Float.lerp(other: Float, alpha: Float) = this + (other - this) * alpha
+fun Color.lerp(other: Color, t: Float): Color =
+    Color(red.lerp(other.red, t), green.lerp(other.green, t), blue.lerp(other.blue, t), alpha.lerp(other.alpha, t))
+
+fun Float.lerp(other: Float, t: Float) = this + (other - this) * t
+
+fun Int.lerp(other: Int, t: Float) = (this.toFloat() + (other.toFloat() - this.toFloat()) * t).toInt()
 
 fun catmullRom(
     t: Float,

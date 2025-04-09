@@ -70,6 +70,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -377,7 +378,9 @@ public class Essential implements EssentialAPI {
     private void loadSessionFactories() {
         try {
             // In order of preference (earlier takes priority)
-            final MicrosoftAccountSessionFactory microsoftAccountSessionFactory = new MicrosoftAccountSessionFactory(baseDir.toPath().resolve("microsoft_accounts.json"));
+            Path savePath = ExtensionsKt.getGlobalEssentialDirectory().resolve("microsoft_accounts.json");
+            Path oldSavePath = baseDir.toPath().resolve("microsoft_accounts.json");
+            final MicrosoftAccountSessionFactory microsoftAccountSessionFactory = new MicrosoftAccountSessionFactory(savePath, oldSavePath);
             Multithreading.runAsync(microsoftAccountSessionFactory::refreshRefreshTokensIfNecessary);
             sessionFactories.add(microsoftAccountSessionFactory);
             // Official launcher factories are disabled for now because apparently having accounts listed which you

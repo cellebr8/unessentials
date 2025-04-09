@@ -311,14 +311,6 @@ fun LayoutScope.previewWindow(state: WardrobeState, modifier: Modifier, bottomDi
                 .join().sideOptions.takeUnless { it.isEmpty() }
         }
     }
-    val heightRange = state.editingCosmetic.map { editing ->
-        val data = editing?.cosmetic?.property<CosmeticProperty.PositionRange>()?.data
-        Triple(
-            data?.xMax?.let { data.xMin?.toInt()?.rangeTo(it.toInt()) },
-            data?.yMax?.let { data.yMin?.toInt()?.rangeTo(it.toInt()) },
-            data?.zMax?.let { data.zMin?.toInt()?.rangeTo(it.toInt()) },
-        )
-    }
 
     val previewing = memo {
         when {
@@ -354,7 +346,7 @@ fun LayoutScope.previewWindow(state: WardrobeState, modifier: Modifier, bottomDi
                         }
                     }
                 }
-                bind(heightRange) { range ->
+                editing.heightRange().let { range ->
                     if (range.first != null || range.second != null || range.third != null) {
                         heightSlider(state, editing, range, previewContainer)
                     }
@@ -801,6 +793,15 @@ private fun LayoutScope.sidebarItemsOld(
 
 private fun LayoutScope.sidebarCosmeticPreview(cosmetic: Cosmetic, settings: State<List<CosmeticSetting>>) {
     CosmeticPreview(cosmetic, settings)(Modifier.fillParent(padding = 1f))
+}
+
+private fun Item.CosmeticOrEmote.heightRange(): Triple<IntRange?, IntRange?, IntRange?> {
+    val data = this.cosmetic.property<CosmeticProperty.PositionRange>()?.data
+    return Triple(
+        data?.xMax?.let { data.xMin?.toInt()?.rangeTo(it.toInt()) },
+        data?.yMax?.let { data.yMin?.toInt()?.rangeTo(it.toInt()) },
+        data?.zMax?.let { data.zMin?.toInt()?.rangeTo(it.toInt()) },
+    )
 }
 
 private fun handleClick(clickEvent: UIClickEvent, action: () -> Unit) {

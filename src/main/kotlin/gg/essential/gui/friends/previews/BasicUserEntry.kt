@@ -35,11 +35,12 @@ abstract class BasicUserEntry(
 ) : UIBlock(EssentialPalette.COMPONENT_BACKGROUND), SearchableItem {
     val usernameState = UUIDUtil.nameState(user, "Loading...")
 
-    protected val imageContainer by CachedAvatarImage.ofUUID(user).constrain {
+    protected val imageContainer by CachedAvatarImage.create(user).constrain {
         x = 8.pixels
         y = CenterConstraint()
         width = 24.pixels
         height = AspectConstraint()
+    }.apply {
     } childOf this
 
     protected val textContainer by UIContainer().constrain {

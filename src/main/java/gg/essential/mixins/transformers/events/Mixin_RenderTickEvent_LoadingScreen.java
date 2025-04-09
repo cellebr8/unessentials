@@ -50,6 +50,11 @@ public class Mixin_RenderTickEvent_LoadingScreen {
         UMatrixStack stack = new UMatrixStack();
         Essential.EVENT_BUS.post(new RenderTickEvent(false, true, new UDrawContext(stack), stack, partialTicks, partialTicks));
     }
+
+    @Inject(method = "setLoadingProgress", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;updateDisplay()V"))
+    private void renderTickFinal(CallbackInfo callbackInfo) {
+        Essential.EVENT_BUS.post(new RenderTickEvent.Final());
+    }
 }
 //#else
 //$$ package gg.essential.mixins.transformers.events;

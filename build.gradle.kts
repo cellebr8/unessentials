@@ -85,6 +85,10 @@ dependencies {
     if (platform.mcVersion >= 11800) {
         implementation(bundle(project(":immediatelyfast"))!!)
     }
+    if (platform.mcVersion >= 12105 && (platform.isFabric || platform.isNeoForge)) {
+        repositories.modrinth()
+        modCompileOnly("maven.modrinth:iris:1.8.11+$platform")
+    }
 
     testImplementation(kotlin("test"))
 

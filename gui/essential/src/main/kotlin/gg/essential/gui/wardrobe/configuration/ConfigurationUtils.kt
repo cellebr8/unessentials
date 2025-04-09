@@ -13,6 +13,7 @@ package gg.essential.gui.wardrobe.configuration
 
 import gg.essential.elementa.components.Window
 import gg.essential.gui.EssentialPalette
+import gg.essential.gui.common.ContextOptionMenu
 import gg.essential.gui.common.EssentialDropDown
 import gg.essential.gui.common.MenuButton
 import gg.essential.gui.common.input.StateTextInput
@@ -22,15 +23,16 @@ import gg.essential.gui.common.input.essentialISODateInput
 import gg.essential.gui.common.input.essentialIntInput
 import gg.essential.gui.common.input.essentialLongInput
 import gg.essential.gui.common.input.essentialManagedNullableISODateInput
+import gg.essential.gui.common.input.essentialNullableISODateInput
 import gg.essential.gui.common.input.essentialNullableStringInput
 import gg.essential.gui.common.input.essentialStringInput
 import gg.essential.gui.common.modal.ConfirmDenyModal
 import gg.essential.gui.common.modal.EssentialModal
 import gg.essential.gui.common.modal.configure
 import gg.essential.gui.elementa.state.v2.*
+import gg.essential.gui.elementa.state.v2.combinators.map
 import gg.essential.gui.layoutdsl.*
-import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledInputRow
-import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledRow
+import gg.essential.gui.util.focusedState
 import gg.essential.mod.EssentialAsset
 import gg.essential.util.GuiEssentialPlatform.Companion.platform
 import gg.essential.util.image.bitmap.Bitmap
@@ -245,6 +247,15 @@ object ConfigurationUtils {
         essentialManagedNullableISODateInput(state, inputModifier)
     }
 
+    fun LayoutScope.labeledNullableISODateInputRow(
+        label: String,
+        state: MutableState<Instant?>,
+        inputModifier: Modifier = Modifier,
+        horizontalArrangement: Arrangement = Arrangement.SpaceBetween,
+    ) = labeledInputRow(label, horizontalArrangement) {
+        essentialNullableISODateInput(state, inputModifier)
+    }
+
     fun LayoutScope.labeledISODateInputRow(
         label: String,
         state: MutableState<Instant>,
@@ -308,6 +319,32 @@ object ConfigurationUtils {
             val dropDown = EssentialDropDown(initialValue, optionsList)
             dropDown.selectedOption.onSetValue(stateScope) { onSetValue(it.value) }
             dropDown(inputModifier)
+        }
+    }
+
+    fun LayoutScope.addAutoCompleteMenu(
+        input: StateTextInput<*>,
+        items: ListState<Pair<String, String>>,
+    ) {
+        val minChars = items.map { if (it.size > 20) 2 else 0 }
+        val inputTextState = input.textState.toV2()
+        val options = memo {
+            val text = inputTextState()
+            if (text.length < minChars()) return@memo listOf()
+            return@memo items().filter { it.first.contains(text, ignoreCase = true) || it.second.contains(text, ignoreCase = true) }
+        }.toListState().mapEach { ContextOptionMenu.Option("${it.second} (${it.first})", null) { input.setText(it.first) } }
+        var menu: ContextOptionMenu? = null
+        input.focusedState().onChange(stateScope) { focused ->
+            menu?.close()
+            menu = null
+            if (focused) {
+                menu = ContextOptionMenu.create(input, options)
+            }
+        }
+        // Fixes menu staying around if manually entering cosmetic
+        input.state.onChange(stateScope) {
+            menu?.close()
+            menu = null
         }
     }
 

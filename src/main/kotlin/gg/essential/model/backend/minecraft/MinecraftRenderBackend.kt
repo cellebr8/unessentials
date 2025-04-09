@@ -42,8 +42,11 @@ import gg.essential.model.util.UVertexConsumer as CVertexConsumer
 //$$ import com.mojang.blaze3d.pipeline.BlendFunction
 //$$ import com.mojang.blaze3d.pipeline.RenderPipeline
 //$$ import com.mojang.blaze3d.vertex.VertexFormat
+//$$ import gg.essential.util.ModLoaderUtil
+//$$ import net.irisshaders.iris.api.v0.IrisApi
+//$$ import net.irisshaders.iris.api.v0.IrisProgram
 //$$ import net.minecraft.client.gl.Framebuffer
-//$$ import net.minecraft.client.gl.ShaderPipelines
+//$$ import net.minecraft.client.gl.RenderPipelines
 //$$ import net.minecraft.client.render.BuiltBuffer
 //$$ import net.minecraft.client.texture.GlTexture
 //#endif
@@ -127,6 +130,18 @@ object MinecraftRenderBackend : RenderBackend {
     //$$     withVertexFormat(pipeline.vertexFormat, pipeline.vertexFormatMode)
     //$$     withDepthBias(pipeline.depthBiasScaleFactor, pipeline.depthBiasConstant)
     //$$ }
+    //#if FORGE==0
+    //$$ // Note: Cannot pass `program` directly because Iris might not be installed
+    //$$ private fun RenderPipeline.assignIrisProgram(program: () -> IrisProgram): RenderPipeline = apply {
+    //$$     if (ModLoaderUtil.isModLoaded("iris")) {
+    //$$         // Separate method for class loading reasons
+    //$$         fun doIt() {
+    //$$             IrisApi.getInstance().assignPipeline(this, program())
+    //$$         }
+    //$$         doIt()
+    //$$     }
+    //$$ }
+    //#endif
     //$$
     //$$ private fun RenderLayer.drawImpl(buffer: BuiltBuffer) {
     //$$     startDrawing()
@@ -166,9 +181,12 @@ object MinecraftRenderBackend : RenderBackend {
     //$$ // As of 1.21.4, MC itself now finally uses the RenderLayer system for its particles, so we'll do the same.
     //$$ // Our particles have more blending modes though, so we need some custom layers.
     //#if MC>=12105
-    //$$ private val particleAdditivePipeline = ShaderPipelines.TRANSLUCENT_PARTICLE.toBuilder()
+    //$$ private val particleAdditivePipeline = RenderPipelines.TRANSLUCENT_PARTICLE.toBuilder()
     //$$     .withBlend(BlendFunction.LIGHTNING)
     //$$     .build()
+        //#if FORGE==0
+        //$$ .assignIrisProgram { IrisProgram.PARTICLES_TRANSLUCENT }
+        //#endif
     //#endif
     //$$ private val particleLayers = mutableMapOf<ParticleEffect.RenderPass, RenderLayer>()
     //$$ private fun getParticleLayer(renderPass: ParticleEffect.RenderPass) = particleLayers.getOrPut(renderPass) {
@@ -225,7 +243,10 @@ object MinecraftRenderBackend : RenderBackend {
     //$$ // MC no longer provides the CULL variant of ENTITY_TRANSLUCENT which we use to render our cosmetics, so we'll
     //$$ // have to build it ourselves.
     //#if MC>=12105
-    //$$ private val entityTranslucentCullPipeline = ShaderPipelines.ENTITY_TRANSLUCENT.toBuilder().withCull(true).build()
+    //$$ private val entityTranslucentCullPipeline = RenderPipelines.ENTITY_TRANSLUCENT.toBuilder().withCull(true).build()
+        //#if FORGE==0
+        //$$ .assignIrisProgram { IrisProgram.ENTITIES_TRANSLUCENT }
+        //#endif
     //#endif
     //$$ private val entityTranslucentCullLayers = mutableMapOf<Identifier, RenderLayer>()
     //$$ fun getEntityTranslucentCullLayer(texture: Identifier) = entityTranslucentCullLayers.getOrPut(texture) {

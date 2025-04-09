@@ -11,11 +11,13 @@
  */
 package gg.essential.gui.wardrobe.configuration.cosmetic.properties
 
-import gg.essential.gui.elementa.state.v2.*
-import gg.essential.gui.layoutdsl.*
+import gg.essential.gui.elementa.state.v2.mutableStateOf
+import gg.essential.gui.layoutdsl.LayoutScope
+import gg.essential.gui.layoutdsl.checkbox
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledDoubleInputRow
+import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledRow
 import gg.essential.mod.cosmetics.settings.CosmeticProperty
-import gg.essential.network.connectionmanager.cosmetics.*
+import gg.essential.network.connectionmanager.cosmetics.CosmeticsDataWithChanges
 import gg.essential.network.cosmetics.Cosmetic
 
 class PreviewResetTimeConfiguration(
@@ -28,7 +30,16 @@ class PreviewResetTimeConfiguration(
 ) {
 
     override fun LayoutScope.layout(property: CosmeticProperty.PreviewResetTime) {
-        labeledDoubleInputRow("Time", mutableStateOf(property.data.time)).state.onSetValue(stateScope) { property.update(property.copy(data = property.data.copy(time = it))) }
+        val largeTime = 1E10
+        val time = property.data.time
+        labeledRow("Infinite loop:") {
+            checkbox(time >= largeTime) { enabled ->
+                property.update(property.copy(data = property.data.copy(time = if (enabled) largeTime else 3.0)))
+            }
+        }
+        if (time < largeTime) {
+            labeledDoubleInputRow("Time", mutableStateOf(time)).state.onSetValue(stateScope) { property.update(property.copy(data = property.data.copy(time = it))) }
+        }
     }
 
 }

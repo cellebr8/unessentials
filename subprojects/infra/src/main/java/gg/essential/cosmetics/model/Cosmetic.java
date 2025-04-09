@@ -54,6 +54,9 @@ public class Cosmetic implements DisplayNameHolder, PriceHolder, SkinLayersHolde
     @SerializedName("k")
     private final @Nullable DateTime availableUntil;
 
+    @SerializedName("show_timer_after")
+    private final @Nullable DateTime showTimerAfter;
+
     @SerializedName("l")
     private @Nullable Map<@NotNull SkinLayer, @NotNull Boolean> skinLayers;
 
@@ -82,6 +85,7 @@ public class Cosmetic implements DisplayNameHolder, PriceHolder, SkinLayersHolde
             final @NotNull DateTime createdAt,
             final @Nullable DateTime availableAfter,
             final @Nullable DateTime availableUntil,
+            final @Nullable DateTime showTimerAfter,
             final @Nullable Map<@NotNull SkinLayer, @NotNull Boolean> skinLayers,
             final @Nullable Map<@NotNull String, @NotNull Integer> categories,
             final @Nullable Integer defaultSortWeight,
@@ -98,6 +102,7 @@ public class Cosmetic implements DisplayNameHolder, PriceHolder, SkinLayersHolde
         this.createdAt = createdAt;
         this.availableAfter = availableAfter;
         this.availableUntil = availableUntil;
+        this.showTimerAfter = showTimerAfter;
         this.skinLayers = skinLayers;
         this.categories = categories;
         this.defaultSortWeight = defaultSortWeight;
@@ -150,6 +155,10 @@ public class Cosmetic implements DisplayNameHolder, PriceHolder, SkinLayersHolde
 
     public @Nullable DateTime getAvailableUntil() {
         return this.availableUntil;
+    }
+
+    public @Nullable DateTime getShowTimerAfter() {
+        return this.showTimerAfter;
     }
 
     public @NotNull Map<@NotNull SkinLayer, @NotNull Boolean> getSkinLayers() {

@@ -214,20 +214,15 @@ object InviteFriendsModal {
             val cheatsState = BasicState(spsSettings.cheats)
             cheatsState.onSetValue { spsSettings = spsSettings.copy(cheats = it) }
             WorldSetting(
-                "Cheats", FullEssentialToggle(
-                    cheatsState,
-                    EssentialPalette.GUI_BACKGROUND,
-                )
+                "Cheats",
+                FullEssentialToggle(cheatsState.toV2())
             ) childOf settings
 
             val shareRP = BasicState(spsSettings.shareResourcePack)
             shareRP.onSetValue { spsSettings = spsSettings.copy(shareResourcePack = it) }
             WorldSetting(
                 "Share RP",
-                FullEssentialToggle(
-                    shareRP,
-                    EssentialPalette.GUI_BACKGROUND,
-                ),
+                FullEssentialToggle(shareRP.toV2()),
                 BasicState("Share your equipped Resource Pack")
             ) childOf settings
 

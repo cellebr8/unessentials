@@ -85,7 +85,7 @@ class CosmeticCategoryConfiguration(
         isEmoteCategoryState.onSetValue(stateScope) { category.update(category.copy(tags = if (it) category.tags + CosmeticCategory.EMOTE_CATEGORY_TAG else category.tags - CosmeticCategory.EMOTE_CATEGORY_TAG)) }
         labeledRow("Is Emote Category: ") {
             box(Modifier.childBasedWidth(3f).childBasedHeight(3f).hoverScope()) {
-                compactFullEssentialToggle(isEmoteCategoryState.toV1(stateScope))
+                compactFullEssentialToggle(isEmoteCategoryState)
                 spacer(1f, 1f)
             }
         }
@@ -94,7 +94,7 @@ class CosmeticCategoryConfiguration(
         isHiddenState.onSetValue(stateScope) { category.update(category.copy(tags = if (it) category.tags + CosmeticCategory.HIDDEN_CATEGORY_TAG else category.tags - CosmeticCategory.HIDDEN_CATEGORY_TAG)) }
         labeledRow("Is Hidden (sidebar): ") {
             box(Modifier.childBasedWidth(3f).childBasedHeight(3f).hoverScope()) {
-                compactFullEssentialToggle(isHiddenState.toV1(stateScope))
+                compactFullEssentialToggle(isHiddenState)
                 spacer(1f, 1f)
             }
         }

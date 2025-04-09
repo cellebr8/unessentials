@@ -20,17 +20,17 @@ import gg.essential.elementa.state.State
 import gg.essential.gui.common.*
 import gg.essential.gui.elementa.state.v2.toV1
 import gg.essential.gui.menu.AccountManager
-import gg.essential.gui.menu.RightSideBar
+import gg.essential.gui.menu.RightSideBarOld
 import gg.essential.handlers.PauseMenuDisplay
 import gg.essential.util.*
 import gg.essential.vigilance.utils.onLeftClick
 
-class CompactRightSideBar(
+class CompactRightSideBarOld(
     menuType: PauseMenuDisplay.MenuType,
     menuVisible: State<Boolean>,
     parentContainer: UIContainer,
     accountManager: AccountManager,
-) : RightSideBar(menuType, menuVisible) {
+) : RightSideBarOld(menuType, menuVisible) {
 
     private val accountSwitcher by accountManager.getCompactAccountSwitcher(parentContainer).constrain {
         x = 0.pixels(alignOpposite = true)

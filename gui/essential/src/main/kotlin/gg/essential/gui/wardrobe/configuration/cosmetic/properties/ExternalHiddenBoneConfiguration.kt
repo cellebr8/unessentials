@@ -25,6 +25,7 @@ import gg.essential.gui.elementa.state.v2.combinators.*
 import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.overlay.ModalManager
 import gg.essential.gui.wardrobe.WardrobeState
+import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.addAutoCompleteMenu
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.divider
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledInputRow
 import gg.essential.mod.cosmetics.settings.CosmeticProperty
@@ -53,7 +54,7 @@ class ExternalHiddenBoneConfiguration(
             }.onLeftClick { platform.pushModal { NewSettingModal(it) } }
             divider()
             labeledInputRow("Copy from:") {
-                essentialStateTextInput(
+                val input = essentialStateTextInput(
                     mutableStateOf(null),
                     { "" }, // Since we update when we get a valid result, we don't need this
                     { input ->
@@ -62,6 +63,8 @@ class ExternalHiddenBoneConfiguration(
                         else (cosmeticsDataWithChanges.getCosmetic(input)?.properties<CosmeticProperty.ExternalHiddenBone>() ?: throw StateTextInput.ParseException())
                     }
                 )
+                addAutoCompleteMenu(input, cosmeticsDataWithChanges.cosmetics.mapEach { it.id to it.displayName }.toListState())
+                input
             }.state.onSetValue(stateScope) { propertyList ->
                 if (propertyList != null) {
                     val newPropertyList = cosmetic.properties.toMutableList()

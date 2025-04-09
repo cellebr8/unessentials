@@ -251,8 +251,7 @@ class SpsOption(
         ): SpsOption {
             return SpsOption(settingInformation).apply {
                 val toggle by FullEssentialToggle(
-                    enabledState,
-                    EssentialPalette.COMPONENT_BACKGROUND
+                    enabledState.toV2()
                 ) childOf actionContent
             }
         }

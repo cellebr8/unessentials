@@ -19,4 +19,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface MinecraftServerAccessor {
     @Accessor
     Thread getServerThread();
+
+    //#if MC<11200
+    //$$ @org.spongepowered.asm.mixin.gen.Invoker
+    //$$ void invokeSaveAllWorlds(boolean dontLog);
+    //#endif
 }

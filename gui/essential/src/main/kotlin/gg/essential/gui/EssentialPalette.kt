@@ -304,6 +304,21 @@ object EssentialPalette {
     @JvmField
     val TEXT_TRANSPARENT_SHADOW: Color = Color(0, 0, 0, 127)
 
+    @JvmField
+    val TOGGLE_OFF_BACKGROUND: Color = Color(0x999999)
+
+    @JvmField
+    val TOGGLE_OFF_BACKGROUND_HOVERED: Color = Color(0xBFBFBF)
+
+    @JvmField
+    val TOGGLE_OFF_FOREGROUND: Color = Color(0x757575)
+
+    @JvmField
+    val TOGGLE_ON_BACKGROUND: Color = Color(0x0A82FD)
+
+    @JvmField
+    val TOGGLE_ON_BACKGROUND_HOVERED: Color = Color(0x4BA4FF)
+
     /** Accent/Blue */
     @JvmField
     val BANNER_BLUE: Color = Color(0x0A82FD)

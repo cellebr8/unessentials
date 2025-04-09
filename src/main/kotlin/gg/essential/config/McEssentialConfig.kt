@@ -58,25 +58,29 @@ object McEssentialConfig {
             }
         }
 
+        fun displayNotConnectedInformation() {
+            if (hasAcceptedTos()) {
+                Notifications.error(
+                    "Essential Network Error",
+                    "Unable to establish connection with the Essential Network."
+                )
+            } else {
+                fun showTOS() = GuiUtil.pushModal { TOSModal(it, unprompted = false, requiresAuth = true, {}) }
+                if (GuiUtil.openedScreen() == null) {
+                    // Show a notification when we're not in any menu, so it's less intrusive
+                    sendTosNotification { showTOS() }
+                } else {
+                    showTOS()
+                }
+            }
+        }
+
         ownCosmeticsHiddenStateWithSource.onSetValue(referenceHolder) { (hidden, setByUser) ->
             if (Essential.getInstance().connectionManager.isAuthenticated) {
                 Essential.getInstance().connectionManager.cosmeticsManager.setOwnCosmeticVisibility(false, !hidden)
             } else {
                 if (!setByUser) return@onSetValue // infra/mod may set whatever it wants, only the user is getting checked
-                if (hasAcceptedTos()) {
-                    Notifications.error(
-                        "Essential Network Error",
-                        "Unable to establish connection with the Essential Network."
-                    )
-                } else {
-                    fun showTOS() = GuiUtil.pushModal { TOSModal(it, unprompted = false, requiresAuth = true, {}) }
-                    if (GuiUtil.openedScreen() == null) {
-                        // Show a notification when we're not in any menu, so it's less intrusive
-                        sendTosNotification { showTOS() }
-                    } else {
-                        showTOS()
-                    }
-                }
+                displayNotConnectedInformation()
                 EssentialConfig.ownCosmeticsHidden = !hidden
             }
         }

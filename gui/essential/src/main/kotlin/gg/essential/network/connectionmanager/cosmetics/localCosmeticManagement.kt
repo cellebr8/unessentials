@@ -73,6 +73,7 @@ fun CosmeticsDataWithChanges.setCosmeticSingletonPropertyEnabled(
         if (existingProperty != null) {
             val updatedProperty = when (existingProperty) {
                 is CosmeticProperty.ArmorHandling -> existingProperty.copy(enabled = enabled)
+                is CosmeticProperty.ArmorHandlingV2 -> existingProperty.copy(enabled = enabled)
                 is CosmeticProperty.PositionRange -> existingProperty.copy(enabled = enabled)
                 is CosmeticProperty.InterruptsEmote -> existingProperty.copy(enabled = enabled)
                 is CosmeticProperty.Localization -> existingProperty.copy(enabled = enabled)
@@ -96,6 +97,12 @@ fun CosmeticsDataWithChanges.setCosmeticSingletonPropertyEnabled(
                     "UNUSED",
                     enabled,
                     CosmeticProperty.ArmorHandling.Data()
+                )
+
+                CosmeticPropertyType.ARMOR_HANDLING_V2 -> CosmeticProperty.ArmorHandlingV2(
+                    cosmeticId,
+                    enabled,
+                    CosmeticProperty.ArmorHandlingV2.Data()
                 )
 
                 CosmeticPropertyType.POSITION_RANGE -> CosmeticProperty.PositionRange(
@@ -222,9 +229,9 @@ fun CosmeticsDataWithChanges.setCosmeticTags(cosmeticId: CosmeticId, tags: Set<S
 /**
  * Sets the availability window of the cosmetic with id [cosmeticId] to [availableAfter] and [availableUntil]
  */
-fun CosmeticsDataWithChanges.setCosmeticAvailable(cosmeticId: CosmeticId, availableAfter: Instant?, availableUntil: Instant?) {
+fun CosmeticsDataWithChanges.setCosmeticAvailable(cosmeticId: CosmeticId, availableAfter: Instant?, availableUntil: Instant?, showTimerAfter: Instant?) {
     updateCosmetic(cosmeticId) {
-        copy(availableAfter = availableAfter, availableUntil = availableUntil)
+        copy(availableAfter = availableAfter, availableUntil = availableUntil, showTimerAfter = showTimerAfter)
     }
 }
 

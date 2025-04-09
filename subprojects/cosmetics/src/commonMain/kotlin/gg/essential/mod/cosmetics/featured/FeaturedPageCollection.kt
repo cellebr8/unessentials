@@ -18,6 +18,7 @@ import gg.essential.cosmetics.FeaturedPageWidth
 import gg.essential.model.util.Instant
 import gg.essential.model.util.InstantAsIso8601Serializer
 import gg.essential.model.util.now
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 
@@ -49,5 +50,5 @@ data class FeaturedPageCollection(
     fun isAvailableAt(time: Instant): Boolean = availability == null || (availability.after < time && time < availability.until)
 
     @Serializable
-    data class Availability(val after: Instant, val until: Instant)
+    data class Availability(val after: Instant, val until: Instant, @SerialName("show_timer_after") val showTimerAfter: Instant? = null)
 }

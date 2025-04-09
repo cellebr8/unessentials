@@ -48,7 +48,7 @@ class CosmeticBundleConfiguration(
         hasSkinState.onSetValue(stateScope) { bundle.update(bundle.copy(skin = if (it) CosmeticBundle.Skin("bff1570fdf623153e6b4a4d2ca97559b471f1ec776584ceec2ebb8bf0b7ba504", Model.ALEX) else null)) }
         labeledRow("Has skin: ") {
             box(Modifier.childBasedWidth(3f).childBasedHeight(3f).hoverScope()) {
-                compactFullEssentialToggle(hasSkinState.toV1(stateScope))
+                compactFullEssentialToggle(hasSkinState)
                 spacer(1f, 1f)
             }
         }

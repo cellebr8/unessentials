@@ -136,6 +136,10 @@ class EmoteEventListeners {
                 } else {
                     preview.unhide()
                 }
+
+                if (preview.player !== UPlayer.getPlayer()) {
+                    preview.player = UPlayer.getPlayer()
+                }
             }
         }
     }

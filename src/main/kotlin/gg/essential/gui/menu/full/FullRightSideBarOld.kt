@@ -22,7 +22,7 @@ import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.*
 import gg.essential.gui.elementa.state.v2.combinators.map
 import gg.essential.gui.elementa.state.v2.toV1
-import gg.essential.gui.menu.RightSideBar
+import gg.essential.gui.menu.RightSideBarOld
 import gg.essential.handlers.PauseMenuDisplay
 import gg.essential.handlers.PauseMenuDisplay.Companion.window
 import gg.essential.universal.UMinecraft.getMinecraft
@@ -32,13 +32,13 @@ import gg.essential.gui.util.hoveredState
 import gg.essential.gui.util.pollingState
 import gg.essential.vigilance.utils.onLeftClick
 
-class FullRightSideBar(
+class FullRightSideBarOld(
     menuType: PauseMenuDisplay.MenuType,
     topButton: UIContainer,
     bottomButton: UIContainer,
     isCollapsed: State<Boolean>,
     menuVisible: State<Boolean>,
-) : RightSideBar(menuType, menuVisible) {
+) : RightSideBarOld(menuType, menuVisible) {
 
     init {
         collapsed.rebind(isCollapsed)

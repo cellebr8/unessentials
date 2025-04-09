@@ -13,6 +13,7 @@ package gg.essential.network.connectionmanager.telemetry;
 
 import gg.essential.Essential;
 import gg.essential.connectionmanager.common.packet.telemetry.ClientTelemetryPacket;
+import gg.essential.connectionmanager.common.packet.telemetry.ServerRecognizedTelemetryPacket;
 import gg.essential.elementa.state.v2.ReferenceHolder;
 import gg.essential.event.client.InitializationEvent;
 import gg.essential.event.essential.TosAcceptedEvent;
@@ -64,6 +65,8 @@ public class TelemetryManager implements NetworkedManager {
     private final SequentialPacketQueue telemetryQueue;
     @NotNull
     private final List<ClientTelemetryPacket> packetList = new ArrayList<>();
+    @Nullable
+    private  List<String> recognizedTelemetryKeys = null;
     @NotNull
     private final ReferenceHolder referenceHolder = new ReferenceHolderImpl();
     @Nullable
@@ -75,6 +78,10 @@ public class TelemetryManager implements NetworkedManager {
         telemetryQueue = new SequentialPacketQueue.Builder(connectionManager)
             .onTimeoutSkip()
             .create();
+        connectionManager.registerPacketHandler(ServerRecognizedTelemetryPacket.class, (packet)->{
+                setRecognizedTelemetryKeys(packet.getRecognizedTelemetry());
+                return Unit.INSTANCE;
+        });
         Essential.EVENT_BUS.register(this);
 
         final String bytes = System.getProperty("essential.stage2.downloaded.bytes");
@@ -95,11 +102,26 @@ public class TelemetryManager implements NetworkedManager {
         }
     }
 
-    // Adds the packet to a SequentialPacketQueue if the user is connected and authenticated
-    // Otherwise, adds the packet to a list to be processed when a connection is established
+    private void setRecognizedTelemetryKeys(@NotNull List<String> keys) {
+        recognizedTelemetryKeys = keys;
+
+        // Send all pending packets now that they can be filtered by recognizedTelemetryKeys
+        if (!packetList.isEmpty()) {
+            // New list to iterate, as enqueue() may result in packetList.add(), if the connection was somehow lost
+            List<ClientTelemetryPacket> pendingPackets = new ArrayList<>(packetList);
+            packetList.clear();
+            pendingPackets.forEach(this::enqueue);
+        }
+    }
+
+    // Adds the packet to a SequentialPacketQueue if the user is connected, authenticated, and recognizedTelemetryKeys is set and matching
+    // Otherwise, adds the packet to a list to be processed when the recognizedTelemetryKeys are received after connection
     public void enqueue(@NotNull ClientTelemetryPacket packet) {
-        if (connectionManager.isOpen() && connectionManager.isAuthenticated()) {
-            telemetryQueue.enqueue(packet);
+        if (connectionManager.isOpen() && connectionManager.isAuthenticated() && recognizedTelemetryKeys != null) {
+            // Only enqueue the packet if it has a server recognized telemetry key
+            if (recognizedTelemetryKeys.contains(packet.getKey())){
+                telemetryQueue.enqueue(packet);
+            }
         } else {
             packetList.add(packet);
         }
@@ -107,8 +129,7 @@ public class TelemetryManager implements NetworkedManager {
 
     @Override
     public void onConnected() {
-        packetList.forEach(telemetryQueue::enqueue);
-        packetList.clear();
+        recognizedTelemetryKeys = null; // The ServerRecognizedTelemetryPacket will be sent by the server after connection to set this
         modPartnerEffect = StateKt.effect(referenceHolder, observer -> {
             List<String> loadedPartnerModIds = ModLoaderUtil.loadedPartnerModIds.get(observer);
             if (loadedPartnerModIds == null) {

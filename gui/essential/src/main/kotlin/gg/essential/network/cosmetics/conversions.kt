@@ -134,6 +134,7 @@ fun InfraCosmetic.toMod(type: CosmeticType, settings: List<CosmeticProperty>): C
         createdAt.toInstant(),
         availableAfter?.toInstant(),
         availableUntil?.toInstant(),
+        showTimerAfter?.toInstant(),
         skinLayers.toMod(),
         categories,
         defaultSortWeight ?: 20,

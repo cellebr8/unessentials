@@ -13,7 +13,9 @@ package gg.essential.gui.common
 
 import dev.folomeev.kotgl.matrix.vectors.vecUnitY
 import gg.essential.cosmetics.CosmeticId
+import gg.essential.cosmetics.EquippedCosmetic
 import gg.essential.elementa.effects.ScissorEffect
+import gg.essential.gui.elementa.state.v2.State
 import gg.essential.gui.elementa.state.v2.combinators.map
 import gg.essential.gui.elementa.state.v2.memo
 import gg.essential.gui.elementa.state.v2.mutableStateOf
@@ -69,8 +71,28 @@ fun LayoutScope.fullBodyRenderPreview(
         Modifier.fillParent().effect { if (it) ScissorEffect(0f, 0f, 0f, 0f) else ScissorEffect() }
     }
     val cameraAngle = mutableStateOf(0f)
+    val visibleCosmeticIds = if (showEmotes) cosmeticsMap else cosmeticsMap - CosmeticSlot.EMOTE
+    val resolvedCosmetics = memo { with(state) { resolveCosmeticIds(visibleCosmeticIds, settings) } }
+    val emoteId = visibleCosmeticIds[CosmeticSlot.EMOTE]
+    val emote = memo { resolvedCosmetics()[CosmeticSlot.EMOTE] }
 
     box(Modifier.fillParent().then(modifier)) {
+        val container = containerDontUseThisUnlessYouReallyHaveTo
+        val currentCosmetics: State<Map<CosmeticSlot, EquippedCosmetic>>
+        if (emoteId != null) {
+            val emoteScheduler = EmoteScheduler(container, memo { emote()?.cosmetic }, memo { emote()?.settings })
+            val scheduledEmote = memo {
+                val cosmetic = emote()
+                if (cosmetic != null && emoteScheduler.emoteEquipped()) {
+                    mapOf(CosmeticSlot.EMOTE to cosmetic)
+                } else {
+                    emptyMap()
+                }
+            }
+            currentCosmetics = memo { resolvedCosmetics() - CosmeticSlot.EMOTE + scheduledEmote() }
+        } else {
+            currentCosmetics = resolvedCosmetics
+        }
         val emulatedUI3DPlayer = platform.newUIPlayer(
             camera = cameraAngle.map { angle ->
                 val rotation = Quaternion.fromAxisAngle(vecUnitY(), angle)
@@ -79,10 +101,7 @@ fun LayoutScope.fullBodyRenderPreview(
                 }
             },
             profile = stateOf(skin?.let { Pair(skin, null) }),
-            cosmetics = run {
-                val visibleCosmeticIds = if (showEmotes) cosmeticsMap else cosmeticsMap - CosmeticSlot.EMOTE
-                memo { with(state) { resolveCosmeticIds(visibleCosmeticIds, settings) } }
-            },
+            cosmetics = currentCosmetics,
         ).apply {
             if (constantRotation) {
                 val fullRotationMillis = 10000.0

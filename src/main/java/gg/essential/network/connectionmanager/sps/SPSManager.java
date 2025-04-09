@@ -439,6 +439,10 @@ public class SPSManager extends StateCallbackManager<IStatusManager> implements 
 
         ResourcePackSharingHttpServer.INSTANCE.stopServer();
 
+        resourcePackUrl = null;
+        resourcePackChecksum = null;
+        shareResourcePack = false;
+
         ExtensionsKt.getExecutor(Minecraft.getMinecraft()).execute(EssentialCommandRegistry.INSTANCE::unregisterSPSHostCommands);
 
         this.updateQueue.enqueue(new ClientUPnPSessionClosePacket());

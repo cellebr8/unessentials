@@ -12,9 +12,6 @@
 package gg.essential.gui.wardrobe.components
 
 import gg.essential.elementa.components.GradientComponent
-import gg.essential.elementa.dsl.minus
-import gg.essential.elementa.dsl.plus
-import gg.essential.elementa.dsl.provideDelegate
 import gg.essential.elementa.events.UIClickEvent
 import gg.essential.elementa.font.DefaultFonts
 import gg.essential.elementa.utils.withAlpha
@@ -23,48 +20,90 @@ import gg.essential.gui.common.CosmeticPreview
 import gg.essential.gui.common.SequenceAnimatedUIImage
 import gg.essential.gui.common.bundleRenderPreview
 import gg.essential.gui.common.modal.OpenLinkModal
-import gg.essential.gui.common.onSetValueAndNow
 import gg.essential.gui.common.outfitRenderPreview
 import gg.essential.gui.common.skinRenderPreview
 import gg.essential.gui.common.state
 import gg.essential.gui.elementa.state.v2.State
 import gg.essential.gui.elementa.state.v2.animateTransitions
 import gg.essential.gui.elementa.state.v2.combinators.and
+import gg.essential.gui.elementa.state.v2.combinators.isNotEmpty
 import gg.essential.gui.elementa.state.v2.combinators.map
 import gg.essential.gui.elementa.state.v2.combinators.not
 import gg.essential.gui.elementa.state.v2.combinators.or
 import gg.essential.gui.elementa.state.v2.combinators.zip
+import gg.essential.gui.elementa.state.v2.effect
 import gg.essential.gui.elementa.state.v2.filter
 import gg.essential.gui.elementa.state.v2.memo
 import gg.essential.gui.elementa.state.v2.mutableStateOf
+import gg.essential.gui.elementa.state.v2.onChange
 import gg.essential.gui.elementa.state.v2.stateBy
 import gg.essential.gui.elementa.state.v2.stateOf
-import gg.essential.gui.elementa.state.v2.toV1
 import gg.essential.gui.elementa.state.v2.toV2
 import gg.essential.gui.image.ImageFactory
-import gg.essential.gui.layoutdsl.*
+import gg.essential.gui.layoutdsl.Alignment
+import gg.essential.gui.layoutdsl.Arrangement
+import gg.essential.gui.layoutdsl.LayoutScope
+import gg.essential.gui.layoutdsl.Modifier
+import gg.essential.gui.layoutdsl.alignBoth
+import gg.essential.gui.layoutdsl.alignHorizontal
+import gg.essential.gui.layoutdsl.alignVertical
+import gg.essential.gui.layoutdsl.animateColor
+import gg.essential.gui.layoutdsl.box
+import gg.essential.gui.layoutdsl.childBasedHeight
+import gg.essential.gui.layoutdsl.childBasedMaxHeight
+import gg.essential.gui.layoutdsl.childBasedMaxWidth
+import gg.essential.gui.layoutdsl.childBasedWidth
+import gg.essential.gui.layoutdsl.color
+import gg.essential.gui.layoutdsl.column
+import gg.essential.gui.layoutdsl.fillHeight
+import gg.essential.gui.layoutdsl.fillParent
+import gg.essential.gui.layoutdsl.fillRemainingHeight
+import gg.essential.gui.layoutdsl.fillWidth
+import gg.essential.gui.layoutdsl.gradient
+import gg.essential.gui.layoutdsl.height
+import gg.essential.gui.layoutdsl.hoverColor
+import gg.essential.gui.layoutdsl.hoverScope
+import gg.essential.gui.layoutdsl.hoverTooltip
+import gg.essential.gui.layoutdsl.icon
+import gg.essential.gui.layoutdsl.image
+import gg.essential.gui.layoutdsl.lazyBox
+import gg.essential.gui.layoutdsl.outline
+import gg.essential.gui.layoutdsl.row
+import gg.essential.gui.layoutdsl.shadow
+import gg.essential.gui.layoutdsl.spacer
+import gg.essential.gui.layoutdsl.tag
+import gg.essential.gui.layoutdsl.text
+import gg.essential.gui.layoutdsl.then
+import gg.essential.gui.layoutdsl.whenTrue
+import gg.essential.gui.layoutdsl.width
+import gg.essential.gui.layoutdsl.widthAspect
 import gg.essential.gui.util.Tag
+import gg.essential.gui.util.hoverScope
+import gg.essential.gui.util.pollingState
+import gg.essential.gui.wardrobe.EmoteWheelPage
+import gg.essential.gui.wardrobe.Item
+import gg.essential.gui.wardrobe.WardrobeCategory
+import gg.essential.gui.wardrobe.WardrobeState
 import gg.essential.mod.cosmetics.CosmeticSlot
+import gg.essential.mod.cosmetics.database.LOCAL_PATH
 import gg.essential.mod.cosmetics.settings.CosmeticProperty
 import gg.essential.mod.cosmetics.settings.CosmeticSetting
+import gg.essential.mod.cosmetics.settings.setting
 import gg.essential.model.util.toJavaColor
 import gg.essential.network.connectionmanager.coins.CoinsManager
 import gg.essential.network.connectionmanager.cosmetics.AssetLoader
-import gg.essential.universal.USound
-import gg.essential.util.UuidNameLookup
-import gg.essential.gui.util.hoverScope
-import gg.essential.util.onRightClick
-import gg.essential.gui.util.pollingState
-import gg.essential.gui.wardrobe.*
-import gg.essential.mod.cosmetics.database.LOCAL_PATH
-import gg.essential.mod.cosmetics.settings.setting
 import gg.essential.network.cosmetics.Cosmetic.Diagnostic
+import gg.essential.universal.USound
 import gg.essential.util.GuiEssentialPlatform.Companion.platform
+import gg.essential.util.UuidNameLookup
+import gg.essential.gui.util.hoverScopeV2
+import gg.essential.util.onRightClick
 import gg.essential.util.thenAcceptOnMainThread
 import gg.essential.util.toCosmeticOptionTime
 import gg.essential.vigilance.utils.onLeftClick
 import java.awt.Color
 import java.net.URI
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 data class CosmeticItemTag(val item: Item) : Tag
@@ -136,7 +175,7 @@ fun LayoutScope.cosmeticItem(item: Item, category: WardrobeCategory, state: Ward
         Modifier.itemSize(1, 1)
     }
 
-    val outlineColor = stateBy {
+    val outlineColor = memo {
         when {
             editing() -> EssentialPalette.TEXT_HIGHLIGHT
             selected() -> EssentialPalette.TEXT_MID_GRAY
@@ -146,8 +185,8 @@ fun LayoutScope.cosmeticItem(item: Item, category: WardrobeCategory, state: Ward
 
     val doHighlight = state.highlightItem.map { it == item.itemId }
     val highlightModifier = Modifier.whenTrue(doHighlight, Modifier.animateColor(EssentialPalette.TEXT_HIGHLIGHT, 0.5f))
-    doHighlight.onSetValueAndNow(stateScope) {
-        if (it) {
+    effect(stateScope) {
+        if (doHighlight()) {
             state.component.delay(1_000) {
                 state.highlightItem.set(null)
             }
@@ -167,7 +206,7 @@ fun LayoutScope.cosmeticItem(item: Item, category: WardrobeCategory, state: Ward
         )) or hasSideOption
 
     val background = Modifier.then {
-        val hovered = hoverScope().toV2()
+        val hovered = hoverScopeV2()
         val highlight = doHighlight
             .map { if (it) 1f else 0f }
             .animateTransitions(this, 0.5f)
@@ -217,7 +256,7 @@ fun LayoutScope.cosmeticItem(item: Item, category: WardrobeCategory, state: Ward
                             }
                             box(Modifier.alignVertical(Alignment.Start).alignHorizontal(Alignment.End)) {
                                 row(Arrangement.spacedBy(1f)) {
-                                    if_((containerDontUseThisUnlessYouReallyHaveTo.hoverScope().toV2() or editing) and hasEditButton) {
+                                    if_((containerDontUseThisUnlessYouReallyHaveTo.hoverScopeV2() or editing) and hasEditButton) {
                                         editButton(item, category, state)
                                     }
                                     favoriteButton(item, state)
@@ -234,7 +273,7 @@ fun LayoutScope.cosmeticItem(item: Item, category: WardrobeCategory, state: Ward
                                     owned(item, state, owned)
                                 }
                             }
-                            if_(containerDontUseThisUnlessYouReallyHaveTo.hoverScope()) {
+                            if_(containerDontUseThisUnlessYouReallyHaveTo.hoverScopeV2()) {
                                 colorBar(item, category, state, selected)
                             }
                         }
@@ -250,7 +289,7 @@ fun LayoutScope.cosmeticItem(item: Item, category: WardrobeCategory, state: Ward
                         truncateIfTooSmall = true,
                         modifier = Modifier.color(EssentialPalette.TEXT).alignHorizontal(Alignment.Start),
                     )
-                    if_(containerDontUseThisUnlessYouReallyHaveTo.hoverScope()) {
+                    if_(containerDontUseThisUnlessYouReallyHaveTo.hoverScopeV2()) {
                         options(item, category, state)
                     }
                 }
@@ -512,14 +551,29 @@ private fun LayoutScope.cosmeticTimer(item: Item, owned: State<Boolean>, wardrob
 
     bind(availableUntilState) { availableUntil ->
         if (availableUntil == null) return@bind
-        val saleTime = containerDontUseThisUnlessYouReallyHaveTo.pollingState { availableUntil.toCosmeticOptionTime() }.toV2()
-        box(Modifier.height(13f).widthAspect(1f).color(EssentialPalette.RED).hoverTooltip({"Leaving in ${saleTime()}"}).hoverScope()) {
-            SequenceAnimatedUIImage(
-                "/assets/essential/textures/studio/clock_", ".png",
-                4,
-                1000,
-                TimeUnit.MILLISECONDS,
-            )(Modifier.color(EssentialPalette.TEXT_HIGHLIGHT).shadow(EssentialPalette.BLACK_SHADOW))
+        val saleTime = containerDontUseThisUnlessYouReallyHaveTo.pollingState {
+            if (item.shouldShowTimer(wardrobeState)) {
+                availableUntil.toCosmeticOptionTime()
+            } else {
+                ""
+            }
+        }.toV2()
+        if_(saleTime.isNotEmpty()) {
+            box(Modifier.height(13f).widthAspect(1f).color(EssentialPalette.RED).hoverTooltip({
+                val time = saleTime()
+                if (time.equals("Expired", true)) {
+                    time
+                } else {
+                    "Leaving in $time"
+                }
+            }).hoverScope()) {
+                SequenceAnimatedUIImage(
+                    "/assets/essential/textures/studio/clock_", ".png",
+                    4,
+                    1000,
+                    TimeUnit.MILLISECONDS,
+                )(Modifier.color(EssentialPalette.TEXT_HIGHLIGHT).shadow(EssentialPalette.BLACK_SHADOW))
+            }
         }
     }
 }
@@ -591,7 +645,7 @@ private fun LayoutScope.favoriteButton(item: Item, wardrobeState: WardrobeState)
 
     val favoriteColorObject = Color(0xFF9AE6)
 
-    if_(containerDontUseThisUnlessYouReallyHaveTo.hoverScope().toV2() or stateOf(isFavorite)) {
+    if_(containerDontUseThisUnlessYouReallyHaveTo.hoverScopeV2() or stateOf(isFavorite)) {
         iconButton(
             EssentialPalette.HEART_FILLED_9X,
             Modifier.width(15f).height(15f).hoverTooltip(if (isFavorite) "Remove Favorite" else "Favorite").hoverScope(),
@@ -625,7 +679,7 @@ private fun LayoutScope.infoIcon(item: Item, wardrobeState: WardrobeState) {
         textTag(
             "i",
             Modifier.width(13f).height(13f).color(EssentialPalette.BANNER_BLUE)
-                .hoverTooltip(infoTextState.toV1(stateScope)).hoverScope()
+                .hoverTooltip(infoTextState).hoverScope()
         )
     }
 }
@@ -758,8 +812,10 @@ private fun LayoutScope.colorBar(item: Item, category: WardrobeCategory, wardrob
                     handleCosmeticOrEmoteLeftClick(item, category, wardrobeState)
                 }
                 wardrobeState.setVariant(item, variant.name)
-            }.hoverScope().onSetValue { hovered ->
-                handleVariantHover(variant, item, wardrobeState, hovered)
+            }.apply {
+                hoverScopeV2().onChange(this) { hovered ->
+                    handleVariantHover(variant, item, wardrobeState, hovered)
+                }
             }
         }
     }
@@ -826,3 +882,11 @@ const val cosmeticYSpacing = 7f
 fun Modifier.itemSize(width: Int, height: Int) =
     width(cosmeticWidth * width + (width - 1) * cosmeticXSpacing)
         .height((cosmeticWidth + cosmeticTextHeight) * height + (height - 1) * cosmeticYSpacing)
+
+private fun Item.shouldShowTimer(wardrobeState: WardrobeState): Boolean {
+    return when (this) {
+        is Item.CosmeticOrEmote -> this.cosmetic.showTimerAfter
+        is Item.Bundle -> wardrobeState.featuredPageCollection.getUntracked()?.availability?.showTimerAfter
+        else -> null
+    }?.isBefore(Instant.now()) ?: true
+}

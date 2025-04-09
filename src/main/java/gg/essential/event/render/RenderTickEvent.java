@@ -61,4 +61,7 @@ public final class RenderTickEvent {
     public float getPartialTicksInGame() {
         return partialTicksInGame;
     }
+
+    public static class Final {
+    }
 }

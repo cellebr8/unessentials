@@ -338,30 +338,11 @@ class GitRepoCosmeticsDatabase(
             fileAccess.loadCosmetic(metadataFile, assetFromPath) { typeId -> types[typeId] }
         } catch (e: Exception) {
             Exception("Failed to load cosmetic at $metadataFile", e).printStackTrace()
-            val diagnostic = Cosmetic.Diagnostic.fatal(
+            makeErrorCosmetic(metadataFile, Cosmetic.Diagnostic.fatal(
                 e.message ?: "Unexpected error",
                 stacktrace = e.stackTraceToString(),
                 file = metadataFile.name,
-            )
-            val folder = metadataFile.parent
-            Cosmetic(
-                folder.str.replace('/', '_').uppercase(),
-                CosmeticType("ERROR", CosmeticSlot.of("ERROR"), mapOf("en_us" to "Error"), emptyMap()),
-                CosmeticTier.COMMON,
-                mapOf("en_us" to folder.str, LOCAL_PATH to folder.str),
-                emptyMap(),
-                emptyList(),
-                -1,
-                emptyMap(),
-                setOf("HAS_ERRORS"),
-                instant(0),
-                instant(0),
-                null,
-                emptyMap(),
-                mapOf("ERROR" to 0),
-                0,
-                listOf(diagnostic),
-            )
+            ))
         }
     }
 
@@ -543,7 +524,7 @@ class GitRepoCosmeticsDatabase(
             FeaturedPageCollectionMetadata(
                 1,
                 featuredPageCollection.id,
-                featuredPageCollection.availability?.let { FeaturedPageCollectionMetadata.Availability(it.after, it.until) },
+                featuredPageCollection.availability?.let { FeaturedPageCollectionMetadata.Availability(it.after, it.until, it.showTimerAfter) },
                 featuredPageCollection.pages,
             )
         } else {
@@ -665,6 +646,7 @@ class GitRepoCosmeticsDatabase(
                 cosmetic.priceCoinsNullable,
                 cosmetic.availableAfter,
                 cosmetic.availableUntil,
+                cosmetic.showTimerAfter,
                 cosmetic.defaultSortWeight.takeUnless { it == 20 },
                 (override ?: CosmeticMetadataOverrides()).copy(
                     id = cosmetic.id.takeUnless { it == fileId.uppercase() },
@@ -688,6 +670,7 @@ class GitRepoCosmeticsDatabase(
                 cosmetic.prices,
                 cosmetic.availableAfter,
                 cosmetic.availableUntil,
+                cosmetic.showTimerAfter,
                 cosmetic.defaultSortWeight.takeUnless { it == 20 },
                 (override ?: CosmeticMetadataOverrides()).copy(
                     id = cosmetic.id.takeUnless { it == fileId.uppercase() },
@@ -858,7 +841,12 @@ class GitRepoCosmeticsDatabase(
     ) {
 
         @Serializable
-        data class Availability(val after: Instant, val until: Instant)
+        data class Availability(
+            val after: Instant,
+            val until: Instant,
+            @SerialName("show_timer_after")
+            val showTimerAfter: Instant? = null,
+        )
 
     }
 
@@ -889,6 +877,8 @@ class GitRepoCosmeticsDatabase(
         val availableAfter: Instant?,
         @SerialName("available_until")
         val availableUntil: Instant?,
+        @SerialName("show_timer_after")
+        val showTimerAfter: Instant? = null,
         @SerialName("default_sort_weight")
         val defaultSortWeight: Int?,
         val override: CosmeticMetadataOverrides,
@@ -911,6 +901,8 @@ class GitRepoCosmeticsDatabase(
         val availableAfter: Instant?,
         @SerialName("available_until")
         val availableUntil: Instant?,
+        @SerialName("show_timer_after")
+        val showTimerAfter: Instant? = null,
         @SerialName("default_sort_weight")
         val defaultSortWeight: Int?,
         val override: CosmeticMetadataOverrides,
@@ -1068,7 +1060,7 @@ private suspend fun FileAccess.loadFeaturedPageCollection(metadataFile: Path): F
     val metadata = json.decodeFromString<GitRepoCosmeticsDatabase.FeaturedPageCollectionMetadata>(metadataJson().decodeToString())
     return FeaturedPageCollection(
         metadata.id,
-        metadata.availability?.let { FeaturedPageCollection.Availability(it.after, it.until) },
+        metadata.availability?.let { FeaturedPageCollection.Availability(it.after, it.until, it.showTimerAfter) },
         metadata.pages
     )
 }
@@ -1093,6 +1085,7 @@ private suspend fun FileAccess.loadCosmetic(metadataFile: Path, assetBuilder: As
             if (metadataV3.price != null) mapOf("coins" to metadataV3.price.toDouble()) else mapOf(),
             metadataV3.availableAfter,
             metadataV3.availableUntil,
+            metadataV3.showTimerAfter,
             metadataV3.defaultSortWeight,
             metadataV3.override,
         )
@@ -1133,7 +1126,17 @@ private suspend fun FileAccess.loadCosmetic(metadataFile: Path, assetBuilder: As
     val settingsFile = (override.settings ?: "$fileId.settings.json")
     assetFiles.remove(Path.of(settingsFile))
     val settings = file(folder / settingsFile)
-        ?.let { CosmeticProperty.fromJsonArray(it().decodeToString()) }
+        ?.let { read ->
+            try {
+                CosmeticProperty.fromJsonArray(read().decodeToString())
+            } catch (e: Exception) {
+                return makeErrorCosmetic(metadataFile, Cosmetic.Diagnostic.fatal(
+                    e.message ?: "Unexpected error",
+                    stacktrace = e.stackTraceToString(),
+                    file = settingsFile,
+                ))
+            }
+        }
 
     for (path in assetFiles) {
         val filePath = folder / path
@@ -1167,8 +1170,32 @@ private suspend fun FileAccess.loadCosmetic(metadataFile: Path, assetBuilder: As
         metadata.availableAfter ?: now(),
         metadata.availableAfter,
         metadata.availableUntil,
+        metadata.showTimerAfter,
         emptyMap(),
         metadata.categories,
         metadata.defaultSortWeight ?: 20,
+    )
+}
+
+private fun makeErrorCosmetic(metadataFile: Path, diagnostic: Cosmetic.Diagnostic): Cosmetic {
+    val folder = metadataFile.parent
+    return Cosmetic(
+        folder.str.replace('/', '_').uppercase(),
+        CosmeticType("ERROR", CosmeticSlot.of("ERROR"), mapOf("en_us" to "Error"), emptyMap()),
+        CosmeticTier.COMMON,
+        mapOf("en_us" to folder.str, LOCAL_PATH to folder.str),
+        emptyMap(),
+        emptyList(),
+        -1,
+        emptyMap(),
+        setOf("HAS_ERRORS"),
+        instant(0),
+        instant(0),
+        instant(0),
+        null,
+        emptyMap(),
+        mapOf("ERROR" to 0),
+        0,
+        listOf(diagnostic),
     )
 }

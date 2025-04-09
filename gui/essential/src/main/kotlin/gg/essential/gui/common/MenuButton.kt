@@ -12,6 +12,7 @@
 package gg.essential.gui.common
 
 import gg.essential.elementa.UIComponent
+import gg.essential.elementa.components.UIContainer
 import gg.essential.elementa.components.Window
 import gg.essential.elementa.constraints.*
 import gg.essential.elementa.dsl.*
@@ -32,6 +33,10 @@ import gg.essential.gui.common.shadow.ShadowIcon
 import gg.essential.gui.elementa.state.v2.combinators.map
 import gg.essential.gui.elementa.state.v2.combinators.zip
 import gg.essential.gui.image.ImageFactory
+import gg.essential.gui.layoutdsl.LayoutScope
+import gg.essential.gui.layoutdsl.Modifier
+import gg.essential.gui.layoutdsl.childBasedSize
+import gg.essential.gui.layoutdsl.layoutAsBox
 import gg.essential.universal.UGraphics
 import gg.essential.universal.UMatrixStack
 import gg.essential.universal.USound
@@ -97,7 +102,7 @@ class MenuButton @JvmOverloads constructor(
         if (collapsed) collapsedText else regularText
     }
     private val availableLabelWidth = pollingState(91f) {
-        getWidth() - (shadowIcon?.getWidth()?.plus(12f) ?: 9f)
+        getWidth() - (icon?.getWidth()?.plus(12f) ?: 9f)
     }
     private val labelState = textState.zip(availableLabelWidth).map { (text, width) ->
         truncateLabel(text ?: "", width)
@@ -119,7 +124,7 @@ class MenuButton @JvmOverloads constructor(
 
     private val iconVisible = BasicState(false).map { it }
 
-    private var shadowIcon: ShadowIcon? = null
+    private var icon: UIComponent? = null
     private var tooltip: Tooltip? = null
     private var originalWidth = constraints.width
     private var originalHeight = constraints.height
@@ -258,7 +263,7 @@ class MenuButton @JvmOverloads constructor(
         yOffset: Float = 0f,
         visibleState: State<Boolean> = BasicState(true),
     ) = apply {
-        shadowIcon = ShadowIcon(icon, BasicState(true), color, styleState.map { it.textShadow }).constrain {
+        this.icon = ShadowIcon(icon, BasicState(true), color, styleState.map { it.textShadow }).constrain {
             iconWidth?.let { width = it.pixels }
             iconHeight?.let { height = it.pixels }
         }.bindConstraints(labelState) {
@@ -267,6 +272,28 @@ class MenuButton @JvmOverloads constructor(
         }.bindParent(this, visibleState, index = if (rightAligned) 1 else 0)
 
         iconVisible.rebind(visibleState)
+    }
+
+    /**
+     * Sets the icon that is visible on the button.
+     *
+     * @param iconLayout    The icon layout.
+     * @param rightAligned  True if the icon should be aligned to the right of the button, false otherwise.
+     * @param xOffset       The additional offset to apply to the X constraint.
+     * @param yOffset       The additional offset to apply to the Y constraint.
+     */
+    fun setIcon(
+        iconLayout: LayoutScope.() -> Unit,
+        rightAligned: Boolean = false,
+        xOffset: Float = 0f,
+        yOffset: Float = 0f,
+    ) = apply {
+        this@MenuButton.icon = UIContainer().layoutAsBox(Modifier.childBasedSize()) {
+            iconLayout.invoke(this)
+        }.bindConstraints(labelState) {
+            x = if (it.isNotEmpty()) 5.pixels(alignOpposite = rightAligned) + xOffset.pixels else CenterConstraint()
+            y = if (it.isNotEmpty()) (1.pixels(alignOpposite = true) boundTo label) + yOffset.pixels else CenterConstraint()
+        }.bindParent(this@MenuButton, true.state(), index = if (rightAligned) 1 else 0)
     }
 
     /**
@@ -506,7 +533,7 @@ class MenuButton @JvmOverloads constructor(
             val shouldTint = !isDefaultOrHoveredBaseColor || alwaysTint
             val texture = ButtonTextureProvider.provide(image, baseColor.takeIf { shouldTint })
 
-            UGraphics.bindTexture(0, texture.dynamicGlId)
+            val textureId = texture.dynamicGlId
             UGraphics.color4f(1f, 1f, 1f, 1f)
 
             UBufferBuilder.create(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_TEXTURE_COLOR).apply {
@@ -556,7 +583,9 @@ class MenuButton @JvmOverloads constructor(
                 // We draw the texture in two halves, just like the vanilla button
                 drawHalf(true)
                 drawHalf(false)
-            }.build()?.drawAndClose(PIPELINE_TEXTURED)
+            }.build()?.drawAndClose(PIPELINE_TEXTURED) {
+                texture(0, textureId)
+            }
         }
 
         private fun UBufferBuilder.drawOutline(

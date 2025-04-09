@@ -52,8 +52,8 @@ abstract class GlGpuTexture(private val format: GpuTexture.Format) : GpuTexture 
         val attachment = if (format.isColor) GL30.GL_COLOR_ATTACHMENT0 else GL30.GL_DEPTH_ATTACHMENT
         val bufferBit = if (format.isColor) GL11.GL_COLOR_BUFFER_BIT else GL11.GL_DEPTH_BUFFER_BIT
 
-        glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, tmpFrameBuffer)
-        glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, tmpFrameBuffer2)
+        glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, if (format.isColor) colorWriteFrameBuffer else depthWriteFrameBuffer)
+        glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, if (format.isColor) colorReadFrameBuffer else depthReadFrameBuffer)
         glFramebufferTexture2D(GL30.GL_DRAW_FRAMEBUFFER, attachment, GL11.GL_TEXTURE_2D, this.glId, 0)
 
         for ((src, srcX, srcY, destX, destY, width, height) in sources) {
@@ -75,7 +75,7 @@ abstract class GlGpuTexture(private val format: GpuTexture.Format) : GpuTexture 
 
     override fun clearColor(color: Color) {
         val prevDrawFrameBufferBinding = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING)
-        glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, tmpFrameBuffer)
+        glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, colorWriteFrameBuffer)
         glFramebufferTexture2D(GL30.GL_DRAW_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, glId, 0)
 
         //#if MC>=12105
@@ -92,7 +92,7 @@ abstract class GlGpuTexture(private val format: GpuTexture.Format) : GpuTexture 
 
     override fun clearDepth(depth: Float) {
         val prevDrawFrameBufferBinding = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING)
-        glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, tmpFrameBuffer)
+        glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, depthWriteFrameBuffer)
         glFramebufferTexture2D(GL30.GL_DRAW_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL11.GL_TEXTURE_2D, glId, 0)
 
         //#if MC>=12105
@@ -120,7 +120,7 @@ abstract class GlGpuTexture(private val format: GpuTexture.Format) : GpuTexture 
 
     override fun readPixelColor(x: Int, y: Int): Color {
         val prevReadFrameBufferBinding = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING)
-        glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, tmpFrameBuffer)
+        glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, colorReadFrameBuffer)
         glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, glId, 0)
         val result = glReadPixelColor(x, y)
         glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, 0, 0)
@@ -130,7 +130,7 @@ abstract class GlGpuTexture(private val format: GpuTexture.Format) : GpuTexture 
 
     override fun readPixelDepth(x: Int, y: Int): Float {
         val prevReadFrameBufferBinding = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING)
-        glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, tmpFrameBuffer)
+        glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, depthReadFrameBuffer)
         glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL11.GL_TEXTURE_2D, glId, 0)
         val result = glReadPixelDepth(x, y)
         glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL11.GL_TEXTURE_2D, 0, 0)
@@ -139,8 +139,22 @@ abstract class GlGpuTexture(private val format: GpuTexture.Format) : GpuTexture 
     }
 
     companion object {
-        private val tmpFrameBuffer by lazy { glGenFramebuffers() }
-        private val tmpFrameBuffer2 by lazy { glGenFramebuffers() }
+        private val colorReadFrameBuffer by lazy { glGenFramebuffers() }
+        private val colorWriteFrameBuffer by lazy { glGenFramebuffers() }
+        private val depthReadFrameBuffer by lazy { genDepthOnlyFrameBuffer() }
+        private val depthWriteFrameBuffer by lazy { genDepthOnlyFrameBuffer() }
+        private fun genDepthOnlyFrameBuffer() = glGenFramebuffers().also { id ->
+            val prevDrawFrameBufferBinding = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING)
+            val prevReadFrameBufferBinding = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING)
+            glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, id)
+            glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, id)
+            // Prior to GL 4.1, read and draw buffers (both!) must be explicitly set to NONE if the framebuffer does not
+            // have a color attachment, otherwise it will not be considered complete and operations on it may error.
+            GL11.glDrawBuffer(GL11.GL_NONE)
+            GL11.glReadBuffer(GL11.GL_NONE)
+            glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDrawFrameBufferBinding)
+            glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevReadFrameBufferBinding)
+        }
         private val tmpFloatBuffer = BufferUtils.createFloatBuffer(4)
 
         private fun glReadPixelColor(x: Int, y: Int): Color {

@@ -15,6 +15,7 @@ import gg.essential.gui.common.input.StateTextInput
 import gg.essential.gui.common.input.essentialStateTextInput
 import gg.essential.gui.elementa.state.v2.*
 import gg.essential.gui.layoutdsl.*
+import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.addAutoCompleteMenu
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.divider
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledInputRow
 import gg.essential.mod.cosmetics.settings.CosmeticProperty
@@ -24,7 +25,7 @@ import gg.essential.network.cosmetics.Cosmetic
 abstract class SingletonPropertyConfiguration<P : CosmeticProperty>(
     private val clazz: Class<P>,
     private val cosmeticsDataWithChanges: CosmeticsDataWithChanges,
-    private val cosmetic: Cosmetic,
+    protected val cosmetic: Cosmetic,
 ) : LayoutDslComponent {
 
     private val property = cosmetic.properties.firstNotNullOfOrNull { if (clazz.isInstance(it)) clazz.cast(it) else null }
@@ -35,7 +36,7 @@ abstract class SingletonPropertyConfiguration<P : CosmeticProperty>(
                 column(Modifier.fillWidth(), Arrangement.spacedBy(5f)) {
                     layout(property)
                     divider()
-                    labeledInputRow("Copy from:") {
+                    val input = labeledInputRow("Copy from:") {
                         essentialStateTextInput(
                             mutableStateOf(null),
                             { "" }, // Since we update when we get a valid result, we don't need this
@@ -47,7 +48,9 @@ abstract class SingletonPropertyConfiguration<P : CosmeticProperty>(
                                 } ?: throw StateTextInput.ParseException())
                             }
                         )
-                    }.state.onSetValue(stateScope) {
+                    }
+                    addAutoCompleteMenu(input, cosmeticsDataWithChanges.cosmetics.mapEach { it.id to it.displayName }.toListState())
+                    input.state.onSetValue(stateScope) {
                         if (it != null) {
                             property.update(it)
                         }

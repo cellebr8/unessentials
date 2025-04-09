@@ -25,6 +25,7 @@ import gg.essential.gui.elementa.state.v2.mutableListStateOf
 import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.elementa.state.v2.withSetter
 import gg.essential.mixins.ext.server.coroutineScope
+import gg.essential.mixins.ext.server.dispatcher
 import gg.essential.mixins.transformers.server.integrated.LanConnectionsAccessor
 import gg.essential.sps.IntegratedServerManager.Difficulty
 import gg.essential.sps.IntegratedServerManager.GameMode
@@ -35,6 +36,7 @@ import gg.essential.util.ModLoaderUtil
 import gg.essential.util.USession
 import gg.essential.util.UuidNameLookup
 import gg.essential.util.textTranslatable
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -72,6 +74,9 @@ class McIntegratedServerManager(val server: IntegratedServer) : IntegratedServer
 
     override val coroutineScope: CoroutineScope
         get() = server.coroutineScope + Dispatchers.Client
+
+    override val serverDispatcher: CoroutineDispatcher
+        get() = server.dispatcher
 
     private val mutableStatusResponseJson = mutableStateOf<String?>(null)
     override val statusResponseJson: State<String?> = mutableStatusResponseJson

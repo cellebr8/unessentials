@@ -102,7 +102,7 @@ class CosmeticConfiguration(
             }
             spacer(width = 10f)
             box(Modifier.width(35f).fillHeight()) {
-                FullEssentialToggle(enabledState.toV1(stateScope), EssentialPalette.BUTTON)()
+                FullEssentialToggle(enabledState)()
             }
         }
     }
@@ -140,8 +140,9 @@ class CosmeticConfiguration(
         }
 
         labeledStringInputRow("Add tag:", mutableStateOf("")).state.onSetValue(stateScope) { cosmeticsDataWithChanges.setCosmeticTags(cosmetic.id, cosmetic.tags + it) }
-        labeledManagedNullableISODateInputRow("Available After:", mutableStateOf(cosmetic.availableAfter)).state.onSetValue(stateScope) { cosmeticsDataWithChanges.setCosmeticAvailable(cosmetic.id, it, cosmetic.availableUntil) }
-        labeledManagedNullableISODateInputRow("Available Until:", mutableStateOf(cosmetic.availableUntil)).state.onSetValue(stateScope) { cosmeticsDataWithChanges.setCosmeticAvailable(cosmetic.id, cosmetic.availableAfter, it) }
+        labeledManagedNullableISODateInputRow("Available After:", mutableStateOf(cosmetic.availableAfter)).state.onSetValue(stateScope) { cosmeticsDataWithChanges.setCosmeticAvailable(cosmetic.id, it, cosmetic.availableUntil, cosmetic.showTimerAfter) }
+        labeledManagedNullableISODateInputRow("Available Until:", mutableStateOf(cosmetic.availableUntil)).state.onSetValue(stateScope) { cosmeticsDataWithChanges.setCosmeticAvailable(cosmetic.id, cosmetic.availableAfter, it, cosmetic.showTimerAfter) }
+        labeledManagedNullableISODateInputRow("Show Timer After:", mutableStateOf(cosmetic.showTimerAfter)).state.onSetValue(stateScope) { cosmeticsDataWithChanges.setCosmeticAvailable(cosmetic.id, cosmetic.availableAfter, cosmetic.availableUntil, it) }
         labeledIntInputRow("Default Sort Weight", mutableStateOf(cosmetic.defaultSortWeight)).state.onSetValue(stateScope) { cosmeticsDataWithChanges.setCosmeticDefaultSortWeight(cosmetic.id, it) }
     }
 
@@ -161,6 +162,7 @@ class CosmeticConfiguration(
                     CosmeticPropertyType.COSMETIC_BONE_HIDING -> CosmeticBoneHidingConfiguration(cosmeticsDataWithChanges, cosmetic)
                     CosmeticPropertyType.EXTERNAL_HIDDEN_BONE -> ExternalHiddenBoneConfiguration(state, cosmeticsDataWithChanges, cosmetic)
                     CosmeticPropertyType.ARMOR_HANDLING -> ArmorHandlingConfiguration(cosmeticsDataWithChanges, cosmetic)
+                    CosmeticPropertyType.ARMOR_HANDLING_V2 -> ArmorHandlingV2Configuration(cosmeticsDataWithChanges, cosmetic)
                     CosmeticPropertyType.POSITION_RANGE -> PlayerPositionAdjustmentPropertyConfiguration(cosmeticsDataWithChanges, cosmetic)
                     CosmeticPropertyType.INTERRUPTS_EMOTE -> InterruptsEmoteConfiguration(cosmeticsDataWithChanges, cosmetic)
                     CosmeticPropertyType.PREVIEW_RESET_TIME -> PreviewResetTimeConfiguration(cosmeticsDataWithChanges, cosmetic)

@@ -24,9 +24,11 @@ import gg.essential.gui.common.modal.configure
 import gg.essential.gui.elementa.state.v2.*
 import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.wardrobe.WardrobeState
+import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.addAutoCompleteMenu
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.divider
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledISODateInputRow
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledListInputRow
+import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledNullableISODateInputRow
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledRow
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.navButton
 import gg.essential.gui.wardrobe.configuration.cosmetic.settings.*
@@ -43,7 +45,6 @@ import gg.essential.mod.cosmetics.featured.TextDivider
 import gg.essential.mod.cosmetics.settings.CosmeticSettingType
 import gg.essential.network.cosmetics.Cosmetic
 import gg.essential.universal.USound
-import gg.essential.util.*
 import gg.essential.util.GuiEssentialPlatform.Companion.platform
 import gg.essential.vigilance.utils.onLeftClick
 import java.time.Duration
@@ -85,14 +86,14 @@ class FeaturedPageCollectionConfiguration(
         val availabilityState = mutableStateOf(availability != null)
         availabilityState.onSetValue(stateScope) {
             if (it) {
-                pageCollection.update(pageCollection.copy(availability = FeaturedPageCollection.Availability(Instant.now(), Instant.now().plus(Duration.ofDays(1)))))
+                pageCollection.update(pageCollection.copy(availability = FeaturedPageCollection.Availability(Instant.now(), Instant.now().plus(Duration.ofDays(1)), null)))
             } else {
                 pageCollection.update(pageCollection.copy(availability = null))
             }
         }
         labeledRow("Availability: ") {
             box(Modifier.childBasedWidth(3f).childBasedHeight(3f).hoverScope()) {
-                compactFullEssentialToggle(availabilityState.toV1(stateScope))
+                compactFullEssentialToggle(availabilityState)
                 spacer(1f, 1f)
             }
         }
@@ -102,6 +103,9 @@ class FeaturedPageCollectionConfiguration(
             }
             labeledISODateInputRow("Until:", mutableStateOf(availability.until)).state.onSetValue(stateScope) {
                 pageCollection.update(pageCollection.copy(availability = availability.copy(until = it)))
+            }
+            labeledNullableISODateInputRow("Timer After:", mutableStateOf(availability.showTimerAfter)).state.onSetValue(stateScope) {
+                pageCollection.update(pageCollection.copy(availability = availability.copy(showTimerAfter = it)))
             }
         }
         spacer(height = 5f)
@@ -314,11 +318,12 @@ class FeaturedPageCollectionConfiguration(
             row(Modifier.fillWidth(), Arrangement.spacedBy(10f, FloatPosition.END)) {
                 val bundleState = mutableStateOf<CosmeticBundle?>(null)
                 text("Add Bundle:")
-                essentialStateTextInput(
+                val input = essentialStateTextInput(
                     bundleState,
                     { it?.id ?: "" },
                     { if (it.isBlank()) null else (cosmeticsDataWithChanges.getCosmeticBundle(it) ?: throw StateTextInput.ParseException()) }
                 )
+                addAutoCompleteMenu(input, cosmeticsDataWithChanges.bundles.mapEach { it.id to it.name })
                 bundleState.onSetValue(stateScope) {
                     val bundleId = (it ?: return@onSetValue).id
                     updateRow(componentIndex) {
@@ -329,11 +334,12 @@ class FeaturedPageCollectionConfiguration(
             row(Modifier.fillWidth(), Arrangement.spacedBy(10f, FloatPosition.END)) {
                 val cosmeticState = mutableStateOf<Cosmetic?>(null)
                 text("Add Cosmetic:")
-                essentialStateTextInput(
+                val input = essentialStateTextInput(
                     cosmeticState,
                     { it?.id ?: "" },
                     { if (it.isBlank()) null else (cosmeticsDataWithChanges.getCosmetic(it) ?: throw StateTextInput.ParseException()) }
                 )
+                addAutoCompleteMenu(input, cosmeticsDataWithChanges.cosmetics.mapEach { it.id  to it.displayName })
                 cosmeticState.onSetValue(stateScope) {
                     val cosmeticId = (it ?: return@onSetValue).id
                     updateRow(componentIndex) {

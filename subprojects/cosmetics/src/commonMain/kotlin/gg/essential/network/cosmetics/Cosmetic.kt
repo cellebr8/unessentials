@@ -47,6 +47,7 @@ data class Cosmetic(
     val createdAt: Instant,
     val availableAfter: Instant?,
     val availableUntil: Instant?,
+    val showTimerAfter: Instant?,
     val skinLayers: Map<SkinLayer, Boolean>,
     val categories: Map<String, Int>,
     val defaultSortWeight: Int,

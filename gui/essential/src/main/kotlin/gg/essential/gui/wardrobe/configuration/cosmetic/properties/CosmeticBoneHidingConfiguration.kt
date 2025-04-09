@@ -23,6 +23,7 @@ import gg.essential.gui.common.modal.NoticeEssentialModal
 import gg.essential.gui.common.modal.configure
 import gg.essential.gui.elementa.state.v2.*
 import gg.essential.gui.layoutdsl.*
+import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.addAutoCompleteMenu
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.divider
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.labeledInputRow
 import gg.essential.mod.cosmetics.settings.CosmeticProperty
@@ -56,7 +57,7 @@ class CosmeticBoneHidingConfiguration(
             }
             divider()
             labeledInputRow("Copy from:") {
-                essentialStateTextInput(
+                val input = essentialStateTextInput(
                     mutableStateOf(null),
                     { "" }, // Since we update when we get a valid result, we don't need this
                     { input ->
@@ -65,6 +66,8 @@ class CosmeticBoneHidingConfiguration(
                         else (cosmeticsDataWithChanges.getCosmetic(input)?.properties<CosmeticProperty.CosmeticBoneHiding>() ?: throw StateTextInput.ParseException())
                     }
                 )
+                addAutoCompleteMenu(input, cosmeticsDataWithChanges.cosmetics.mapEach { it.id to it.displayName }.toListState())
+                input
             }.state.onSetValue(stateScope) { propertyList ->
                 if (propertyList != null) {
                     val newPropertyList = cosmetic.properties.toMutableList()

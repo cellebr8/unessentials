@@ -40,7 +40,7 @@ import gg.essential.universal.UMinecraft
 import gg.essential.util.*
 import gg.essential.vigilance.utils.onLeftClick
 
-open class RightSideBar(menuType: PauseMenuDisplay.MenuType, menuVisible: State<Boolean>) : UIContainer() {
+open class RightSideBarOld(menuType: PauseMenuDisplay.MenuType, menuVisible: State<Boolean>) : UIContainer() {
 
     val connectionManager = Essential.getInstance().connectionManager
     val collapsed = BasicState(false).map { it }

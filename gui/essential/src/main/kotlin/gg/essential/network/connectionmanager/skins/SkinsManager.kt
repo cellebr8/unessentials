@@ -58,6 +58,10 @@ class SkinsManager(private val connectionManager: CMConnection) : NetworkedManag
         )
     }.toListState()
 
+    private val skinsOrderedByLastUsed = mutableSkins.map { skins ->
+        skins.values.sortedByDescending { (it.lastUsedAt ?: it.createdAt).toEpochMilli()  }
+    }.toListState()
+
     init {
         connectionManager.registerPacketHandler<ServerSkinPopulatePacket> { packet ->
             mutableSkins.set { map -> map + packet.skins.associate { it.id to it.toMod() } }
@@ -138,6 +142,8 @@ class SkinsManager(private val connectionManager: CMConnection) : NetworkedManag
     }
 
     fun updateLastUsedAtState(skinId: SkinId) {
+        // Skip update if the skin is already the most recently used
+        if (skinsOrderedByLastUsed.getUntracked().first().id == skinId) return
         packetQueue.enqueue(ClientSkinUpdateLastUsedStatePacket(skinId)) { maybeResponse ->
             val response = maybeResponse.orElse(null)
             // We don't replace the skin here, since the packet handler already replaces it

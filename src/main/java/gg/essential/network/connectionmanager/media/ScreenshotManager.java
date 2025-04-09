@@ -126,7 +126,6 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
     private final PriorityThreadPoolExecutor backgroundExecutor = new PriorityThreadPoolExecutor(1);
     private final FileCachedWindowedImageProvider minResolutionProvider;
     private final List<WeakReference<Consumer<ScreenshotCollectionChangeEvent>>> screenshotCollectionChangeHandlers = new ArrayList<>();
-    private int frameCounter = -1;
     // Set and initialized in getter if null
     private HSBColor[] screenshotColors;
 
@@ -157,7 +156,6 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
         editorStateFile = new File(baseDir, "screenshot-editor.json");
         screenshotChecksumManager = new ScreenshotChecksumManager(new File(baseDir, "screenshot-checksum-caches.json"));
         screenshotMetadataManager = new ScreenshotMetadataManager(metadataFolder, screenshotChecksumManager);
-        Essential.EVENT_BUS.register(this);
         minResolutionProvider = ScreenshotProviderManager.Companion.createFileCachedBicubicProvider(ScreenshotProviderManager.minResolutionTargetResolution, backgroundExecutor, UnpooledByteBufAllocator.DEFAULT, baseDir, nativeImageReader, true);
         Multithreading.runAsync(this::preloadScreenshots);
         screenshotFolderWatcher = new DirectoryWatcher(HelpersKt.getScreenshotFolder().toPath(), false, 1, TimeUnit.SECONDS);
@@ -801,34 +799,35 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
         return Notifications.INSTANCE.hasActiveNotifications() || ScreenshotOverlay.INSTANCE.hasActiveNotifications();
     }
 
+    private boolean suppressNextBufferSwap;
+
     public void handleScreenshotKeyPressed() {
         if (hasOverlay()) {
             Notifications.INSTANCE.hide();
             ScreenshotOverlay.INSTANCE.hide();
-            frameCounter = 2; // RenderTickEvent will be fired later this same tick, so we want to wait for the second call next frame
+            Essential.EVENT_BUS.register(new Object() {
+                @Subscribe
+                public void preBufferSwap(RenderTickEvent.Final event) {
+                    takeNow();
+
+                    Notifications.INSTANCE.show();
+                    ScreenshotOverlay.INSTANCE.show();
+                    suppressNextBufferSwap = true;
+
+                    Essential.EVENT_BUS.unregister(this);
+                }
+            });
         } else {
             takeNow();
         }
     }
 
-    @Subscribe
-    public void tick(RenderTickEvent event) {
-        if (!event.isPre()) {
-            return;
-        }
-        if (frameCounter > 0) {
-            frameCounter--;
-        }
-        if (frameCounter == 0) {
-            frameCounter = -1;
-            takeNow();
-            Notifications.INSTANCE.show();
-            ScreenshotOverlay.INSTANCE.show();
-        }
-    }
-
     public boolean suppressBufferSwap() {
-        return frameCounter == 1;
+        if (suppressNextBufferSwap) {
+            suppressNextBufferSwap = false;
+            return true;
+        }
+        return false;
     }
 
     /**

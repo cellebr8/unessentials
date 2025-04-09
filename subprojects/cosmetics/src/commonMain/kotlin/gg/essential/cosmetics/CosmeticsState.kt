@@ -169,7 +169,14 @@ class CosmeticsState(
      * not give any advantage in PvP scenarios).
      */
     private val partsHiddenDueToArmor: Map<CosmeticId, Set<EnumPart>> = cosmetics.values
-        .flatMap { it.cosmetic.properties.filterIsInstance<CosmeticProperty.ArmorHandling>() }
+        .flatMap {
+            // Ignore old property if newer v2 is present
+            if (it.cosmetic.property<CosmeticProperty.ArmorHandlingV2>() != null) {
+                it.cosmetic.properties.filterIsInstance<CosmeticProperty.ArmorHandling>()
+            } else {
+                emptyList()
+            }
+        }
         .groupByPropertyTargetId { property ->
             val data = property.data
             buildSet {
@@ -197,9 +204,21 @@ class CosmeticsState(
      * This is similar to [partsHiddenDueToProperty] except that it targets specific bones, rather than whole body parts.
      * E.g. the backpacks remove the built-in backpack of the space suit
      */
-    val hiddenBones: Map<CosmeticId, Set<BoneId>> = cosmetics.values
+    private val hiddenBonesDueToOtherCosmetics: Map<CosmeticId, Set<BoneId>> = cosmetics.values
         .flatMap { it.cosmetic.properties.filterIsInstance<CosmeticProperty.ExternalHiddenBone>() }
         .groupByPropertyTargetId { it.data.hiddenBones }
+
+    private val hiddenBonesDueArmor: Map<CosmeticId, Set<BoneId>> = cosmetics.values
+        .flatMap { it.cosmetic.properties.filterIsInstance<CosmeticProperty.ArmorHandlingV2>() }
+        .groupByPropertyTargetId { property ->
+            val equippedSlotIDs = armor.flatMap { it.armorSlotIds }.toSet()
+            property.data.conflicts.mapNotNull { (boneId, slots) -> if (slots.any { equippedSlotIDs.contains(it) }) boneId else null }
+        }
+
+    val hiddenBones: Map<CosmeticId, Set<BoneId>> =
+        (hiddenBonesDueToOtherCosmetics.asSequence() + hiddenBonesDueArmor.asSequence())
+            .groupBy({ it.key }) { it.value }
+            .mapValues { it.value.flatten().toSet() }
 
     /**
      * For each cosmetic, contains the user-configured positional offset (e.g. glasses can be adjusted to your skin).
@@ -262,18 +281,27 @@ class CosmeticsState(
     /**
      * Set of armor slot ids that currently have cosmetics occupying
      */
-    val partsEquipped: Set<Int> = bedrockModels.values.flatMap { model ->
+    val partsEquipped: Set<Int> = bedrockModels.flatMap { (cosmetic, model) ->
         val renderGeometry = renderGeometries.getValue(model.cosmetic.id)
         model.propagateVisibilityToRootBone(
             sides[model.cosmetic.id],
             hiddenBones[model.cosmetic.id] ?: emptySet(),
             EnumPart.values().toSet(),
         )
-        model.bones.byPart
-            .asSequence()
-            .filter { it.value.containsVisibleBoxes(renderGeometry) }
-            .map { it.key }
-    }.flatMap { it.armorSlotIds }.toSet()
+        val boneToSlots = cosmetic.property<CosmeticProperty.ArmorHandlingV2>()?.data?.conflicts
+        if (boneToSlots != null) {
+            boneToSlots.asSequence()
+                .filter { model.bones[it.key]?.containsVisibleBoxes(renderGeometry) ?: false }
+                .flatMap { it.value }
+        } else {
+            model.bones.byPart
+                .asSequence()
+                .filter { it.value.containsVisibleBoxes(renderGeometry) }
+                .flatMap {
+                    it.key.armorSlotIds
+                }
+        }
+    }.toSet()
 
     fun getPositionAdjustment(cosmetic: Cosmetic) = positionAdjustments[cosmetic.id] ?: Vector3()
 

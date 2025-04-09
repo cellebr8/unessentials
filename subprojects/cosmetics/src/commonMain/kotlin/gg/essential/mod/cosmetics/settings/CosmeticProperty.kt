@@ -11,6 +11,7 @@
  */
 package gg.essential.mod.cosmetics.settings
 
+import gg.essential.cosmetics.BoneId
 import gg.essential.mod.cosmetics.CosmeticSlot
 import gg.essential.model.Side
 import gg.essential.model.util.Color
@@ -61,6 +62,23 @@ sealed class CosmeticProperty {
             val arms: Boolean = false,
             val body: Boolean = false,
             val legs: Boolean = false,
+        )
+    }
+
+    @SerialName("ARMOR_HANDLING_V2")
+    @Serializable
+    data class ArmorHandlingV2(
+        override val id: String?,
+        override val enabled: Boolean,
+        val data: Data
+    ) : CosmeticProperty() {
+
+        @Transient
+        override val type: CosmeticPropertyType = CosmeticPropertyType.ARMOR_HANDLING_V2
+
+        @Serializable
+        data class Data(
+            val conflicts: Map<BoneId, List<Int>> = mapOf()
         )
     }
 
@@ -380,6 +398,7 @@ sealed class CosmeticProperty {
             polymorphic(CosmeticProperty::class) {
                 subclass(Unknown::class, Unknown.serializer())
                 subclass(ArmorHandling::class, ArmorHandling.serializer())
+                subclass(ArmorHandlingV2::class, ArmorHandlingV2.serializer())
                 subclass(CosmeticBoneHiding::class, CosmeticBoneHiding.serializer())
                 subclass(PositionRange::class, PositionRange.serializer())
                 subclass(ExternalHiddenBone::class, ExternalHiddenBone.serializer())

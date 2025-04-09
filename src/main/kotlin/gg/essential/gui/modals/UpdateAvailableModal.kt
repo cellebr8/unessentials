@@ -11,6 +11,7 @@
  */
 package gg.essential.gui.modals
 
+import gg.essential.config.EssentialConfig
 import gg.essential.elementa.components.Window
 import gg.essential.elementa.constraints.SiblingConstraint
 import gg.essential.elementa.dsl.pixels
@@ -21,18 +22,30 @@ import gg.essential.gui.common.MenuButton
 import gg.essential.gui.common.compactFullEssentialToggle
 import gg.essential.gui.common.modal.ConfirmDenyModal
 import gg.essential.gui.common.modal.configure
-import gg.essential.gui.common.state
-import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.elementa.state.v2.stateOf
 import gg.essential.gui.elementa.state.v2.toV1
-import gg.essential.gui.layoutdsl.*
+import gg.essential.gui.layoutdsl.Arrangement
+import gg.essential.gui.layoutdsl.BasicYModifier
+import gg.essential.gui.layoutdsl.Modifier
+import gg.essential.gui.layoutdsl.box
+import gg.essential.gui.layoutdsl.childBasedHeight
+import gg.essential.gui.layoutdsl.childBasedWidth
+import gg.essential.gui.layoutdsl.color
+import gg.essential.gui.layoutdsl.column
+import gg.essential.gui.layoutdsl.hoverScope
+import gg.essential.gui.layoutdsl.inheritHoverScope
+import gg.essential.gui.layoutdsl.layoutAsBox
+import gg.essential.gui.layoutdsl.onLeftClick
+import gg.essential.gui.layoutdsl.row
+import gg.essential.gui.layoutdsl.shadow
+import gg.essential.gui.layoutdsl.spacer
+import gg.essential.gui.layoutdsl.text
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.overlay.ModalManager
 import gg.essential.universal.USound
 import gg.essential.util.AutoUpdate
 import gg.essential.util.MinecraftUtils.shutdown
 import gg.essential.util.bindHoverEssentialTooltip
-import gg.essential.vigilance.utils.onLeftClick
 import java.awt.Color
 
 class UpdateAvailableModal(modalManager: ModalManager) : ConfirmDenyModal(modalManager, false) {
@@ -51,24 +64,24 @@ class UpdateAvailableModal(modalManager: ModalManager) : ConfirmDenyModal(modalM
             titleTextColor = EssentialPalette.MODAL_WARNING
         }
 
-        val autoUpdate = mutableStateOf(AutoUpdate.autoUpdate.get())
+        val autoUpdate = EssentialConfig.autoUpdateState
 
         customContent.layoutAsBox(BasicYModifier { SiblingConstraint(15f) }) {
             column {
                 row(
-                    Modifier.childBasedWidth(3f).onLeftClick {
+                    Modifier.childBasedWidth(3f).hoverScope().onLeftClick {
                         USound.playButtonPress()
                         autoUpdate.set { !it }
                     },
                     Arrangement.spacedBy(9f),
                 ) {
                     text("Auto-updates", Modifier.color(EssentialPalette.TEXT_DISABLED).shadow(Color.BLACK))
-                    box(Modifier.childBasedHeight(3f).hoverScope()) {
+                    box(Modifier.childBasedHeight()) {
                         compactFullEssentialToggle(
-                            autoUpdate.toV1(this@UpdateAvailableModal),
-                            offColor = EssentialPalette.TEXT_DISABLED.state()
+                            autoUpdate,
+                            Modifier.inheritHoverScope(),
+                            offColor = EssentialPalette.TEXT_DISABLED,
                         )
-                        spacer(1f, 1f)
                     }
                 }
 

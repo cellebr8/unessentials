@@ -12,6 +12,7 @@
 package gg.essential.gui.wardrobe.configuration
 
 import gg.essential.elementa.components.ScrollComponent
+import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.modal.DangerConfirmationEssentialModal
 import gg.essential.gui.common.modal.Modal
 import gg.essential.gui.common.modal.configure
@@ -64,24 +65,28 @@ sealed class AbstractConfiguration<I, T>(
                     }
                     divider()
                     val savedScroll = savedScrollState
-                    val scrollComponent = scrollable(Modifier.fillWidth().fillRemainingHeight(), vertical = true) {
-                        column(Modifier.fillWidth(padding = 10f), Arrangement.spacedBy(3f)) {
-                            spacer(height = 5f)
-                            if (submenu != null) {
-                                submenu()
-                            } else {
-                                columnLayout(currentlyEditing)
+                    row(Modifier.fillWidth().fillRemainingHeight()) {
+                        val scrollComponent = scrollable(Modifier.fillRemainingWidth().fillHeight(), vertical = true) {
+                            column(Modifier.fillWidth(padding = 10f), Arrangement.spacedBy(3f)) {
+                                spacer(height = 5f)
+                                if (submenu != null) {
+                                    submenu()
+                                } else {
+                                    columnLayout(currentlyEditing)
+                                }
+                                spacer(height = 5f)
                             }
-                            spacer(height = 5f)
                         }
-                    }
-                    currentScrollComponent = scrollComponent
-                    if (savedScroll != null && savedScroll.first == currentlyEditing.id()) {
-                        try {
-                            scrollComponent.scrollTo(verticalOffset = savedScroll.second, smoothScroll = false)
-                        } catch (e: Exception) {
-                            LoggerFactory.getLogger(AbstractConfiguration::class.java)
-                                .info("Prevented crash in AbstractConfiguration. (See EM-2304)", e)
+                        val scrollbar = box(Modifier.width(2f).fillHeight().color(EssentialPalette.LIGHTEST_BACKGROUND).hoverColor(EssentialPalette.SCROLLBAR).hoverScope())
+                        scrollComponent.setVerticalScrollBarComponent(scrollbar, true)
+                        currentScrollComponent = scrollComponent
+                        if (savedScroll != null && savedScroll.first == currentlyEditing.id()) {
+                            try {
+                                scrollComponent.scrollTo(verticalOffset = savedScroll.second, smoothScroll = false)
+                            } catch (e: Exception) {
+                                LoggerFactory.getLogger(AbstractConfiguration::class.java)
+                                    .info("Prevented crash in AbstractConfiguration. (See EM-2304)", e)
+                            }
                         }
                     }
                     divider()
