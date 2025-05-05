@@ -33,6 +33,7 @@ import gg.essential.gui.layoutdsl.*
 import gg.essential.gui.notification.Notifications
 import gg.essential.gui.screenshot.components.ScreenshotBrowser
 import gg.essential.gui.screenshot.constraints.AspectPreservingFillConstraint
+import gg.essential.gui.screenshot.copyScreenshotToClipboard
 import gg.essential.gui.util.hoveredState
 import gg.essential.universal.ChatColor
 import gg.essential.universal.UKeyboard
@@ -115,10 +116,7 @@ class ImageEmbedImpl(
                 val tempFile = Files.createTempFile("essential-screenshot", "png").toFile()
                 ImageIO.write(loadedImage, "png", tempFile)
                 Minecraft.getMinecraft().executor.execute {
-                    Essential.getInstance().connectionManager.screenshotManager.copyScreenshotToClipboardWithMessage(
-                        tempFile,
-                        "Successfully copied image to clipboard."
-                    )
+                    copyScreenshotToClipboard(tempFile.toPath())
                     // Cleanup temp file
                     FileUtils.deleteQuietly(tempFile)
                 }

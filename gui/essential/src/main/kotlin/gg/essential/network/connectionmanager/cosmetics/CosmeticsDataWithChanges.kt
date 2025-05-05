@@ -23,6 +23,7 @@ import gg.essential.mod.cosmetics.CosmeticCategory
 import gg.essential.mod.cosmetics.CosmeticType
 import gg.essential.mod.cosmetics.featured.FeaturedPageCollection
 import gg.essential.network.cosmetics.Cosmetic
+import gg.essential.util.logExceptions
 import java.util.concurrent.CompletableFuture
 
 class CosmeticsDataWithChanges(
@@ -127,7 +128,35 @@ class CosmeticsDataWithChanges(
             bundles = bundlesMap + updatedBundles.get().filterValues { it == null },
             featuredPageCollections = featuredPageCollectionsMap + updatedFeaturedPageCollections.get().filterValues { it == null },
             cosmetics = cosmeticsMap + updatedCosmetics.get().filterValues { it == null },
-        )
+        ).thenApply {
+            updatedCosmetics.set(emptyMap())
+            updatedCategories.set(emptyMap())
+            updatedTypes.set(emptyMap())
+            updatedBundles.set(emptyMap())
+            updatedFeaturedPageCollections.set(emptyMap())
+        }.logExceptions()
+    }
+
+    fun getUpdatesSummary() = memo {
+        val updatedCosmetics = updatedCosmetics()
+        val updatedCategories = updatedCategories()
+        val updatedTypes = updatedTypes()
+        val updatedBundles = updatedBundles()
+        val updatedFeaturedPageCollections = updatedFeaturedPageCollections()
+        if(updatedCosmetics.isEmpty() && updatedCategories.isEmpty() && updatedTypes.isEmpty() && updatedBundles.isEmpty() && updatedFeaturedPageCollections.isEmpty()) {
+            return@memo null
+        }
+        val cosmetics = updatedCosmetics.entries.joinToString("\n") { "${it.key} - " + if (it.value == null) "Removed" else "Changed" }
+        val categories = updatedCategories.entries.joinToString("\n") { "${it.key} - " + if (it.value == null) "Removed" else "Changed" }
+        val types = updatedTypes.entries.joinToString("\n") { "${it.key} - " + if (it.value == null) "Removed" else "Changed" }
+        val bundles = updatedBundles.entries.joinToString("\n") { "${it.key} - " + if (it.value == null) "Removed" else "Changed" }
+        val featuredPageCollections = updatedFeaturedPageCollections.entries.joinToString("\n") { "${it.key} - " + if (it.value == null) "Removed" else "Changed" }
+        val cosmeticsText = if (cosmetics.isNotBlank()) "\nCosmetics:\n$cosmetics" else ""
+        val categoriesText = if (categories.isNotBlank()) "\nCategories:\n$categories" else ""
+        val typesText = if (types.isNotBlank()) "\nTypes:\n$types" else ""
+        val bundlesText = if (bundles.isNotBlank()) "\nBundles:\n$bundles" else ""
+        val featuredPageCollectionsText = if (featuredPageCollections.isNotBlank()) "\nFeatured Pages:\n$featuredPageCollections" else ""
+        "Changes:$cosmeticsText$categoriesText$typesText$bundlesText$featuredPageCollectionsText"
     }
 
     override fun getCosmetic(id: CosmeticId): Cosmetic? = cosmeticsMap[id]

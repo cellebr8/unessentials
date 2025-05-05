@@ -128,6 +128,8 @@ interface GuiEssentialPlatform {
 
     fun enqueueTelemetry(packet: ClientTelemetryPacket)
 
+    fun findCodeSource(javaClass: Class<*>): CodeSource?
+
     fun trackByteBuf(alloc: LimitedAllocator, buf: ByteBuf): ByteBuf
 
     fun newGlFrameBuffer(width: Int, height: Int, colorFormat: GpuTexture.Format, depthFormat: GpuTexture.Format): GlFrameBuffer

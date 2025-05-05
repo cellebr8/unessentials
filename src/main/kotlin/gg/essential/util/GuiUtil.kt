@@ -120,7 +120,7 @@ object GuiUtil : GuiUtil, OverlayManager by OverlayManagerImpl, ModalManager by 
             return
         }
 
-        if (screenRequiresCosmetics && !connectionManager.cosmeticsManager.cosmeticsLoadedFuture.isDone) {
+        if (screenRequiresCosmetics && !connectionManager.cosmeticsManager.cosmeticsLoaded.getUntracked()) {
             pushModal { CosmeticsLoadingModal(it) { openScreen(type, screen) } }
             return
         }

@@ -26,6 +26,7 @@ import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.screenshot.DateRange
 import gg.essential.gui.screenshot.ScreenshotId
 import gg.essential.gui.screenshot.createDateOnlyCalendar
+import gg.essential.gui.screenshot.getImageTime
 import gg.essential.gui.screenshot.providers.RegisteredTexture
 import gg.essential.gui.util.hoveredState
 import gg.essential.handlers.screenshot.ClientScreenshotMetadata

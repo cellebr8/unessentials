@@ -43,7 +43,9 @@ class FriendStatus(
         constrain {
             width = 100.percent
             height = ChildBasedMaxSizeConstraint()
-        }.effect(ScissorEffect())
+        }.apply {
+            effect(ScissorEffect())
+        }
 
         effect(this) {
             val activity = statusStates.getActivityState(uuid)()

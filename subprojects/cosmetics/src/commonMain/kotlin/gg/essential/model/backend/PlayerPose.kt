@@ -66,6 +66,14 @@ data class PlayerPose(
 
     override fun isEmpty(): Boolean = false
 
+    fun withoutAttachments() = copy(
+        rightShoulderEntity = Part.MISSING,
+        leftShoulderEntity = Part.MISSING,
+        rightWing = Part.MISSING,
+        leftWing = Part.MISSING,
+        cape = Part.MISSING,
+    )
+
     data class Part(
         val pivotX: Float = 0f,
         val pivotY: Float = 0f,

@@ -84,24 +84,12 @@ class ModelInstance(
      * Note that this method must called for all models, even those that were not actually rendered (e.g. because
      * the corresponding player was frustum culled), so that particles bound to locators (which may be visible even
      * when the player entity that spawned them is not) are update correctly.
-     * In such cases where no reliable pose information is available, pass `null`.
      */
-    fun updateLocators(renderedPose: PlayerPose?, state: CosmeticsState) {
+    fun updateLocators(renderedPose: PlayerPose, state: CosmeticsState) {
         // Locators are fairly expensive to update, so only do it if we need to
         if (animationState.locatorsNeedUpdating()) {
-            val pose = renderedPose
-                // No way for us to get the real pose if we didn't actually render, let's just use the neutral pose
-                ?: PlayerPose.neutral().copy(
-                    // Also no way to know if cape/elytra/etc. are visible (not if you consider modded items anyway),
-                    // so we'll move those far away so any events they spawn won't be visible.
-                    rightShoulderEntity = PlayerPose.Part.MISSING,
-                    leftShoulderEntity = PlayerPose.Part.MISSING,
-                    rightWing = PlayerPose.Part.MISSING,
-                    leftWing = PlayerPose.Part.MISSING,
-                    cape = PlayerPose.Part.MISSING,
-                )
             animationState.apply(model.rootBone)
-            model.applyPose(pose, entity)
+            model.applyPose(renderedPose, entity)
 
             // process visibility and sided-ness from cosmetic state for Locator.isVisible update
             model.propagateVisibilityToRootBone(

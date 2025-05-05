@@ -98,7 +98,7 @@ open class EssentialGUI(
         height = 75.percent
     } childOf window
 
-    private val container by UIContainer().constrain {
+    protected val container by UIContainer().constrain {
         x = CenterConstraint()
         y = CenterConstraint()
         width = 85.percent.coerceAtMost(100.percent - basicWidthConstraint { backContainer.getWidth() * 2 }).coerceAtLeast(0.pixels)

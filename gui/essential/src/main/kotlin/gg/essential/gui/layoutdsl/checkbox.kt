@@ -11,6 +11,7 @@
  */
 package gg.essential.gui.layoutdsl
 
+import gg.essential.elementa.components.inspector.Inspector
 import gg.essential.gui.common.Checkbox
 
 fun LayoutScope.checkbox(
@@ -30,3 +31,7 @@ fun LayoutScope.checkbox(
     return Checkbox(initialValue)()
 }
 
+@Suppress("unused")
+private val init = run {
+    Inspector.registerComponentFactory(null)
+}

@@ -148,9 +148,14 @@ public class Connection extends WebSocketClient {
             this.timeoutTask = null;
         }
 
-        boolean outdated = reason.contains("Invalid status code received: 410") || reason.contains("Invalid status code received: 404");
+        KnownCloseReason knownReason;
+        if (reason.contains("Invalid status code received: 410") || reason.contains("Invalid status code received: 404")) {
+            knownReason = KnownCloseReason.OUTDATED;
+        } else {
+            knownReason = null;
+        }
 
-        this.callbacks.onClose(new CloseInfo(code, reason, remote, outdated));
+        this.callbacks.onClose(new CloseInfo(code, reason, remote, knownReason));
     }
 
     @Override
@@ -256,5 +261,10 @@ public class Connection extends WebSocketClient {
         void onOpen();
         void onPacketAsync(Packet packet);
         void onClose(CloseInfo info);
+    }
+
+    public enum KnownCloseReason {
+
+        OUTDATED
     }
 }

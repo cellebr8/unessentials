@@ -442,7 +442,11 @@ open class UI3DPlayer(
 
             doDrawPlayer()
 
-            playerExt.wearablesManager.updateLocators(playerExt.renderedPose)
+            // We just drew the player, the rendered pose shouldn't ever be null (except if a third-party mod does some
+            // really weird things), so the fallback doesn't really matter
+            val renderedPose = playerExt.renderedPose ?: PlayerPose.neutral()
+
+            playerExt.wearablesManager.updateLocators(renderedPose)
             dispatchEvents(player, playerExt.wearablesManager)
 
             // An emulated player has its own dedicated particle system which we need to manually update here (that is

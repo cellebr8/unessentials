@@ -16,6 +16,8 @@ import com.google.common.collect.Multimap;
 import com.llamalad7.mixinextras.MixinExtrasBootstrap;
 import gg.essential.asm.EssentialTransformer;
 
+import gg.essential.asm.GlErrorCheckingTransformer;
+import gg.essential.asm.MixinTransformerWrapper;
 import gg.essential.data.VersionInfo;
 import gg.essential.mixins.injection.points.AfterInvokeInInit;
 import gg.essential.mixins.injection.points.BeforeConstantInInit;
@@ -32,12 +34,20 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import org.spongepowered.asm.service.MixinService;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 //#if FABRIC
 //$$ import java.lang.management.ManagementFactory;
 //$$ import java.lang.management.RuntimeMXBean;
+//#endif
+
+//#if MC>=11600
+//$$ import org.spongepowered.asm.mixin.transformer.IMixinTransformer;
+//#else
+import net.minecraft.launchwrapper.IClassTransformer;
 //#endif
 
 public class Plugin implements IMixinConfigPlugin {
@@ -85,6 +95,20 @@ public class Plugin implements IMixinConfigPlugin {
         //$$         + " (Arch: " + System.getProperty("os.arch") + ")"
         //$$ );
         //#endif
+
+
+        // Note: These are not properly supported! Use only for debugging!
+        List<MixinTransformerWrapper.Transformer> globalTransformers = new ArrayList<>();
+        if (Boolean.getBoolean("essential.gl_debug.asm")) {
+            globalTransformers.add(new GlErrorCheckingTransformer());
+        }
+        if (!globalTransformers.isEmpty()) {
+            try {
+                registerGlobalTransformers(globalTransformers);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private final Multimap<String, EssentialTransformer> transformerMap = ArrayListMultimap.create();
@@ -224,6 +248,29 @@ public class Plugin implements IMixinConfigPlugin {
         for (EssentialTransformer transformer : transformerMap.get(targetClassName)) {
             transformer.postApply(targetClass);
         }
+    }
+
+    private static void registerGlobalTransformers(List<MixinTransformerWrapper.Transformer> extraTransformers) throws ReflectiveOperationException {
+        //#if FABRIC
+        //$$ ClassLoader classLoader = Plugin.class.getClassLoader();
+        //$$ Field delegateField = classLoader.getClass().getDeclaredField("delegate");
+        //$$ delegateField.setAccessible(true);
+        //$$ Object delegate = delegateField.get(classLoader);
+        //$$ Field transformerField = delegate.getClass().getDeclaredField("mixinTransformer");
+        //$$ transformerField.setAccessible(true);
+        //$$ IMixinTransformer transformer = (IMixinTransformer) transformerField.get(delegate);
+        //$$ transformer = new MixinTransformerWrapper(transformer, extraTransformers);
+        //$$ transformerField.set(delegate, transformer);
+        //#elseif MC>=11600
+        //$$ throw new UnsupportedOperationException(); // not yet implemented for modern forge
+        //#else
+        ClassLoader classLoader = net.minecraft.launchwrapper.Launch.classLoader;
+        Field transformersField = classLoader.getClass().getDeclaredField("transformers");
+        transformersField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<IClassTransformer> transformers = (List<IClassTransformer>) transformersField.get(classLoader);
+        transformers.addAll(extraTransformers);
+        //#endif
     }
 
     static boolean hasClass(String name) {

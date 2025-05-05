@@ -52,13 +52,13 @@ import gg.essential.gui.layoutdsl.width
 import gg.essential.gui.screenshot.DateRange
 import gg.essential.gui.screenshot.ScreenshotId
 import gg.essential.gui.screenshot.createDateOnlyCalendar
+import gg.essential.gui.screenshot.getImageTime
 import gg.essential.handlers.screenshot.ClientScreenshotMetadata
 import gg.essential.network.connectionmanager.media.ScreenshotCollectionChangeEvent
 import gg.essential.universal.UKeyboard
 import gg.essential.universal.UMatrixStack
 import gg.essential.universal.USound
 import gg.essential.util.GuiEssentialPlatform.Companion.platform
-import gg.essential.util.getImageTime
 import gg.essential.util.scrollGradient
 import gg.essential.vigilance.utils.onLeftClick
 import java.util.*

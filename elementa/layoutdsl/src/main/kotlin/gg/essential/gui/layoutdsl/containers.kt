@@ -15,6 +15,7 @@ package gg.essential.gui.layoutdsl
 
 import gg.essential.elementa.UIComponent
 import gg.essential.elementa.components.ScrollComponent
+import gg.essential.elementa.components.inspector.Inspector
 import gg.essential.elementa.constraints.ChildBasedMaxSizeConstraint
 import gg.essential.elementa.constraints.ChildBasedSizeConstraint
 import gg.essential.elementa.dsl.boundTo
@@ -182,4 +183,9 @@ fun LayoutScope.floatingBox(
         box.isFloating = floating()
     }
     return box
+}
+
+@Suppress("unused")
+private val init = run {
+    Inspector.registerComponentFactory(null)
 }

@@ -16,10 +16,12 @@ import gg.essential.elementa.dsl.childOf
 import gg.essential.gui.common.Spacer
 import gg.essential.gui.common.modal.EssentialModal
 import gg.essential.gui.common.modal.configure
+import gg.essential.gui.elementa.state.v2.awaitValue
 import gg.essential.gui.overlay.ModalManager
 import gg.essential.network.connectionmanager.cosmetics.CosmeticsManager
-import gg.essential.util.Multithreading
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Displays when the user attempts to open the Wardrobe, but cosmetics are not fully loaded yet.
@@ -36,10 +38,14 @@ class CosmeticsLoadingModal(modalManager: ModalManager, callback: () -> Unit) : 
         // `customContent` has a padding of 4f on its y position
         Spacer(height = 17f - 4f) childOf customContent
 
-        val cosmeticsLoadedFuture = Essential.getInstance().connectionManager.cosmeticsManager.cosmeticsLoadedFuture
-        Multithreading.runAsync {
-            cosmeticsLoadedFuture.get(CosmeticsManager.LOAD_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            callback()
+        val cosmeticsLoaded = Essential.getInstance().connectionManager.cosmeticsManager.cosmeticsLoaded
+        modalManager.coroutineScope.launch {
+            val completed = withTimeoutOrNull(CosmeticsManager.LOAD_TIMEOUT_SECONDS.seconds) {
+                cosmeticsLoaded.awaitValue(true)
+            }
+            if (completed == true) {
+                callback()
+            }
         }
     }
 }

@@ -94,7 +94,9 @@ import gg.essential.util.GuiEssentialPlatform.Companion.platform
 import gg.essential.util.findChildOfTypeOrNull
 import gg.essential.util.onLeftClick
 import gg.essential.util.scrollGradient
+import gg.essential.util.thenAcceptOnMainThread
 import gg.essential.util.toState
+import gg.essential.vigilance.utils.onLeftClick
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -104,7 +106,7 @@ import kotlin.math.abs
 import kotlin.math.round
 
 fun LayoutScope.previewWindowTitleBar(state: WardrobeState, modifier: Modifier) {
-    val regularContent = State { !state.editingMenuOpen() && state.showingDiagnosticsFor() == null }
+    val regularContent = State { !state.isUsingConfigurator() && state.showingDiagnosticsFor() == null }
     val bundleSelected = state.selectedBundle.map { it != null }
     val emoteSelected = state.selectedEmote.map { it != null }
     val characterSelected = bundleSelected or !state.inEmoteWheel
@@ -227,8 +229,26 @@ fun LayoutScope.previewWindowTitleBar(state: WardrobeState, modifier: Modifier) 
                     icon(EssentialPalette.CANCEL_7X)
                 }.onLeftClick { click -> handleClick(click) { state.showingDiagnosticsFor.set(null) } }
             }
-            if_({ state.cosmeticsManager.cosmeticsDataWithChanges != null && state.showingDiagnosticsFor() == null}) {
-                val configuratorColor = state.editingMenuOpen.map { if (it) EssentialPalette.GRAY_BUTTON_HOVER else EssentialPalette.GRAY_BUTTON }
+            if_({ state.cosmeticsManager.cosmeticsDataWithChanges != null && state.showingDiagnosticsFor() == null }) {
+                val saveTooltip = state.cosmeticsManager.cosmeticsDataWithChanges!!.getUpdatesSummary()
+                if_(state.isUsingConfigurator) {
+                    val saveColor = saveTooltip.map { if (it == null) EssentialPalette.GRAY_BUTTON else EssentialPalette.YELLOW_BUTTON_HOVER }
+                    box(modifier.width(17f).heightAspect(1f).color(saveColor).shadow(EssentialPalette.BLACK).hoverTooltip(saveTooltip.map { it ?: "No changes" }).hoverScope()) {
+                        icon(EssentialPalette.SAVE_9X)
+                    }.onLeftClick {
+                        state.cosmeticsManager.cosmeticsDataWithChanges!!.writeChangesToLocalCosmeticData(state.cosmeticsManager.localCosmeticsData!!).thenAcceptOnMainThread {
+                            Notifications.push("Cosmetics", "Data saved to file successfully")
+                        }
+                    }
+                }
+
+                val configuratorColor = memo {
+                    when {
+                        !state.isUsingConfigurator() && saveTooltip() != null -> EssentialPalette.YELLOW_BUTTON_HOVER
+                        state.isUsingConfigurator() -> EssentialPalette.GRAY_BUTTON_HOVER
+                        else -> EssentialPalette.GRAY_BUTTON
+                    }
+                }
                 titleBarButton(Modifier.color(configuratorColor).hoverColor(EssentialPalette.GRAY_BUTTON_HOVER).hoverTooltip("Cosmetic editor").hoverScope()) {
                     icon(EssentialPalette.SETTINGS_9X7)
                 }.onLeftClick { click -> handleClick(click) { state.editingMenuOpen.set { !it } } }
@@ -236,7 +256,7 @@ fun LayoutScope.previewWindowTitleBar(state: WardrobeState, modifier: Modifier) 
             if_(!emoteSelected and !bundleSelected and !state.inEmoteWheel and regularContent) {
                 outfitAddButton(state)
             }
-            if_(selectedEmoteHasSound and !state.editingMenuOpen and !state.inEmoteWheel) {
+            if_(selectedEmoteHasSound and !state.isUsingConfigurator and !state.inEmoteWheel) {
                 titleBarButton(Modifier.color(EssentialPalette.GRAY_BUTTON).hoverColor(EssentialPalette.GRAY_BUTTON_HOVER).hoverScope()) {
                     icon({ if (EssentialConfig.playEmoteSoundsInWardrobe()) EssentialPalette.UNMUTE_10X7 else EssentialPalette.MUTE_10X7 },
                         Modifier.color(EssentialPalette.TEXT).hoverColor(EssentialPalette.TEXT_HIGHLIGHT))

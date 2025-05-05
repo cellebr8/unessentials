@@ -82,11 +82,11 @@ object AutoUpdate {
     fun requiresUpdate() = Essential.getInstance().connectionManager.outdated
 
     fun getNotificationTitle(includeLoaderText: Boolean = true) = if (requiresUpdate()) {
-        "Essential Update Required!"
+        "Update Required"
     } else if (!stage3UpdateAvailable && includeLoaderText) {
-        "Essential Loader Update Available!"
+        "Loader Update Available"
     } else {
-        "Essential Update Available!"
+        "Update Available"
     }
 
     fun createUpdateModal(modalManager: ModalManager) =

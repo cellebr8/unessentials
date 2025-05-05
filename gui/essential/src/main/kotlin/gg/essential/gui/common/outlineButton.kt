@@ -20,12 +20,15 @@ import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.elementa.state.v2.stateOf
 import gg.essential.gui.elementa.state.v2.toV1
 import gg.essential.gui.elementa.state.v2.toV2
+import gg.essential.gui.layoutdsl.Alignment
 import gg.essential.gui.layoutdsl.LayoutScope
 import gg.essential.gui.layoutdsl.Modifier
-import gg.essential.gui.layoutdsl.childBasedHeight
+import gg.essential.gui.layoutdsl.alignVertical
+import gg.essential.gui.layoutdsl.box
 import gg.essential.gui.layoutdsl.childBasedWidth
 import gg.essential.gui.layoutdsl.color
 import gg.essential.gui.layoutdsl.effect
+import gg.essential.gui.layoutdsl.height
 import gg.essential.gui.layoutdsl.hoverScope
 import gg.essential.gui.layoutdsl.layoutAsBox
 import gg.essential.gui.util.hoverScope
@@ -64,12 +67,14 @@ class OutlineButton(
 
     init {
         layoutAsBox(
-            Modifier.childBasedWidth(5f).childBasedHeight(6f).color(memo { currentStyle().buttonColor })
+            Modifier.childBasedWidth(5f).height(19f).color(memo { currentStyle().buttonColor })
                 .effect {
                     OutlineEffect(memo { currentStyle().outlineColor }.toV1(this), stateOf(1f).toV1(this), drawInsideChildren = true)
                 }.hoverScope()
         ) {
-            content(currentStyle)
+            box(Modifier.alignVertical(Alignment.Center(true))) {
+                content(currentStyle)
+            }
         }
         onLeftClick { event ->
             if (disabled.getUntracked()) {

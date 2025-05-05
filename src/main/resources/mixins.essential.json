@@ -183,6 +183,7 @@
     "feature.ice.common.Mixin_IceChannelIsNotLocal",
     "feature.ice.common.logging.Mixin_RedirectIce4jJulLoggers",
     "feature.ice.server.Mixin_NettyIceServer",
+    "feature.multiplayer_tabs.Mixin_PreventThirdPartyReloadOnCustomTab",
     "feature.particles.Mixin_AddParticleSystemToClientWorld",
     "feature.particles.Mixin_PreserveRealYawDuringInventoryRendering",
     "feature.particles.Mixin_RenderParticleSystemOfClientWorld",

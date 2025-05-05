@@ -265,7 +265,7 @@ class PauseMenuDisplay {
             fun showUpdateToast(message: String? = null) {
                 var updateClicked = false
 
-                val updateButton = toastButton("Update",
+                val updateButton = toastButton("Install",
                     backgroundModifier = Modifier.color(EssentialPalette.GREEN_BUTTON)
                         .hoverColor(EssentialPalette.GREEN_BUTTON_HOVER)
                         .shadow(Color.BLACK),
@@ -281,6 +281,7 @@ class PauseMenuDisplay {
                     }
                 }, {
                     withCustomComponent(Slot.ACTION, updateButton)
+                    withCustomComponent(Slot.ICON, EssentialPalette.DOWNLOAD_7X8.create())
                     trimMessage = true
                     AutoUpdate.dismissUpdateToast = {
                         updateClicked = true

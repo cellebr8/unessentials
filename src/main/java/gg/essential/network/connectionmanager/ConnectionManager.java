@@ -281,6 +281,7 @@ public class ConnectionManager extends ConnectionManagerKt {
             this.knownServersManager,
             this.telemetryManager::enqueue
         ));
+
     }
 
     @NotNull

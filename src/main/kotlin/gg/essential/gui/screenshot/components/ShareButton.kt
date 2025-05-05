@@ -28,6 +28,8 @@ import gg.essential.gui.notification.error
 import gg.essential.gui.screenshot.LocalScreenshot
 import gg.essential.gui.screenshot.RemoteScreenshot
 import gg.essential.gui.screenshot.ScreenshotId
+import gg.essential.gui.screenshot.copyScreenshotToClipboard
+import gg.essential.gui.screenshot.getImageTime
 import gg.essential.gui.util.hoveredState
 import gg.essential.handlers.screenshot.ClientScreenshotMetadata
 import gg.essential.universal.UMinecraft
@@ -99,14 +101,14 @@ class ShareButton(val screenshotBrowser: ScreenshotBrowser) : UIContainer() {
 
             if (editComponent.hasEdits()) {
                 editComponent.exportEditImageToTempFile()?.thenAcceptAsync({
-                    screenshotManager.copyScreenshotToClipboard(it)
+                    copyScreenshotToClipboard(it.toPath())
 
                     // Cleanup temp file
                     FileUtils.deleteQuietly(it)
                 }, UMinecraft.getMinecraft().executor) ?: Notifications.error("Picture export failed", "")
             } else {
                 val id = screenshotBrowser.focusing.get()?.id ?: return@Option
-                screenshotManager.copyScreenshotToClipboard(id)
+                copyScreenshotToClipboard(id)
             }
         })
         if (OnboardingData.hasAcceptedTos() && connectionManager.isAuthenticated) {

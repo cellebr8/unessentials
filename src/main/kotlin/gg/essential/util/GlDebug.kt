@@ -11,8 +11,10 @@
  */
 package gg.essential.util
 
+import gg.essential.config.AccessedViaReflection
 import org.lwjgl.opengl.ARBDebugOutput.*
 import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL30
 import org.lwjgl.opengl.KHRDebug.*
 import org.slf4j.LoggerFactory
 
@@ -125,5 +127,54 @@ object GlDebug {
         GL_DEBUG_TYPE_PUSH_GROUP -> "push group"
         GL_DEBUG_TYPE_POP_GROUP -> "pop group"
         else -> "unknown type $id"
+    }
+
+    @JvmField
+    var inBeginEndPair = false
+
+    @JvmStatic
+    @AccessedViaReflection("GlErrorCheckingTransformer")
+    fun checkGlError(methodName: String) {
+        // only a very specific set of methods may be called between begin and end, and glGetError isn't one of them
+        if (inBeginEndPair) return
+
+        // Need to manually check if there is an OpenGL context active in the current thread,
+        // otherwise LWJGL3 will error in native code and abort the JVM
+        //#if MC>=11400
+        //$$ try {
+        //$$     @Suppress("SENSELESS_COMPARISON") // may return null instead of throwing when CHECKS are disabled
+        //$$     if (org.lwjgl.opengl.GL.getCapabilities() == null) {
+        //$$         return
+        //$$     }
+        //$$ } catch (e: IllegalStateException) {
+        //$$     return
+        //$$ }
+        //#endif
+
+        try {
+            while (true) {
+                val error = GL11.glGetError()
+                if (error == GL11.GL_NO_ERROR) return
+
+                val message = "${glErrorToString(error)} in $methodName"
+                onDebugOutput(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, message)
+            }
+        } catch (e: RuntimeException) {
+            // LWJGL2 will throw if there's no OpenGL context yet, see GLContext.getCapabilities
+            if (e.message == "No OpenGL context found in the current thread.") return
+            throw e
+        }
+    }
+
+    // See https://www.khronos.org/opengl/wiki/GLAPI/glGetError
+    private fun glErrorToString(id: Int) = when (id) {
+        GL11.GL_INVALID_ENUM -> "GL_INVALID_ENUM"
+        GL11.GL_INVALID_VALUE -> "GL_INVALID_VALUE"
+        GL11.GL_INVALID_OPERATION -> "GL_INVALID_OPERATION"
+        GL30.GL_INVALID_FRAMEBUFFER_OPERATION -> "GL_INVALID_FRAMEBUFFER_OPERATION"
+        GL11.GL_OUT_OF_MEMORY -> "GL_OUT_OF_MEMORY"
+        GL11.GL_STACK_UNDERFLOW -> "GL_STACK_UNDERFLOW"
+        GL11.GL_STACK_OVERFLOW -> "GL_STACK_OVERFLOW"
+        else -> "unknown error $id"
     }
 }

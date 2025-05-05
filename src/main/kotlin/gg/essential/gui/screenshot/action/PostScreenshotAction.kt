@@ -13,6 +13,7 @@ package gg.essential.gui.screenshot.action
 
 import gg.essential.Essential
 import gg.essential.config.EssentialConfig
+import gg.essential.gui.screenshot.copyScreenshotToClipboard
 import gg.essential.util.Multithreading
 import java.io.File
 
@@ -42,7 +43,7 @@ sealed class PostScreenshotAction {
     object CopyImage: PostScreenshotAction() {
         override fun run(screenshot: File) {
             Multithreading.runAsync {
-                Essential.getInstance().connectionManager.screenshotManager.copyScreenshotToClipboard(screenshot)
+                copyScreenshotToClipboard(screenshot.toPath())
             }
         }
     }

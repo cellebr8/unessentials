@@ -107,7 +107,7 @@ public class CosmeticsManager implements NetworkedManager, ICosmeticsManager {
     private final ModelLoader modelLoader;
 
     @NotNull
-    private CompletableFuture<Void> cosmeticsLoadedFuture = new CompletableFuture<>();
+    private MutableState<Boolean> cosmeticsLoaded = StateKt.mutableStateOf(false);
     private boolean receivedUnlockPacket = false;
 
     // If we've warned the user about cosmetics not working on offline mode servers
@@ -281,7 +281,7 @@ public class CosmeticsManager implements NetworkedManager, ICosmeticsManager {
         this.updateQueue.reset();
         this.clearUnlockedCosmetics(true);
         this.infraCosmeticsData.resetState();
-        this.cosmeticsLoadedFuture = new CompletableFuture<>();
+        this.cosmeticsLoaded.set(false);
         this.receivedUnlockPacket = false;
         connectionManager.send(new ClientWardrobeSettingsPacket());
     }
@@ -411,16 +411,16 @@ public class CosmeticsManager implements NetworkedManager, ICosmeticsManager {
     }
 
     /**
-     * Returns a future completed when client has received all cosmetic data from infra.
+     * Returns a boolean state which is true when client has received all cosmetic data from infra.
      */
-    public @NotNull CompletableFuture<Void> getCosmeticsLoadedFuture() {
-        return cosmeticsLoadedFuture;
+    public @NotNull State<Boolean> getCosmeticsLoaded() {
+        return cosmeticsLoaded;
     }
 
     @Subscribe
     public void tick(ClientTickEvent tickEvent) {
-        if (!cosmeticsLoadedFuture.isDone() && cosmeticDataLoadedFromInfra()) {
-            cosmeticsLoadedFuture.complete(null);
+        if (!this.cosmeticsLoaded.getUntracked() && cosmeticDataLoadedFromInfra()) {
+            this.cosmeticsLoaded.set(true);
         }
     }
 

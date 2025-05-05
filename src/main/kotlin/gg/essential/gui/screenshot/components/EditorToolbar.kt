@@ -30,7 +30,7 @@ import gg.essential.gui.common.or
 import gg.essential.gui.common.shadow.ShadowEffect
 import gg.essential.gui.screenshot.editor.ScreenshotCanvas
 import gg.essential.gui.screenshot.editor.tools.PenTool
-import gg.essential.network.connectionmanager.media.ScreenshotManager
+import gg.essential.gui.util.hoveredState
 import gg.essential.universal.UGraphics
 import gg.essential.universal.UKeyboard
 import gg.essential.universal.UMatrixStack
@@ -39,13 +39,20 @@ import gg.essential.universal.shader.BlendState
 import gg.essential.util.bindHoverEssentialTooltip
 import gg.essential.util.centered
 import gg.essential.gui.util.hoveredState
+import gg.essential.lib.gson.Gson
 import gg.essential.universal.render.URenderPipeline
 import gg.essential.universal.vertex.UBufferBuilder
 import gg.essential.universal.vertex.UVertexConsumer
+import gg.essential.util.GuiEssentialPlatform.Companion.platform
 import gg.essential.util.HSBColor
 import gg.essential.vigilance.utils.onLeftClick
 import org.lwjgl.opengl.GL11
 import java.awt.Color
+import java.io.IOException
+import kotlin.io.path.div
+import kotlin.io.path.exists
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 class EditorToolbar(
     screenshotBrowser: ScreenshotBrowser,
@@ -57,7 +64,6 @@ class EditorToolbar(
 
     private val colorPicker by ScreenshotColorPicker(
         penTool,
-        screenshotBrowser.screenshotManager,
         screenshotBrowser,
         active
     ).constrain {
@@ -189,7 +195,6 @@ class StrokeWidthComponent(val penTool: PenTool) : UIBlock(EssentialPalette.COMP
 
 class ScreenshotColorPicker(
     private val penTool: PenTool,
-    private val screenshotManager: ScreenshotManager,
     screenshotBrowser: ScreenshotBrowser,
     active: State<Boolean>,
 ) : UIContainer() {
@@ -370,7 +375,7 @@ class ScreenshotColorPicker(
             width = ChildBasedMaxSizeConstraint()
         }
 
-        for ((index, colorPreset) in screenshotManager.editorColors.withIndex()) {
+        for ((index, colorPreset) in loadEditorColors().withIndex()) {
             val colorChoice = ColorChoice(BasicState(colorPreset), index)
             colorChoice childOf colorHistoryContainer
         }
@@ -410,8 +415,8 @@ class ScreenshotColorPicker(
     }
 
     fun saveColors() {
-        screenshotManager.updateEditorColors(
-            colorHistoryContainer.childrenOfType(ColorChoice::class.java).map { it.containedColor.get() }.toTypedArray()
+        saveEditorColors(
+            colorHistoryContainer.childrenOfType(ColorChoice::class.java).map { it.containedColor.get() }
         )
     }
 
@@ -599,5 +604,39 @@ class ScreenshotColorPicker(
         ).apply {
             blendState = BlendState.NORMAL
         }.build()
+
+
+        private val editorStateFile = platform.essentialBaseDir / "screenshot-editor.json"
+
+        private val DEFAULT_COLORS = listOf(HSBColor(0xD32121), HSBColor(0xEAB600), HSBColor(0x3B8A2F), HSBColor(0x0085FF), HSBColor(0x000000))
+        private var savedColors: List<HSBColor>? = null
+
+        private fun saveEditorColors(colors: List<HSBColor>) {
+            if (savedColors == colors) {
+                return
+            }
+            savedColors = colors
+            try {
+                editorStateFile.writeText(Gson().toJson(colors))
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+
+        private fun loadEditorColors(): List<HSBColor> {
+            if (savedColors == null) {
+                savedColors = try {
+                    if (editorStateFile.exists()) {
+                        Gson().fromJson(editorStateFile.readText(), Array<HSBColor>::class.java).toList()
+                    } else {
+                        null
+                    }
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    null
+                }?.takeUnless { it.size != 5 } ?: DEFAULT_COLORS
+            }
+            return savedColors!!
+        }
     }
 }

@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":quic-connector"))
     implementation(project(":pseudotcp"))
     implementation(project(":lwjgl3"))
+    implementation(project(":clipboard"))
 
     // For NotificationBuilder
     compileOnly(project(":api:1.12.2-forge")) { isTransitive = false}

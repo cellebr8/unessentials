@@ -35,14 +35,12 @@ import gg.essential.gui.screenshot.ScreenshotOverlay;
 import gg.essential.gui.screenshot.ScreenshotUploadToast;
 import gg.essential.gui.screenshot.action.PostScreenshotAction;
 import gg.essential.gui.screenshot.components.ScreenshotComponentsKt;
-import gg.essential.gui.screenshot.components.ScreenshotProperties;
 import gg.essential.gui.screenshot.components.ScreenshotProviderManager;
 import gg.essential.gui.screenshot.concurrent.PrioritizedCallable;
 import gg.essential.gui.screenshot.concurrent.PriorityThreadPoolExecutor;
 import gg.essential.gui.screenshot.downsampling.PixelBuffer;
 import gg.essential.gui.screenshot.handler.ScreenshotChecksumManager;
 import gg.essential.gui.screenshot.handler.ScreenshotMetadataManager;
-import gg.essential.gui.screenshot.image.ForkedImageClipboard;
 import gg.essential.gui.screenshot.providers.FileCachedWindowedImageProvider;
 import gg.essential.handlers.io.DirectoryWatcher;
 import gg.essential.handlers.io.FileSystemEvent;
@@ -50,7 +48,6 @@ import gg.essential.handlers.screenshot.ClientScreenshotMetadata;
 import gg.essential.handlers.screenshot.FileSystemEventKt;
 import gg.essential.handlers.screenshot.ScreenshotUploadUtil;
 import gg.essential.image.imagescaling.ResampleOp;
-import gg.essential.lib.gson.Gson;
 import gg.essential.media.model.Media;
 import gg.essential.media.model.MediaLocationMetadata;
 import gg.essential.media.model.MediaMetadata;
@@ -63,11 +60,9 @@ import gg.essential.universal.UDesktop;
 import gg.essential.util.EssentialSounds;
 import gg.essential.util.ExtensionsKt;
 import gg.essential.util.GuiUtil;
-import gg.essential.util.HSBColor;
 import gg.essential.util.HelpersKt;
 import gg.essential.util.MinecraftUtils;
 import gg.essential.util.Multithreading;
-import gg.essential.util.TemporaryFile;
 import gg.essential.util.TimeFormatKt;
 import gg.essential.util.UUIDUtil;
 import gg.essential.util.lwjgl3.Lwjgl3Loader;
@@ -90,15 +85,11 @@ import java.awt.image.RenderedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -112,12 +103,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static gg.essential.gui.screenshot.UtilsKt.getImageTime;
 import static gg.essential.gui.screenshot.providers.WindowProviderKt.toSingleWindowRequest;
 
 public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
 
     private final NativeImageReader nativeImageReader;
-    private final File editorStateFile;
     private final Map<String, Media> uploadedScreenshots = new HashMap<>();
     private final ConnectionManager connectionManager;
     private final ScreenshotMetadataManager screenshotMetadataManager;
@@ -126,12 +117,8 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
     private final PriorityThreadPoolExecutor backgroundExecutor = new PriorityThreadPoolExecutor(1);
     private final FileCachedWindowedImageProvider minResolutionProvider;
     private final List<WeakReference<Consumer<ScreenshotCollectionChangeEvent>>> screenshotCollectionChangeHandlers = new ArrayList<>();
-    // Set and initialized in getter if null
-    private HSBColor[] screenshotColors;
 
     private final ScreenshotChecksumManager screenshotChecksumManager;
-    @NotNull
-    private final Gson gson = new Gson();
 
     private final DirectoryWatcher screenshotFolderWatcher;
 
@@ -153,8 +140,7 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
             }
         }
         nativeImageReader = lwjgl3.get(NativeImageReader.class);
-        editorStateFile = new File(baseDir, "screenshot-editor.json");
-        screenshotChecksumManager = new ScreenshotChecksumManager(new File(baseDir, "screenshot-checksum-caches.json"));
+        screenshotChecksumManager = new ScreenshotChecksumManager(HelpersKt.getScreenshotFolder(), new File(baseDir, "screenshot-checksum-caches.json"));
         screenshotMetadataManager = new ScreenshotMetadataManager(metadataFolder, screenshotChecksumManager);
         minResolutionProvider = ScreenshotProviderManager.Companion.createFileCachedBicubicProvider(ScreenshotProviderManager.minResolutionTargetResolution, backgroundExecutor, UnpooledByteBufAllocator.DEFAULT, baseDir, nativeImageReader, true);
         Multithreading.runAsync(this::preloadScreenshots);
@@ -211,7 +197,7 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
     }
 
     public CompletableFuture<Media> upload(Path path, ClientScreenshotMetadata metadata) {
-        return upload(path, metadata, ScreenshotOverlay.INSTANCE.pushUpload());
+        return upload(path, metadata, ScreenshotUploadToast.create());
     }
 
     public CompletableFuture<Media> upload(Path path, ClientScreenshotMetadata metadata, Consumer<ScreenshotUploadToast.ToastProgress> progressConsumer) {
@@ -251,7 +237,7 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
     }
 
     public CompletableFuture<Media> uploadAndCopyLinkToClipboard(Path path, ClientScreenshotMetadata metadata) {
-        return uploadAndCopyLinkToClipboard(path, metadata, ScreenshotOverlay.INSTANCE.pushUpload());
+        return uploadAndCopyLinkToClipboard(path, metadata, ScreenshotUploadToast.create());
     }
 
     public CompletableFuture<Media> uploadAndCopyLinkToClipboard(Path path, ClientScreenshotMetadata metadata, Consumer<ScreenshotUploadToast.ToastProgress> progressConsumer) {
@@ -263,7 +249,7 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
     }
 
     public CompletableFuture<Media> uploadAndShareLinkToChannels(List<Channel> channels, Path path, ClientScreenshotMetadata metadata) {
-        return uploadAndShareLinkToChannels(channels, path, metadata, ScreenshotOverlay.INSTANCE.pushUpload());
+        return uploadAndShareLinkToChannels(channels, path, metadata, ScreenshotUploadToast.create());
     }
 
     public CompletableFuture<Media> uploadAndShareLinkToChannels(List<Channel> channels, Path path, ClientScreenshotMetadata metadata, Consumer<ScreenshotUploadToast.ToastProgress> progressConsumer) {
@@ -271,7 +257,7 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
     }
 
     public void copyLinkToClipboard(Media media) {
-        copyLinkToClipboard(media, ScreenshotOverlay.INSTANCE.pushUpload());
+        copyLinkToClipboard(media, ScreenshotUploadToast.create());
     }
 
     private void copyLinkToClipboard(Media media, Consumer<ScreenshotUploadToast.ToastProgress> progressConsumer) {
@@ -285,7 +271,7 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
     }
 
     public void shareLinkToChannels(List<Channel> channels, Media media) {
-        shareLinkToChannels(channels, media, ScreenshotOverlay.INSTANCE.pushUpload());
+        shareLinkToChannels(channels, media, ScreenshotUploadToast.create());
     }
 
     public void shareLinkToChannels(List<Channel> channels, Media media, Consumer<ScreenshotUploadToast.ToastProgress> progressConsumer) {
@@ -319,7 +305,7 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
                         if (entry.getValue().join()) {
                             anySucceeded = true;
                         } else {
-                            ScreenshotOverlay.INSTANCE.pushUpload().accept(new ScreenshotUploadToast.ToastProgress.Complete("Error: Failed to share to " + entry.getKey().getName(), false));
+                            ScreenshotUploadToast.create().accept(new ScreenshotUploadToast.ToastProgress.Complete("Error: Failed to share to " + entry.getKey().getName(), false));
                         }
                     }
 
@@ -570,36 +556,6 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
         return getUploadedMedia(screenshotMetadataManager.getOrCreateMetadata(path).getMediaId());
     }
 
-    public void copyScreenshotToClipboard(ScreenshotId screenshot) {
-        try (TemporaryFile tmpFile = new TemporaryFile("screenshot", ".png");
-             InputStream in = screenshot.open()) {
-            Files.copy(in, tmpFile.getFile(), StandardCopyOption.REPLACE_EXISTING);
-            copyScreenshotToClipboard(tmpFile.getFile().toFile(), screenshot.getName());
-        } catch (IOException e) {
-            e.printStackTrace();
-            Notifications.INSTANCE.push("Error Copying Screenshot", "An unknown error occurred. Check logs for details");
-        }
-    }
-
-    public void copyScreenshotToClipboard(File screenshot) {
-        copyScreenshotToClipboard(screenshot, screenshot.getName());
-    }
-
-    public void copyScreenshotToClipboard(File screenshot, String name) {
-        copyScreenshotToClipboardWithMessage(screenshot, "Successfully copied " + name + " to clipboard.");
-    }
-
-    public void copyScreenshotToClipboardWithMessage(File screenshot, String successMessage) {
-        try (ForkedImageClipboard clipboard = new ForkedImageClipboard()) {
-            if (clipboard.copy(screenshot)) {
-                // When removing feature flag, the message param will no longer be used, so maybe clean it up
-                NotificationsKt.sendPictureCopiedNotification();
-            } else {
-                gg.essential.gui.notification.ExtensionsKt.error(Notifications.INSTANCE, "Failed to copy picture", "");
-            }
-        }
-    }
-
     @Override
     public ClientScreenshotMetadata setFavorite(Path path, boolean favorite) {
         final ClientScreenshotMetadata metadata = screenshotMetadataManager.getOrCreateMetadata(path);
@@ -619,10 +575,6 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
         });
         media.getMetadata().setFavorite(favorite);
         return new ClientScreenshotMetadata(media);
-    }
-
-    public static DateTime getImageTime(Path path, @Nullable ClientScreenshotMetadata metadata, boolean includeEditTime) {
-        return HelpersKt.getImageTime(new ScreenshotProperties(new LocalScreenshot(path), metadata), includeEditTime);
     }
 
     @Override
@@ -765,34 +717,6 @@ public class ScreenshotManager implements NetworkedManager, IScreenshotManager {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public void updateEditorColors(HSBColor[] colors) {
-        if (Arrays.equals(screenshotColors, colors)) {
-            return;
-        }
-        screenshotColors = colors;
-        try {
-            FileUtils.write(editorStateFile, gson.toJson(colors), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public HSBColor[] getEditorColors() {
-        if (screenshotColors == null) {
-            if (editorStateFile.exists()) {
-                try {
-                    screenshotColors = gson.fromJson(FileUtils.readFileToString(editorStateFile, StandardCharsets.UTF_8), HSBColor[].class);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (screenshotColors == null || screenshotColors.length != 5) {
-                screenshotColors = new HSBColor[]{new HSBColor(0xD32121), new HSBColor(0xEAB600), new HSBColor(0x3B8A2F), new HSBColor(0x0085FF), new HSBColor(0x000000)};
-            }
-        }
-        return screenshotColors;
     }
 
     private boolean hasOverlay() {

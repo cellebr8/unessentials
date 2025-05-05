@@ -34,11 +34,11 @@ import gg.essential.handlers.screenshot.ClientScreenshotMetadata
 import gg.essential.network.connectionmanager.media.IScreenshotManager
 import gg.essential.universal.UMatrixStack
 import gg.essential.universal.UResolution
-import gg.essential.util.Multithreading
 import gg.essential.util.UIdentifier
 import gg.essential.util.animateColor
 import gg.essential.util.lwjgl3.api.nanovg.NanoVG
 import gg.essential.vigilance.gui.VigilancePalette
+import kotlinx.coroutines.Dispatchers
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import java.awt.Color
@@ -48,6 +48,7 @@ import java.io.IOException
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * Can be improved by abstracting cropping functions to a cropping [Tool] class
@@ -272,7 +273,7 @@ class ScreenshotCanvas(val screenshot: State<UIdentifier?>) : UIContainer() {
         veoCopy.drawFrameBuffer(fullWidth / UResolution.scaleFactor, fullHeight / UResolution.scaleFactor)
         veoCopy.delete()
         // Fork as soon as we can to avoid freezing the main thread
-        Multithreading.runAsync {
+        Dispatchers.IO.dispatch(EmptyCoroutineContext) {
             buffer.rewind()
             val imgData = (0 until buffer.limit()).map { i ->
                 (buffer.get(i) * 255f).toInt()

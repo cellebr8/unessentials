@@ -13,6 +13,7 @@ package gg.essential.mixins.transformers.feature.cosmetics;
 
 import gg.essential.cosmetics.WearablesManager;
 import gg.essential.mixins.impl.client.entity.AbstractClientPlayerExt;
+import gg.essential.model.backend.PlayerPose;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.RenderGlobal;
@@ -77,7 +78,18 @@ public abstract class Mixin_UpdateCosmetics {
             AbstractClientPlayerExt playerExt = (AbstractClientPlayerExt) player;
 
             WearablesManager wearablesManager = playerExt.getWearablesManager();
-            wearablesManager.updateLocators(playerExt.getRenderedPose());
+            PlayerPose renderedPose = playerExt.getRenderedPose();
+            if (renderedPose == null) {
+                // No way for us to get the real pose if we didn't actually render, let's just use the neutral pose.
+                renderedPose = PlayerPose.Companion.neutral();
+                // Also no way to know if cape/elytra/etc. are visible (not if you consider modded items anyway),
+                // so we'll place those far away as if they weren't visible so any events they spawn won't be visible.
+                renderedPose = renderedPose.withoutAttachments();
+                // Also apply any emotes to it, so that any particles that shoot where the emote points actually shoot
+                // in that direction instead of just straight down.
+                renderedPose = playerExt.getPoseManager().computePose(wearablesManager, renderedPose);
+            }
+            wearablesManager.updateLocators(renderedPose);
             dispatchEvents((AbstractClientPlayer) player, wearablesManager);
         }
     }

@@ -213,9 +213,17 @@ class CoinsPurchaseModal private constructor(
                     }
                 }
                 spacer(height = 13f)
-                row(Modifier.fillWidth(), Arrangement.SpaceBetween) {
-                    forEach(coinsManager.pricing) {
-                        bundleBox(it)
+                if_(coinsManager.pricing.isEmpty()) {
+                    box(Modifier.childBasedWidth().height(168f)) {
+                        box(Modifier.childBasedWidth(14f).childBasedHeight(12f).color(EssentialPalette.COMPONENT_BACKGROUND_HIGHLIGHT)) {
+                            text("Please try again later or contact support...", Modifier.color(EssentialPalette.TEXT).shadow(EssentialPalette.TEXT_SHADOW))
+                        }
+                    }
+                }.`else` {
+                    row(Modifier.fillWidth(), Arrangement.SpaceBetween) {
+                        forEach(coinsManager.pricing) {
+                            bundleBox(it)
+                        }
                     }
                 }
                 spacer(height = 16f)

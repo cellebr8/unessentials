@@ -501,6 +501,17 @@ class WardrobeState(
 
     val showingDiagnosticsFor = mutableStateOf<String?>(null) // value is LOCAL_PATH of cosmetic
 
+    val isUsingConfigurator = memo {
+        editingMenuOpen() || listOfNotNull(
+            showingDiagnosticsFor(),
+            currentlyEditingCosmetic(),
+            currentlyEditingCosmeticBundle(),
+            currentlyEditingCosmeticType(),
+            currentlyEditingCosmeticCategory(),
+            currentlyEditingFeaturedPageCollection(),
+        ).isNotEmpty()
+    }
+
     fun changeOutfit(offset: Int) {
         val outfits = outfitManager.outfits.get()
         val n = outfits.size

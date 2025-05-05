@@ -15,14 +15,13 @@ import com.google.common.collect.Sets
 import com.sparkuniverse.toolbox.serialization.DateTimeTypeAdapter
 import com.sparkuniverse.toolbox.serialization.UUIDTypeAdapter
 import com.sparkuniverse.toolbox.util.DateTime
-import gg.essential.Essential
+import gg.essential.gui.screenshot.getImageTime
 import gg.essential.handlers.screenshot.ClientScreenshotMetadata
 import gg.essential.lib.gson.GsonBuilder
 import gg.essential.lib.gson.JsonSyntaxException
 import gg.essential.network.connectionmanager.media.IScreenshotMetadataManager
-import gg.essential.network.connectionmanager.media.ScreenshotManager
-import gg.essential.util.UUIDUtil
-import org.apache.commons.io.FileUtils
+import gg.essential.util.USession
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -54,7 +53,7 @@ class ScreenshotMetadataManager(
             val fileContents = File(metadataFolder, imageChecksum).readText()
             gson.fromJson(fileContents, ClientScreenshotMetadata::class.java)
         } catch (exception: JsonSyntaxException) {
-            Essential.logger.error("Metadata corrupt for checksum $imageChecksum. Attempting recovery.", exception)
+            LOGGER.error("Metadata corrupt for checksum $imageChecksum. Attempting recovery.", exception)
             tryRecoverMetadata(imageChecksum)
         } catch (ignored: FileNotFoundException) {
             null
@@ -67,7 +66,7 @@ class ScreenshotMetadataManager(
      */
     private fun tryRecoverMetadata(checksum: String): ClientScreenshotMetadata? {
         val metadata = screenshotChecksumManager.getPathsForChecksum(checksum).firstOrNull()?.let {
-            createMetadata(ScreenshotManager.getImageTime(it, null, false), checksum)
+            createMetadata(getImageTime(it, null, false), checksum)
         }
         metadata?.let { writeMetadata(it) }
         return metadata
@@ -125,7 +124,7 @@ class ScreenshotMetadataManager(
     private fun deleteMetadata(metadata: ClientScreenshotMetadata) {
         val metadataFile = File(metadataFolder, metadata.checksum)
         metadataCache.remove(metadata.checksum)
-        FileUtils.deleteQuietly(metadataFile)
+        metadataFile.delete()
     }
 
     fun deleteMetadata(file: File) {
@@ -138,7 +137,7 @@ class ScreenshotMetadataManager(
 
     fun createMetadata(time: DateTime, checksum: String): ClientScreenshotMetadata {
         return ClientScreenshotMetadata(
-            UUIDUtil.getClientUUID(),
+            USession.activeNow().uuid,
             time,
             checksum,
             null,
@@ -159,8 +158,12 @@ class ScreenshotMetadataManager(
 
         val checksum = screenshotChecksumManager[file] ?: throw IllegalStateException("No checksum for file $file. Was the file deleted?")
 
-        return createMetadata(ScreenshotManager.getImageTime(path, null, false), checksum).also {
+        return createMetadata(getImageTime(path, null, false), checksum).also {
             updateMetadata(it)
         }
+    }
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(ScreenshotMetadataManager::class.java)
     }
 }

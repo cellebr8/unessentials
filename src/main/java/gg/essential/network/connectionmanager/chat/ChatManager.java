@@ -130,6 +130,7 @@ public class ChatManager extends StateCallbackManager<IMessengerManager> impleme
         connectionManager.registerPacketHandler(ServerChatChannelMessagePacket.class, serverChatChannelMessagePacketHandler);
         connectionManager.registerPacketHandler(ServerChatChannelRemovePacket.class, new ServerChatChannelRemovePacketHandler());
         connectionManager.registerPacketHandler(ServerChatChannelMessageReportReasonsPacket.class, new ServerChatChannelMessageReportReasonsPacketHandler());
+
     }
 
     @NotNull

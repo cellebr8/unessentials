@@ -121,7 +121,7 @@ dependencies {
     if (platform.isFabric && platform.mcVersion >= 12006) {
         val fapiVersion = when (platform.mcVersion) {
             12006 -> "0.97.8+1.20.6"
-            12100 -> "0.99.2+1.21"
+            12101 -> "0.99.2+1.21"
             12103 -> "0.106.0+1.21.2"
             12104 -> "0.110.0+1.21.4"
             12105 -> "0.119.0+1.21.5"

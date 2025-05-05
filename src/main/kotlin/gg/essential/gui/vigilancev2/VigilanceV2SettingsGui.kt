@@ -53,6 +53,7 @@ class VigilanceV2SettingsGui @JvmOverloads constructor(
     val currentCategoryName: MutableState<String> = mutableStateOf(defaultCategoryName)
 
     init {
+
         titleBar.layout {
             searchState = vigilanceTitleBar(outlineThickness, { leftTitleBarContent() })
         }

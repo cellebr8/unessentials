@@ -11,12 +11,15 @@
  */
 package gg.essential.util
 
+import gg.essential.util.GuiEssentialPlatform.Companion.platform
+import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.apache.logging.log4j.LogManager
 import java.io.Closeable
 import java.nio.file.Paths
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.reflect.full.IllegalCallableAccessException
 
 /**
@@ -52,7 +55,7 @@ class ForkedJvm(main: String, classpath: String? = null, jvmArgs: List<String> =
             redirectInput(ProcessBuilder.Redirect.PIPE)
         }.start()
 
-        Multithreading.scheduledPool.execute {
+        Dispatchers.IO.dispatch(EmptyCoroutineContext) {
             val logger = LogManager.getLogger(main)
             val reader = process.errorStream.bufferedReader()
             while (true) {
@@ -84,7 +87,7 @@ class ForkedJvm(main: String, classpath: String? = null, jvmArgs: List<String> =
             Json::class.java, // kotlin-serialization-json
             *extraClasses,
         ).map { cls ->
-            findCodeSource(cls) ?: throw UnsupportedOperationException("Failed to find $cls jar location")
+            platform.findCodeSource(cls) ?: throw UnsupportedOperationException("Failed to find $cls jar location")
         }.also {
             if (it.first() is CodeSource.Directory) {
                 return System.getProperty("java.class.path") // dev env, just use the system classpath

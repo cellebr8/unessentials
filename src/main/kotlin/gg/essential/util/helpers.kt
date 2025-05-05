@@ -20,9 +20,6 @@ import gg.essential.elementa.components.Window
 import gg.essential.gui.common.ImageLoadCallback
 import gg.essential.gui.elementa.essentialmarkdown.EssentialMarkdown
 import gg.essential.gui.friends.SocialMenu
-import gg.essential.gui.screenshot.LocalScreenshot
-import gg.essential.gui.screenshot.SCREENSHOT_DATETIME_FORMAT
-import gg.essential.gui.screenshot.components.ScreenshotProperties
 import gg.essential.universal.UDesktop
 import gg.essential.universal.UMinecraft
 import gg.essential.util.resource.EssentialAssetResourcePack
@@ -162,11 +159,6 @@ fun findCodeSource(javaClass: Class<*>): CodeSource? {
             null
         }
     }
-}
-
-sealed interface CodeSource {
-    data class Jar(val path: Path) : CodeSource
-    data class Directory(val path: Path) : CodeSource
 }
 
 fun addEssentialResourcePack(consumer: Consumer<IResourcePack>) {
@@ -312,36 +304,6 @@ fun setPerspective(perspective: Int) {
     UMinecraft.getSettings().thirdPersonView = perspective
     //#endif
     UMinecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty()
-}
-
-fun getImageTime(properties: ScreenshotProperties, useEditIfPresent: Boolean): DateTime {
-    val (id, metadata) = properties
-    return if (metadata != null) {
-        if (useEditIfPresent) {
-            metadata.editTime ?: metadata.time
-        } else {
-            metadata.time
-        }
-    } else if (id is LocalScreenshot) {
-        val path = id.path
-        val name = path.fileName.toString()
-            // If multiple screenshots were taken on this second, trim the trailing counter
-            .split("_").take(2).joinToString("_")
-            // and in any case, remove the file extension
-            .removeSuffix(".png")
-        val millis = try {
-            SCREENSHOT_DATETIME_FORMAT.parse(name).time
-        } catch (e: Exception) {
-            try {
-                Files.getLastModifiedTime(path).toMillis()
-            } catch (e: Exception) {
-                0
-            }
-        }
-        DateTime(millis)
-    } else {
-        DateTime(0)
-    }
 }
 
 fun openFileInDirectory(path: Path) {

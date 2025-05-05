@@ -13,19 +13,17 @@ package gg.essential.gui.screenshot.handler
 
 import gg.essential.lib.gson.Gson
 import gg.essential.lib.gson.JsonSyntaxException
-import gg.essential.util.screenshotFolder
 import gg.essential.vigilance.impl.nightconfig.core.utils.ObservedMap
 import org.apache.commons.codec.digest.DigestUtils
-import org.apache.commons.io.FileUtils
 import java.io.File
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
 /**
  * Manages the file -> checksum relationship for screenshot metadata
  */
 class ScreenshotChecksumManager(
+    private val screenshotFolder: File,
     private val cacheFile: File,
 ) {
     private val gson = Gson()
@@ -42,7 +40,7 @@ class ScreenshotChecksumManager(
                     persistChanges = false
 
                     val data = gson.fromJson(
-                        FileUtils.readFileToString(cacheFile, StandardCharsets.UTF_8),
+                        cacheFile.readText(),
                         Array<SerializedChecksum>::class.java
                     )
                     if (data != null) {
@@ -122,10 +120,8 @@ class ScreenshotChecksumManager(
         }
 
         synchronized(entries) {
-            FileUtils.write(
-                cacheFile,
+            cacheFile.writeText(
                 gson.toJson(entries.map { SerializedChecksum(it.value, it.key) }),
-                StandardCharsets.UTF_8
             )
         }
     }
@@ -135,7 +131,7 @@ class ScreenshotChecksumManager(
      */
     private fun readFileChecksum(file: File): String? {
         return try {
-            DigestUtils.md5Hex(FileUtils.readFileToByteArray(file))
+            DigestUtils.md5Hex(file.readText())
         } catch (e: IOException) {
             e.printStackTrace()
             null

@@ -313,6 +313,9 @@ class GuiEssentialPlatformImpl : GuiEssentialPlatform {
         Essential.getInstance().connectionManager.telemetryManager.enqueue(packet)
     }
 
+    override fun findCodeSource(javaClass: Class<*>): CodeSource? =
+        gg.essential.util.findCodeSource(javaClass)
+
     override fun trackByteBuf(alloc: LimitedAllocator, buf: ByteBuf): ByteBuf =
         gg.essential.gui.screenshot.bytebuf.trackByteBuf(alloc, buf)
 

@@ -11,23 +11,16 @@
  */
 package gg.essential.gui.screenshot
 
-import com.sparkuniverse.toolbox.chat.model.Channel
 import gg.essential.Essential
-import gg.essential.api.gui.Slot
 import gg.essential.config.EssentialConfig
 import gg.essential.data.OnboardingData
 import gg.essential.elementa.UIComponent
 import gg.essential.elementa.components.UIBlock
-import gg.essential.elementa.components.UIBlock.Companion.drawBlock
 import gg.essential.elementa.components.UIContainer
 import gg.essential.elementa.components.UIImage
-import gg.essential.elementa.components.UIText
 import gg.essential.elementa.components.Window
 import gg.essential.elementa.constraints.AspectConstraint
-import gg.essential.elementa.constraints.CenterConstraint
-import gg.essential.elementa.constraints.ChildBasedMaxSizeConstraint
 import gg.essential.elementa.constraints.ChildBasedSizeConstraint
-import gg.essential.elementa.constraints.FillConstraint
 import gg.essential.elementa.constraints.SiblingConstraint
 import gg.essential.elementa.constraints.XConstraint
 import gg.essential.elementa.constraints.animation.Animations
@@ -39,10 +32,8 @@ import gg.essential.elementa.dsl.basicYConstraint
 import gg.essential.elementa.dsl.childOf
 import gg.essential.elementa.dsl.constrain
 import gg.essential.elementa.dsl.max
-import gg.essential.elementa.dsl.minus
 import gg.essential.elementa.dsl.percent
 import gg.essential.elementa.dsl.percentOfWindow
-import gg.essential.elementa.dsl.pixel
 import gg.essential.elementa.dsl.pixels
 import gg.essential.elementa.dsl.provideDelegate
 import gg.essential.elementa.dsl.times
@@ -58,9 +49,6 @@ import gg.essential.gui.common.bindParent
 import gg.essential.gui.common.onSetValueAndNow
 import gg.essential.gui.common.or
 import gg.essential.gui.common.shadow.ShadowIcon
-import gg.essential.gui.elementa.state.v2.animateTransitions
-import gg.essential.gui.elementa.state.v2.mutableStateOf
-import gg.essential.gui.friends.SocialMenu
 import gg.essential.gui.image.ImageFactory
 import gg.essential.gui.layoutdsl.Modifier
 import gg.essential.gui.layoutdsl.fillHeight
@@ -78,7 +66,6 @@ import gg.essential.gui.screenshot.constraints.AspectPreservingFillConstraint
 import gg.essential.gui.screenshot.toast.ScreenshotPreviewAction
 import gg.essential.gui.screenshot.toast.ScreenshotPreviewActionSlot
 import gg.essential.gui.util.hoveredState
-import gg.essential.universal.UMatrixStack
 import gg.essential.universal.UResolution
 import gg.essential.universal.USound
 import gg.essential.util.GuiUtil
@@ -90,7 +77,6 @@ import gg.essential.util.times
 import gg.essential.vigilance.utils.onLeftClick
 import java.awt.Color
 import java.io.File
-import java.util.function.Consumer
 
 object ScreenshotOverlay {
     private val layer = GuiUtil.createPersistentLayer(LayerPriority.Notifications)
@@ -99,16 +85,6 @@ object ScreenshotOverlay {
 
     fun push(file: File) {
         pushToast(ScreenshotPreviewToast(file))
-    }
-
-    fun pushUpload(): Consumer<ScreenshotUploadToast.ToastProgress> {
-        val toast = ScreenshotUploadToast()
-
-        Notifications.push("", "") {
-            timerEnabled = toast.timerEnabled
-            withCustomComponent(Slot.LARGE_PREVIEW, toast)
-        }
-        return toast.createProgressConsumer()
     }
 
     private fun pushToast(toast: ScreenshotToast) {
@@ -330,7 +306,7 @@ class ScreenshotPreviewToast(val file: File) : ScreenshotToast() {
             ScreenshotPreviewAction.COPY_PICTURE -> {
                 ManageAction("Copy Picture", EssentialPalette.COPY_9X).onLeftClick {
                     Multithreading.runAsync {
-                        Essential.getInstance().connectionManager.screenshotManager.copyScreenshotToClipboard(file)
+                        copyScreenshotToClipboard(file.toPath())
                     }
                 }
             }
@@ -481,158 +457,4 @@ class ScreenshotPreviewToast(val file: File) : ScreenshotToast() {
         }
     }
 
-}
-
-class ScreenshotUploadToast : UIContainer() {
-
-    private val maxCompletionDelayMillis = 500
-    private val startUploadMillis = System.currentTimeMillis()
-    private val initialProgress: ToastProgress = ToastProgress.Step(0)
-    private var targetProgress: ToastProgress = initialProgress
-    private var currentProgress: ToastProgress = targetProgress
-    val timerEnabled = BasicState(false)
-    private val stateText by UIText("Uploading...").setShadowColor(EssentialPalette.TEXT_SHADOW_LIGHT).constrain {
-        x = SiblingConstraint(6f)
-        y = CenterConstraint()
-        color = EssentialPalette.TEXT_HIGHLIGHT.toConstraint()
-    } childOf this
-
-    private val progressState = mutableStateOf(0f)
-    private val progressStateAnimated = progressState.animateTransitions(this@ScreenshotUploadToast, 0.5f, Animations.LINEAR)
-
-    private val progress by object : UIComponent() {
-
-        init {
-            isFloating = true
-        }
-
-        override fun draw(matrixStack: UMatrixStack) {
-            beforeDraw(matrixStack)
-
-            val x = constraints.getX().toDouble()
-            val y = constraints.getY().toDouble()
-            val width = constraints.getWidth().toDouble()
-            val height = constraints.getHeight().toDouble()
-
-            val percent = progressStateAnimated.getUntracked().toDouble()
-
-            matrixStack.push()
-            matrixStack.translate(1f, 1f, 0f)
-            drawInner(matrixStack, x, y, width, height, percent, EssentialPalette.TEXT_SHADOW_LIGHT)
-            matrixStack.pop()
-            drawInner(matrixStack, x, y, width, height, percent, EssentialPalette.TEXT_HIGHLIGHT)
-
-            super.draw(matrixStack)
-        }
-
-        private fun drawInner(matrixStack: UMatrixStack, x: Double, y: Double, width: Double, height: Double, percent: Double, color: Color) {
-            drawBlock(matrixStack, color, x, y, x + width, y + 1)
-            drawBlock(matrixStack, color, x, y + height - 1, x + width, y + height)
-            drawBlock(matrixStack, color, x, y + 1, x + 1, y + height - 1)
-            drawBlock(matrixStack, color, x + width - 1, y + 1, x + width, y + height - 1)
-
-            drawBlock(matrixStack, color, x + 1, y + 1, x + (width - 2) * percent, y + height - 1)
-        }
-    }.constrain {
-        x = SiblingConstraint(4f)
-        y = CenterConstraint()
-        width = FillConstraint(useSiblings = false) - 1.pixel
-        height = 8.pixels
-    } childOf this
-
-    init {
-        constrain {
-            width = 100.percent
-            height = ChildBasedMaxSizeConstraint() - 2.pixels
-        }
-
-        onLeftClick { click ->
-            val progress = currentProgress
-            if (progress is ToastProgress.Complete && progress.success) {
-                progress.channels.lastOrNull()?.let { channel ->
-                    GuiUtil.openScreen {
-                        SocialMenu(channel.id)
-                    }
-                    click.stopPropagation()
-                }
-            }
-        }
-
-        addUpdateFunc { _, _ -> updateProgress() }
-    }
-
-    private fun updateProgress() {
-        val targetProgress = targetProgress
-        if (currentProgress != targetProgress) {
-            val previousProgress = currentProgress
-            currentProgress = targetProgress
-
-            // If we went straight to complete, skip the upload bar and just show the result
-            if (targetProgress is ToastProgress.Complete && previousProgress == initialProgress) {
-                fireComplete(targetProgress)
-                return
-            }
-
-            val targetPercent = if (targetProgress is ToastProgress.Step) {
-                targetProgress.completionPercent.coerceAtMost(100)
-            } else {
-                100
-            }
-
-            progressState.set(targetPercent * 0.01f)
-
-            delay(500) {
-                if (targetProgress is ToastProgress.Complete) {
-                    // If we were successful, and it's been under maxCompletionDelayMillis, use some delay for dramatic effect.
-                    val timeElapsedMillis = System.currentTimeMillis() - startUploadMillis
-                    val delayMillis = maxCompletionDelayMillis - timeElapsedMillis
-                    if (targetProgress.success && delayMillis > 0) {
-                        delay(delayMillis) { fireComplete(targetProgress) }
-                    } else {
-                        fireComplete(targetProgress)
-                    }
-                }
-            }
-        }
-    }
-
-    fun createProgressConsumer(): Consumer<ToastProgress> {
-        return Consumer<ToastProgress> { t ->
-            Window.enqueueRenderOperation {
-                targetProgress = t
-            }
-        }
-    }
-
-    private fun fireComplete(status: ToastProgress.Complete) {
-        val action = {
-            timerEnabled.set(true)
-            removeChild(progress)
-            stateText.setText(status.message)
-            this.insertChildAt(
-                ShadowIcon(
-                    if (status.success) {
-                        EssentialPalette.CHECKMARK_7X5
-                    } else {
-                        EssentialPalette.CANCEL_5X
-                    }, true
-                ).rebindPrimaryColor(BasicState(EssentialPalette.TEXT_HIGHLIGHT))
-                    .rebindShadowColor(BasicState(EssentialPalette.MODAL_OUTLINE)).constrain {
-                        y = CenterConstraint()
-                    }, 0
-            )
-            USound.playLevelupSound()
-        }
-        action()
-    }
-
-    sealed class ToastProgress {
-
-        data class Complete(val message: String, val success: Boolean, val channels: List<Channel> = listOf()) : ToastProgress() {
-
-            constructor(message: String, success: Boolean) : this(message, success, listOf<Channel>())
-        }
-
-        data class Step(val completionPercent: Int) : ToastProgress()
-    }
 }

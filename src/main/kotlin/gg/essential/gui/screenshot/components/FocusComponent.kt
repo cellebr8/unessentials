@@ -40,6 +40,7 @@ import gg.essential.gui.layoutdsl.fillHeight
 import gg.essential.gui.layoutdsl.fillWidth
 import gg.essential.gui.layoutdsl.layoutAsBox
 import gg.essential.gui.layoutdsl.row
+import gg.essential.gui.screenshot.openScreenshotPropertiesModal
 import gg.essential.universal.USound
 import gg.essential.gui.util.hoveredState
 import gg.essential.vigilance.utils.onLeftClick
@@ -83,7 +84,7 @@ open class FocusComponent(
     protected val properties by IconButton(EssentialPalette.PROPERTIES_7X5, tooltipText = "Properties")
         .setDimension(IconButton.Dimension.Fixed(buttonSize, buttonSize))
         .onLeftClick {
-            screenshotBrowser.displayPropertiesModal(previewing)
+            openScreenshotPropertiesModal(previewing)
         }
 
     protected val edit by IconButton(EssentialPalette.EDIT_10X7, "Edit")

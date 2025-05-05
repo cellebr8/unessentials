@@ -20,6 +20,8 @@ import gg.essential.gui.EssentialPalette
 import gg.essential.gui.common.ContextOptionMenu
 import gg.essential.gui.screenshot.LocalScreenshot
 import gg.essential.gui.screenshot.RemoteScreenshot
+import gg.essential.gui.screenshot.copyScreenshotToClipboard
+import gg.essential.gui.screenshot.openScreenshotPropertiesModal
 import gg.essential.universal.USound
 import gg.essential.util.*
 
@@ -62,7 +64,7 @@ class ScreenshotOptionsDropdown(
             })
 
             options.add(ContextOptionMenu.Option("Copy Picture", image = EssentialPalette.COPY_10X7) {
-                screenshotManager.copyScreenshotToClipboard(id)
+                copyScreenshotToClipboard(id)
             })
 
             if (OnboardingData.hasAcceptedTos() && connectionManager.isAuthenticated) {
@@ -78,7 +80,7 @@ class ScreenshotOptionsDropdown(
         }
 
         options.add(ContextOptionMenu.Option("Properties", image = EssentialPalette.PROPERTIES_10X5) {
-            screenshotBrowser.displayPropertiesModal(screenshotProperties)
+            openScreenshotPropertiesModal(screenshotProperties)
         })
 
         if (id is LocalScreenshot) {

@@ -77,6 +77,7 @@ class ContextOptionMenu(
                         spacer(width = 10f)
                     }
                     text(option.textState, colorModifier, centeringContainsShadow = false)
+                    spacer(width = 10f)
                 }
             }.onLeftClick {
                 USound.playButtonPress()
@@ -88,7 +89,7 @@ class ContextOptionMenu(
         }
 
         fun Modifier.customOptionMenuWidth() = this then BasicWidthModifier {
-            basicWidthConstraint { it.children.maxOfOrNull { child -> ChildBasedSizeConstraint().getWidth(child) } ?: 1f } + 10.pixels
+            basicWidthConstraint { it.children.maxOfOrNull { child -> ChildBasedSizeConstraint().getWidth(child) } ?: 1f }
         }
 
         fun Modifier.maxSiblingHeight() = this then BasicHeightModifier {

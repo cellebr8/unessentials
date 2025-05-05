@@ -18,7 +18,6 @@ import gg.essential.gui.common.MenuButton
 import gg.essential.gui.elementa.state.v2.*
 import gg.essential.gui.elementa.state.v2.combinators.*
 import gg.essential.gui.layoutdsl.*
-import gg.essential.gui.notification.Notifications
 import gg.essential.gui.wardrobe.WardrobeState
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.divider
 import gg.essential.gui.wardrobe.configuration.ConfigurationUtils.navButton
@@ -57,12 +56,6 @@ class ConfigurationMenu(
             }
             divider()
             row(Modifier.fillWidth().childBasedMaxHeight(3f), Arrangement.spacedBy(5f, FloatPosition.CENTER)) {
-                navButton("Save to file", Modifier.fillWidth(0.45f)) {
-                    state.cosmeticsManager.cosmeticsDataWithChanges!!.writeChangesToLocalCosmeticData(state.cosmeticsManager.localCosmeticsData!!).thenAcceptOnMainThread {
-                        Notifications.push("Cosmetics", "Data saved to file successfully")
-                    }.logExceptions()
-
-                }
                 navButton(backButtonState, Modifier.fillWidth(0.45f)) {
                     if (currentConfigurationType.get() == null) state.editingMenuOpen.set(false)
                     else currentConfigurationType.set(null)

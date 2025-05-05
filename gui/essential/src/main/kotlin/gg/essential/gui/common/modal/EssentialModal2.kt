@@ -21,14 +21,19 @@ import gg.essential.gui.common.textStyle
 import gg.essential.gui.elementa.state.v2.State
 import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.elementa.state.v2.stateOf
+import gg.essential.gui.layoutdsl.Alignment
 import gg.essential.gui.layoutdsl.Arrangement
 import gg.essential.gui.layoutdsl.LayoutScope
 import gg.essential.gui.layoutdsl.Modifier
 import gg.essential.gui.layoutdsl.WrappedTextBuilder
+import gg.essential.gui.layoutdsl.alignHorizontal
 import gg.essential.gui.layoutdsl.box
-import gg.essential.gui.layoutdsl.childBasedSize
+import gg.essential.gui.layoutdsl.childBasedHeight
+import gg.essential.gui.layoutdsl.childBasedMaxHeight
 import gg.essential.gui.layoutdsl.color
 import gg.essential.gui.layoutdsl.column
+import gg.essential.gui.layoutdsl.fillWidth
+import gg.essential.gui.layoutdsl.height
 import gg.essential.gui.layoutdsl.onLeftClick
 import gg.essential.gui.layoutdsl.outline
 import gg.essential.gui.layoutdsl.shadow
@@ -114,7 +119,7 @@ abstract class EssentialModal2(
     override fun LayoutScope.layoutModal() {
         box(
             Modifier
-                .childBasedSize(16f)
+                .childBasedHeight(16f)
                 .color(EssentialPalette.MODAL_BACKGROUND)
                 .outline(EssentialPalette.BUTTON_HIGHLIGHT, 1f)
         ) {
@@ -138,10 +143,22 @@ abstract class EssentialModal2(
      * call a superclass' implementation of an extension function. ([KT-11488](https://youtrack.jetbrains.com/issue/KT-11488/When-overriding-a-member-extension-function-cannot-call-superclass-implementation))
      */
     fun LayoutScope.layoutContentImpl(modifier: Modifier = Modifier) {
-        column(Modifier.width(190f).then(modifier), Arrangement.spacedBy(17f)) {
-            layoutTitle()
-            layoutBody()
-            layoutButtons()
+        // Width = 190 (Main) + 16 * 2 (Padding)
+        column(Modifier.width(222f).then(modifier), Arrangement.spacedBy(17f)) {
+            box(Modifier.fillWidth(padding = 16f)) {
+                layoutTitle()
+            }
+            box(Modifier.fillWidth().childBasedMaxHeight()) {
+                box(Modifier.fillWidth(padding = 16f)) {
+                    layoutBody()
+                }
+                box(Modifier.width(16f).alignHorizontal(Alignment.End)) {
+                    layoutBodyScrollBar()
+                }
+            }
+            box(Modifier.fillWidth(padding = 16f)) {
+                layoutButtons()
+            }
         }
     }
 
@@ -150,6 +167,9 @@ abstract class EssentialModal2(
 
     /** For the actual content of your modal, e.g. the [description] text. */
     open fun LayoutScope.layoutBody() {}
+
+    /** For the scrollbar of your modal */
+    open fun LayoutScope.layoutBodyScrollBar() {}
 
     /** For the action buttons of your modal. See [primaryButton], [cancelButton] & [primaryAndCancelButtons]. */
     abstract fun LayoutScope.layoutButtons()

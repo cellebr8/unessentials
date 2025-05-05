@@ -197,8 +197,6 @@ class CoinsManager(val connectionManager: CMConnection) : NetworkedManager {
             val responsePacket = maybeResponse.orElse(null)
             if (responsePacket is ServerCoinBundleOptionsPacket) {
                 mutablePricing.setAll(responsePacket.coinBundles.map { it.toMod(currency) })
-            } else {
-                Notifications.push("Error obtaining coin bundles", "An unexpected error has occurred. Try again.")
             }
         }
     }

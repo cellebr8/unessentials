@@ -23,6 +23,7 @@ import gg.essential.gui.elementa.state.v2.awaitValue
 import gg.essential.gui.elementa.state.v2.mutableStateOf
 import gg.essential.gui.menu.AccountManager.Companion.refreshCurrentSession
 import gg.essential.network.CMConnection
+import gg.essential.network.connectionmanager.Connection.KnownCloseReason
 import gg.essential.network.connectionmanager.ConnectionManager.Status
 import gg.essential.util.Client
 import gg.essential.util.ExponentialBackoff
@@ -48,15 +49,14 @@ import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.io.Closeable
-import java.time.Duration as JavaDuration
 import java.time.Instant
 import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toKotlinDuration
+import java.time.Duration as JavaDuration
 
 abstract class ConnectionManagerKt : CMConnection {
     @Suppress("LeakingThis")
@@ -311,9 +311,10 @@ abstract class ConnectionManagerKt : CMConnection {
             return select {
                 openChannel.onReceive { ConnectResult.Connected }
                 closeChannel.onReceive { info ->
-                    when {
-                        info.outdated -> ConnectResult.Outdated
-                        else -> ConnectResult.Failed(info)
+                    when (info.knownReason) {
+                        KnownCloseReason.OUTDATED -> ConnectResult.Outdated
+                        null -> ConnectResult.Failed(info)
+                        else -> throw AssertionError() // FIXME: Workaround for compiler bug fixed in Kotlin 2.0
                     }
                 }
             }
@@ -324,7 +325,12 @@ abstract class ConnectionManagerKt : CMConnection {
         }
     }
 
-    data class CloseInfo(val code: Int, val reason: String, val remote: Boolean, val outdated: Boolean)
+    data class CloseInfo(
+        val code: Int,
+        val reason: String,
+        val remote: Boolean,
+        val knownReason: KnownCloseReason?,
+    )
 
     companion object {
         val LOGGER: Logger = LogManager.getLogger("Essential - Connection")
