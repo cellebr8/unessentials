@@ -20,37 +20,18 @@ import gg.essential.gui.elementa.state.v2.State
 fun TelemetryManager.setupAbFeatureTracking(refHolder: ReferenceHolder) {
     // List of AB features dependent settings to track: settingName, settingState, isFeatureEnabled
     val abFeatures = listOf<Triple<String, State<Any?>, Boolean>>(
+        continue
     )
 
     val sendAbTogglePacket: (value: Any?, setting: String) -> Unit = { value, setting ->
-        enqueue(ClientTelemetryPacket("AB_FEATURE", mapOf(setting to value)))
-
-        if (value != null) {
-            ABTestingData.addData("Setting:$setting")
-        }
+        continue
     }
 
     abFeatures.forEach { (setting, state, enabled) ->
-        if (enabled) {
-            // Send null packet if the feature setting has never been changed
-            if (!ABTestingData.hasData("Setting:$setting")) {
-                sendAbTogglePacket(null, setting)
-            }
-
-            // Otherwise, send packet with setting name and value
-            state.onSetValue(refHolder) {
-                sendAbTogglePacket(it, setting)
-            }
-        }
+        continue
     }
 }
 
 fun TelemetryManager.setupSettingsTracking(refHolder: ReferenceHolder) {
-    val trackedFeatureState: Map<String, State<*>> = emptyMap()
-
-    trackedFeatureState.forEach { (name, state) ->
-        state.onSetValueAndNow(refHolder) { value ->
-            enqueue(ClientTelemetryPacket("SETTING_STATE", mapOf(name to value)))
-        }
-    }
+    continue
 }
