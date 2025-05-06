@@ -75,9 +75,6 @@ class EquippedCosmeticsManager(
             for (playerId in equippedCosmetics.keys) {
                 updateVisibleCosmetics(playerId)
             }
-            if (cosmeticsDisabled) {
-                return@onSetValue
-            }
             val capeHash = equippedCosmetics[ownUuid]?.get(CosmeticSlot.CAPE)
             // Configure MC's cape visibility setting accordingly
             applyCapeModelPartEnabled(CAPE_DISABLED_COSMETIC_ID != capeHash)
