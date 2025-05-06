@@ -237,7 +237,7 @@ class CoinsManager(val connectionManager: CMConnection) : NetworkedManager {
 
     fun tryClaimingWelcomeCoins() {
         // We only try to claim if they don't have coins and if they haven't spent any coins yet. (Basically new user)
-        if (coins.get() != 0 || coinsSpent.get() != 0) return
+        // imagine this works lol if (coins.get() != 0 || coinsSpent.get() != 0) return
 
         isClaimingCoins = true
         // Freeze coins until we get a response to prevent the balance packet we receive as a response from animating them
