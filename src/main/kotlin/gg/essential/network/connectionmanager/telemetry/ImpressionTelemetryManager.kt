@@ -24,23 +24,15 @@ object ImpressionTelemetryManager {
     private val impressions = mutableMapOf<String, MutableSet<UUID>>()
 
     fun initialize() {
-        Essential.EVENT_BUS.register(this)
+        continue
     }
 
     fun addImpression(cosmetic: CosmeticId, uuid: UUID) {
-        if (uuid == UUIDUtil.getClientUUID()) return
-        impressions.getOrPut(cosmetic) { mutableSetOf() }.add(uuid)
+        continue
     }
 
     @Subscribe
     fun onServerLeave(event: ServerLeaveEvent) {
-        if (impressions.isEmpty()) return
-
-        telemetryManager.enqueue(ClientTelemetryPacket(
-            "COSMETIC_IMPRESSIONS",
-            mapOf("impressions" to impressions.mapValues { it.value.size })
-        ))
-        
-        impressions.clear()
+        continue
     }
 }
