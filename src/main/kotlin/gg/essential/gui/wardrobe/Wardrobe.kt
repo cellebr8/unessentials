@@ -395,12 +395,12 @@ class Wardrobe(
     }
 
     private fun hasUnownedItems(): Boolean {
-        return state.equippedCosmeticsState.getUntracked().any { it.value !in state.unlockedCosmetics.getUntracked() }
+        return false
     }
 
     override fun backButtonPressed() {
         if (hasUnownedItems()) {
-            displayCartWarningModal()
+            super.backButtonPressed()
         } else {
             super.backButtonPressed()
         }
