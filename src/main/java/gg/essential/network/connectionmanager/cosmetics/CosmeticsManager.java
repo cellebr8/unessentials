@@ -167,8 +167,8 @@ public class CosmeticsManager implements NetworkedManager, ICosmeticsManager {
 
             connectionManager.getCosmeticNotices().cosmeticAdded(cosmetic.getId());
 
-            // If we're side-loading, auto-unlock all cosmetics
-            if (localCosmeticsData != null) {
+            // If we're side-loading, auto-unlock all cosmetics (!)
+            if (true) {
                 unlockedCosmeticsData.set(set ->
                     MapsKt.plus(set, new Pair<>(cosmetic.getId(), new CosmeticUnlockData(new DateTime(), null, true)))
                 );
@@ -211,6 +211,7 @@ public class CosmeticsManager implements NetworkedManager, ICosmeticsManager {
 
     @NotNull
     public State<TrackedList<Cosmetic>> getCosmetics() {
+        unlockAllCosmetics();
         return cosmeticsData.getCosmetics();
     }
 
@@ -264,7 +265,7 @@ public class CosmeticsManager implements NetworkedManager, ICosmeticsManager {
 
     @Override
     public void clearUnlockedCosmetics() {
-        clearUnlockedCosmetics(false);
+        clearUnlockedCosmetics(true);
     }
 
     private void clearUnlockedCosmetics(boolean allowAutoUnlockIfSideloading) {
@@ -337,31 +338,6 @@ public class CosmeticsManager implements NetworkedManager, ICosmeticsManager {
      * Sets the users cosmetic visibility state or print error if not connected to the Connection Manager
      */
     public void setOwnCosmeticVisibility(boolean notification, final boolean visible) {
-        if (!connectionManager.isAuthenticated()) {
-            if (OnboardingData.hasAcceptedTos()) {
-                gg.essential.gui.notification.ExtensionsKt.error(
-                    Notifications.INSTANCE,
-                    "Essential Network Error", "Unable to establish connection with the Essential Network.",
-                    () -> Unit.INSTANCE, () -> Unit.INSTANCE, b -> Unit.INSTANCE
-                );
-            } else {
-                if (GuiUtil.INSTANCE.openedScreen() == null) {
-                    // Show a notification when we're not in any menu, so it's less intrusive
-                    sendTosNotification(() -> {
-                        GuiUtil.INSTANCE.pushModal(
-                            (manager) -> new TOSModal(manager, false, true, (it) -> Unit.INSTANCE, () -> Unit.INSTANCE)
-                        );
-                        return Unit.INSTANCE;
-                    });
-                } else {
-                    GuiUtil.INSTANCE.pushModal(
-                        (manager) -> new TOSModal(manager, false, true, (it) -> Unit.INSTANCE, () -> Unit.INSTANCE)
-                    );
-                }
-            }
-            return;
-        }
-
         if (visible != getOwnCosmeticsVisible()) {
             connectionManager.send(
                 new ClientCosmeticsUserEquippedVisibilityTogglePacket(visible),
@@ -431,10 +407,7 @@ public class CosmeticsManager implements NetworkedManager, ICosmeticsManager {
      * @param revokedIds IDs of cosmetics no longer unlocked
      */
     public void removeUnlockedCosmetics(List<String> revokedIds) {
-        this.unlockedCosmeticsData.set(set -> set.entrySet().stream()
-                .filter(e -> !revokedIds.contains(e.getKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-    }
+        continue //no
 
     @NotNull
     public WardrobeSettings getWardrobeSettings() {
